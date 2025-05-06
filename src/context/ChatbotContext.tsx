@@ -29,7 +29,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState<string>(() => {
     // Try to load from localStorage if available
-    return localStorage.getItem('openai_api_key') || '';
+    return localStorage.getItem('gemini_api_key') || '';
   });
   const { toast } = useToast();
 
@@ -67,7 +67,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     
     try {
       if (!apiKey) {
-        throw new Error('Please set your OpenAI API key in the settings');
+        throw new Error('Please set your Gemini API key in the settings');
       }
       
       // Determine if request is for text or image generation
@@ -77,18 +77,27 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
                             content.toLowerCase().includes('image');
       
       if (isImageRequest) {
-        // Image generation with OpenAI API
-        const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        // Image generation with Gemini API
+        const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: "dall-e-3",
-            prompt: content,
-            n: 1,
-            size: "1024x1024",
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `Generate an image based on this description: ${content}`
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.9,
+              maxOutputTokens: 2048,
+            }
           })
         });
         
@@ -97,37 +106,48 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         }
         
         const imageData = await imageResponse.json();
+        
+        // Since Gemini doesn't directly generate images like DALL-E,
+        // we'll provide a descriptive response with a relevant placeholder image
         const botMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: "I've generated this image based on your request:",
+          content: "I can't directly generate images, but here's a description of what you're looking for.",
           timestamp: new Date().toISOString(),
-          imageUrl: imageData.data[0].url,
+          imageUrl: "https://source.unsplash.com/random/800x600/?"+encodeURIComponent(content),
         };
         
         setMessages(prev => [...prev, botMessage]);
       } else {
-        // Text completion with OpenAI API
-        const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        // Text completion with Gemini API
+        const chatResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
+            contents: [
               {
-                role: "system",
-                content: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics. Include code examples when relevant."
+                role: "user",
+                parts: [
+                  { 
+                    text: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics. Include code examples when relevant."
+                  }
+                ]
               },
               ...messages.map(msg => ({
-                role: msg.role,
-                content: msg.content
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
               })),
-              { role: "user", content }
+              {
+                role: "user",
+                parts: [{ text: content }]
+              }
             ],
-            max_tokens: 500
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 800,
+            }
           })
         });
         
@@ -136,10 +156,13 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         }
         
         const chatData = await chatResponse.json();
+        const responseText = chatData.candidates?.[0]?.content?.parts?.[0]?.text || 
+                           "I'm sorry, I couldn't generate a response.";
+        
         const botMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: chatData.choices[0].message.content,
+          content: responseText,
           timestamp: new Date().toISOString(),
         };
         

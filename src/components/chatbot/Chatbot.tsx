@@ -41,7 +41,7 @@ export function Chatbot() {
 
   const saveApiKey = () => {
     setApiKey(apiKeyInput);
-    localStorage.setItem('openai_api_key', apiKeyInput);
+    localStorage.setItem('gemini_api_key', apiKeyInput);
     setApiKeyDialogOpen(false);
   };
   
@@ -169,7 +169,7 @@ export function Chatbot() {
                 size="icon" 
                 variant="outline" 
                 disabled={isLoading || !apiKey}
-                onClick={() => setInputValue(prev => prev + " Please generate an image of ")}
+                onClick={() => setInputValue(prev => prev + " Please describe an image of ")}
               >
                 <Image className="h-4 w-4" />
                 <span className="sr-only">Generate image</span>
@@ -178,8 +178,8 @@ export function Chatbot() {
           </div>
           <div className="mt-2 text-xs text-center text-muted-foreground">
             {apiKey ? 
-              "AI assistant can answer questions, explain concepts, and generate diagrams" :
-              "Please add your OpenAI API key in settings to enable the AI assistant"
+              "AI assistant can answer questions, explain concepts, and find relevant images" :
+              "Please add your Gemini API key in settings to enable the AI assistant"
             }
           </div>
         </div>
@@ -190,7 +190,7 @@ export function Chatbot() {
           <DialogHeader>
             <DialogTitle>AI Assistant Settings</DialogTitle>
             <DialogDescription>
-              Enter your OpenAI API key to enable the AI assistant. 
+              Enter your Google Gemini API key to enable the AI assistant. 
               Your key is stored locally in your browser.
             </DialogDescription>
           </DialogHeader>
@@ -204,13 +204,13 @@ export function Chatbot() {
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="sk-..."
+                placeholder="AIza..."
                 className="col-span-3"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={saveApiKey} disabled={!apiKeyInput.trim().startsWith('sk-')}>
+            <Button onClick={saveApiKey} disabled={!apiKeyInput.trim().startsWith('AIza')}>
               Save Changes
             </Button>
           </DialogFooter>
