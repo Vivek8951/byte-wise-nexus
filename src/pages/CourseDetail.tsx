@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Book, Calendar, BarChart, Clock, Download, Play, Star, Users, FileText } from "lucide-react";
@@ -14,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { CourseCard } from "@/components/courses/CourseCard";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
