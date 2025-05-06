@@ -54,3 +54,20 @@ export interface ChatMessage {
   timestamp: string;
   imageUrl?: string;
 }
+
+export interface CourseProgress {
+  userId: string;
+  courseId: string;
+  completedVideos: string[];
+  completedQuizzes: string[];
+  lastAccessed: string;
+  overallProgress: number; // Percentage from 0-100
+}
+
+export interface CourseEnrollment {
+  userId: string;
+  courseId: string;
+  enrollmentDate: string;
+  isCompleted: boolean;
+  certificateIssued: boolean;
+}

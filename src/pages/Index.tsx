@@ -1,21 +1,39 @@
 
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Code, Database, Network, Server, Cpu, Layout } from "lucide-react";
+import { ArrowRight, Code, Database, Network, Server, Cpu, Layout, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Chatbot } from "@/components/chatbot/Chatbot";
-import { CourseCard } from "@/components/courses/CourseCard";
-import { useCourses } from "@/context/CourseContext";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Index() {
-  const { featuredCourses, isLoading } = useCourses();
-  
   useEffect(() => {
     document.title = "TechLearn - Computer Science Education Platform";
   }, []);
+  
+  const features = [
+    {
+      icon: BookOpen,
+      title: "Expert-Led Courses",
+      description: "Learn from industry professionals and academics with years of experience in computer science."
+    },
+    {
+      icon: Layout,
+      title: "Structured Learning Paths",
+      description: "Follow carefully designed learning paths to build your skills progressively."
+    },
+    {
+      icon: Cpu,
+      title: "AI Learning Assistant",
+      description: "Get immediate help from our AI chatbot that answers questions and generates visual explanations."
+    },
+    {
+      icon: Code,
+      title: "Practical Coding Exercises",
+      description: "Apply concepts with hands-on programming exercises and real-world projects."
+    }
+  ];
   
   const categories = [
     { id: 'algorithms', name: 'Data Structures & Algorithms', icon: Code },
@@ -58,6 +76,50 @@ export default function Index() {
           <div className="absolute inset-0 bg-[url('/placeholder.svg')] opacity-10"></div>
         </section>
         
+        {/* How It Works Section */}
+        <section className="py-16 bg-white dark:bg-gray-900">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4 heading-gradient">How TechLearn Works</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Our platform makes learning computer science accessible, structured, and engaging
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <div className="flex flex-col items-center p-6 text-center">
+                <div className="h-14 w-14 bg-tech-blue/10 rounded-full flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-tech-blue">1</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Create an Account</h3>
+                <p className="text-muted-foreground">
+                  Sign up for free and get access to our course catalog and learning tools.
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center p-6 text-center">
+                <div className="h-14 w-14 bg-tech-purple/10 rounded-full flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-tech-purple">2</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Enroll in Courses</h3>
+                <p className="text-muted-foreground">
+                  Browse our catalog and enroll in courses that match your interests and career goals.
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center p-6 text-center">
+                <div className="h-14 w-14 bg-tech-pink/10 rounded-full flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-tech-pink">3</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Learn & Grow</h3>
+                <p className="text-muted-foreground">
+                  Access videos, downloadable resources, and get help from our AI assistant whenever needed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
         {/* Categories Section */}
         <section className="py-16 bg-muted/50">
           <div className="container mx-auto px-4">
@@ -81,40 +143,8 @@ export default function Index() {
           </div>
         </section>
         
-        {/* Featured Courses Section */}
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold heading-gradient">Featured Courses</h2>
-                <p className="text-muted-foreground mt-2">
-                  Popular courses curated by experts in the field
-                </p>
-              </div>
-              <Link to="/courses">
-                <Button variant="ghost" className="gap-1">
-                  View All
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {isLoading ? (
-                Array(3).fill(0).map((_, index) => (
-                  <div key={index} className="h-80 rounded-lg bg-muted animate-pulse" />
-                ))
-              ) : (
-                featuredCourses.slice(0, 3).map(course => (
-                  <CourseCard key={course.id} course={course} />
-                ))
-              )}
-            </div>
-          </div>
-        </section>
-        
         {/* Features Section */}
-        <section className="py-16 bg-muted/50">
+        <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4 heading-gradient">Platform Features</h2>
@@ -123,35 +153,41 @@ export default function Index() {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                <div className="h-12 w-12 bg-tech-blue/10 rounded-full flex items-center justify-center mb-4">
-                  <Code className="h-6 w-6 text-tech-blue" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {features.map((feature, index) => (
+                <div key={index} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+                  <div className="h-12 w-12 bg-tech-blue/10 rounded-full flex items-center justify-center mb-4">
+                    <feature.icon className="h-6 w-6 text-tech-blue" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Comprehensive Courses</h3>
-                <p className="text-muted-foreground">
-                  Access high-quality video lectures, downloadable notes, and interactive quizzes across essential computer science subjects.
-                </p>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                <div className="h-12 w-12 bg-tech-purple/10 rounded-full flex items-center justify-center mb-4">
-                  <Layout className="h-6 w-6 text-tech-purple" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Role-Based Learning</h3>
-                <p className="text-muted-foreground">
-                  Customized dashboards for both students and administrators with progress tracking and content management.
-                </p>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                <div className="h-12 w-12 bg-tech-pink/10 rounded-full flex items-center justify-center mb-4">
-                  <Cpu className="h-6 w-6 text-tech-pink" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">AI Learning Assistant</h3>
-                <p className="text-muted-foreground">
-                  Get help from our AI chatbot that can answer questions, generate diagrams, and summarize content for enhanced learning.
-                </p>
+              ))}
+            </div>
+          </div>
+        </section>
+        
+        {/* CTA Section */}
+        <section className="py-16 bg-tech-blue text-white">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
+              <p className="text-lg opacity-90 mb-8">
+                Join thousands of students who are already advancing their careers with TechLearn.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/register">
+                  <Button size="lg" className="bg-white text-tech-blue hover:bg-gray-100">
+                    Create Free Account
+                  </Button>
+                </Link>
+                <Link to="/courses">
+                  <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                    Browse Courses <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
