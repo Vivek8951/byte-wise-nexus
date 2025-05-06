@@ -47,6 +47,30 @@ export interface Note {
   order: number;
 }
 
+export interface Quiz {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string;
+  questions: QuizQuestion[];
+  order: number;
+}
+
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  options: string[];
+  correctAnswer: number;
+}
+
+export interface QuizAttempt {
+  userId: string;
+  quizId: string;
+  courseId: string;
+  score: number;
+  completedAt: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -70,4 +94,16 @@ export interface CourseEnrollment {
   enrollmentDate: string;
   isCompleted: boolean;
   certificateIssued: boolean;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+export interface BackendConfig {
+  apiUrl: string;
+  aiEndpoint: string;
 }

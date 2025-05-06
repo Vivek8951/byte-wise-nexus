@@ -10,6 +10,8 @@ interface ChatbotContextType {
   isOpen: boolean;
   toggleChatbot: () => void;
   clearChat: () => void;
+  apiKey: string;
+  setApiKey: (key: string) => void;
 }
 
 const ChatbotContext = createContext<ChatbotContextType | undefined>(undefined);
@@ -25,6 +27,10 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [apiKey, setApiKey] = useState<string>(() => {
+    // Try to load from localStorage if available
+    return localStorage.getItem('openai_api_key') || '';
+  });
   const { toast } = useToast();
 
   const toggleChatbot = () => {
@@ -59,41 +65,120 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
-    // Simulate API call delay (in a real app, this would call OpenAI API)
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate a mock response
-    let responseText = '';
-    let imageUrl;
-    
-    if (content.toLowerCase().includes('diagram') || 
-        content.toLowerCase().includes('graph') || 
-        content.toLowerCase().includes('picture') ||
-        content.toLowerCase().includes('image')) {
-      responseText = "I've generated an image based on your request. In a real implementation, this would be created using the OpenAI Image Generation API.";
-      imageUrl = '/placeholder.svg';
-    } else if (content.toLowerCase().includes('algorithm')) {
-      responseText = "Algorithms are step-by-step procedures for solving problems. Common algorithms include sorting algorithms like Quick Sort and Merge Sort, search algorithms like Binary Search, and graph algorithms like Dijkstra's algorithm for finding shortest paths.";
-    } else if (content.toLowerCase().includes('database')) {
-      responseText = "Databases store and organize data. The two main types are SQL (relational) databases like MySQL and PostgreSQL, and NoSQL databases like MongoDB and Redis. Each type has specific use cases and advantages.";
-    } else {
-      responseText = "That's an interesting question about computer science. To give you a more specific answer, could you provide more details or clarify what aspect you're interested in?";
+    try {
+      if (!apiKey) {
+        throw new Error('Please set your OpenAI API key in the settings');
+      }
+      
+      // Determine if request is for text or image generation
+      const isImageRequest = content.toLowerCase().includes('diagram') || 
+                            content.toLowerCase().includes('graph') || 
+                            content.toLowerCase().includes('picture') ||
+                            content.toLowerCase().includes('image');
+      
+      if (isImageRequest) {
+        // Image generation with OpenAI API
+        const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: "dall-e-3",
+            prompt: content,
+            n: 1,
+            size: "1024x1024",
+          })
+        });
+        
+        if (!imageResponse.ok) {
+          throw new Error('Failed to generate image. Please check your API key and try again.');
+        }
+        
+        const imageData = await imageResponse.json();
+        const botMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: "I've generated this image based on your request:",
+          timestamp: new Date().toISOString(),
+          imageUrl: imageData.data[0].url,
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        // Text completion with OpenAI API
+        const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics. Include code examples when relevant."
+              },
+              ...messages.map(msg => ({
+                role: msg.role,
+                content: msg.content
+              })),
+              { role: "user", content }
+            ],
+            max_tokens: 500
+          })
+        });
+        
+        if (!chatResponse.ok) {
+          throw new Error('Failed to get response. Please check your API key and try again.');
+        }
+        
+        const chatData = await chatResponse.json();
+        const botMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: chatData.choices[0].message.content,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+      }
+    } catch (error) {
+      // Handle errors
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      
+      const botMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Error: ${errorMessage}`,
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages(prev => [...prev, botMessage]);
+      
+      toast({
+        title: "AI Assistant Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    const botMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: responseText,
-      timestamp: new Date().toISOString(),
-      imageUrl,
-    };
-    
-    setMessages(prev => [...prev, botMessage]);
-    setIsLoading(false);
   };
 
   return (
-    <ChatbotContext.Provider value={{ messages, sendMessage, isLoading, isOpen, toggleChatbot, clearChat }}>
+    <ChatbotContext.Provider value={{ 
+      messages, 
+      sendMessage, 
+      isLoading, 
+      isOpen, 
+      toggleChatbot, 
+      clearChat,
+      apiKey,
+      setApiKey
+    }}>
       {children}
     </ChatbotContext.Provider>
   );

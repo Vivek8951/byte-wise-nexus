@@ -1,6 +1,8 @@
 
 import { CourseProgress, CourseEnrollment } from '../types';
+import { toast } from "@/components/ui/sonner";
 
+// This simulates data that would normally come from a backend server
 export const mockCourseProgress: CourseProgress[] = [
   {
     userId: '2',
@@ -67,23 +69,61 @@ export const mockEnrollments: CourseEnrollment[] = [
   },
 ];
 
-export const getUserCourseProgress = (userId: string, courseId: string): CourseProgress | undefined => {
-  return mockCourseProgress.find(
-    progress => progress.userId === userId && progress.courseId === courseId
+// Simulate API calls with timeouts to make it feel more like real backend requests
+const simulateApiCall = <T>(data: T): Promise<T> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(data);
+    }, 800); // 800ms delay to simulate network request
+  });
+};
+
+export const getUserCourseProgress = async (userId: string, courseId: string): Promise<CourseProgress | undefined> => {
+  console.log(`[API] Fetching progress for user ${userId} on course ${courseId}`);
+  
+  // Simulate API call
+  return simulateApiCall(
+    mockCourseProgress.find(
+      progress => progress.userId === userId && progress.courseId === courseId
+    )
   );
 };
 
-export const getUserEnrollments = (userId: string): CourseEnrollment[] => {
-  return mockEnrollments.filter(enrollment => enrollment.userId === userId);
-};
-
-export const isUserEnrolled = (userId: string, courseId: string): boolean => {
-  return mockEnrollments.some(
-    enrollment => enrollment.userId === userId && enrollment.courseId === courseId
+export const getUserEnrollments = async (userId: string): Promise<CourseEnrollment[]> => {
+  console.log(`[API] Fetching all enrollments for user ${userId}`);
+  
+  // Simulate API call
+  return simulateApiCall(
+    mockEnrollments.filter(enrollment => enrollment.userId === userId)
   );
 };
 
-export const enrollUserInCourse = (userId: string, courseId: string): CourseEnrollment => {
+export const isUserEnrolled = async (userId: string, courseId: string): Promise<boolean> => {
+  console.log(`[API] Checking if user ${userId} is enrolled in course ${courseId}`);
+  
+  // Simulate API call
+  return simulateApiCall(
+    mockEnrollments.some(
+      enrollment => enrollment.userId === userId && enrollment.courseId === courseId
+    )
+  );
+};
+
+export const enrollUserInCourse = async (userId: string, courseId: string): Promise<CourseEnrollment> => {
+  console.log(`[API] Enrolling user ${userId} in course ${courseId}`);
+  
+  // Check if already enrolled
+  const alreadyEnrolled = mockEnrollments.some(
+    e => e.userId === userId && e.courseId === courseId
+  );
+  
+  if (alreadyEnrolled) {
+    toast("You are already enrolled in this course");
+    return simulateApiCall(
+      mockEnrollments.find(e => e.userId === userId && e.courseId === courseId)!
+    );
+  }
+  
   const newEnrollment: CourseEnrollment = {
     userId,
     courseId,
@@ -106,26 +146,120 @@ export const enrollUserInCourse = (userId: string, courseId: string): CourseEnro
   
   mockCourseProgress.push(newProgress);
   
-  return newEnrollment;
+  // Simulate API call
+  return simulateApiCall(newEnrollment);
 };
 
-export const updateCourseProgress = (
+export const updateCourseProgress = async (
   userId: string, 
   courseId: string,
   data: Partial<CourseProgress>
-): CourseProgress | undefined => {
+): Promise<CourseProgress | undefined> => {
+  console.log(`[API] Updating progress for user ${userId} on course ${courseId}`, data);
+  
   const progressIndex = mockCourseProgress.findIndex(
     p => p.userId === userId && p.courseId === courseId
   );
   
-  if (progressIndex === -1) return undefined;
+  if (progressIndex === -1) return simulateApiCall(undefined);
+  
+  // Calculate overall progress based on videos completed
+  let calculatedProgress = data.overallProgress;
+  
+  if (data.completedVideos && !data.overallProgress) {
+    // This is a simplified calculation - in a real app you'd consider total videos in course
+    calculatedProgress = Math.min(Math.floor((data.completedVideos.length / 10) * 100), 100);
+  }
   
   mockCourseProgress[progressIndex] = {
     ...mockCourseProgress[progressIndex],
     ...data,
+    overallProgress: calculatedProgress || mockCourseProgress[progressIndex].overallProgress,
     lastAccessed: new Date().toISOString().split('T')[0],
   };
   
-  return mockCourseProgress[progressIndex];
+  // Check if course is completed (progress >= 100%)
+  if (mockCourseProgress[progressIndex].overallProgress >= 100) {
+    const enrollmentIndex = mockEnrollments.findIndex(
+      e => e.userId === userId && e.courseId === courseId
+    );
+    
+    if (enrollmentIndex !== -1) {
+      mockEnrollments[enrollmentIndex].isCompleted = true;
+      
+      // Generate certificate if not already issued
+      if (!mockEnrollments[enrollmentIndex].certificateIssued) {
+        mockEnrollments[enrollmentIndex].certificateIssued = true;
+        toast("Congratulations! You've completed this course and earned a certificate!");
+      }
+    }
+  }
+  
+  // Simulate API call
+  return simulateApiCall(mockCourseProgress[progressIndex]);
 };
 
+// Track video completion
+export const markVideoAsCompleted = async (
+  userId: string,
+  courseId: string,
+  videoId: string
+): Promise<CourseProgress | undefined> => {
+  console.log(`[API] Marking video ${videoId} as completed for user ${userId} on course ${courseId}`);
+  
+  const userProgress = mockCourseProgress.find(
+    p => p.userId === userId && p.courseId === courseId
+  );
+  
+  if (!userProgress) return simulateApiCall(undefined);
+  
+  // Only add if not already completed
+  if (!userProgress.completedVideos.includes(videoId)) {
+    return updateCourseProgress(userId, courseId, {
+      completedVideos: [...userProgress.completedVideos, videoId],
+    });
+  }
+  
+  return simulateApiCall(userProgress);
+};
+
+// Track quiz completion
+export const markQuizAsCompleted = async (
+  userId: string,
+  courseId: string,
+  quizId: string,
+  score: number
+): Promise<CourseProgress | undefined> => {
+  console.log(`[API] Marking quiz ${quizId} as completed with score ${score} for user ${userId} on course ${courseId}`);
+  
+  const userProgress = mockCourseProgress.find(
+    p => p.userId === userId && p.courseId === courseId
+  );
+  
+  if (!userProgress) return simulateApiCall(undefined);
+  
+  // Only add if not already completed
+  if (!userProgress.completedQuizzes.includes(quizId)) {
+    return updateCourseProgress(userId, courseId, {
+      completedQuizzes: [...userProgress.completedQuizzes, quizId],
+    });
+  }
+  
+  return simulateApiCall(userProgress);
+};
+
+// Get all user progress (for admin dashboard)
+export const getAllUserProgress = async (): Promise<CourseProgress[]> => {
+  console.log('[API] Fetching all user progress data');
+  
+  // Simulate API call
+  return simulateApiCall([...mockCourseProgress]);
+};
+
+// Get all enrollments (for admin dashboard)
+export const getAllEnrollments = async (): Promise<CourseEnrollment[]> => {
+  console.log('[API] Fetching all enrollment data');
+  
+  // Simulate API call
+  return simulateApiCall([...mockEnrollments]);
+};
