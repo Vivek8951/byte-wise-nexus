@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
@@ -110,9 +111,9 @@ export default function CourseDetail() {
         <div className="mb-6">
           <BackButton href="/courses" className="mb-4" />
           
-          {/* Course header section */}
+          {/* Course header section with improved alignment */}
           <div className="md:flex md:items-start gap-8">
-            <div className="md:w-2/3">
+            <div className="md:w-2/3 text-left">
               <h1 className="text-3xl font-bold heading-gradient mb-4">{course?.title}</h1>
               <p className="text-muted-foreground mb-6">{course?.description}</p>
               
@@ -127,13 +128,13 @@ export default function CourseDetail() {
             <div className="md:w-1/3">
               <Card className="bg-card border rounded-lg overflow-hidden">
                 <CardHeader>
-                  <CardTitle>Course Details</CardTitle>
-                  <CardDescription>Quick overview of the course</CardDescription>
+                  <CardTitle className="text-left">Course Details</CardTitle>
+                  <CardDescription className="text-left">Quick overview of the course</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Info className="h-5 w-5 text-muted-foreground" />
-                    <div>
+                    <div className="text-left">
                       <h4 className="font-medium">Instructor</h4>
                       <p className="text-sm text-muted-foreground">{course?.instructor}</p>
                     </div>
@@ -141,7 +142,7 @@ export default function CourseDetail() {
                   <Separator />
                   <div className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div>
+                    <div className="text-left">
                       <h4 className="font-medium">Lectures</h4>
                       <p className="text-sm text-muted-foreground">{videos?.length} videos</p>
                     </div>
@@ -149,7 +150,7 @@ export default function CourseDetail() {
                   <Separator />
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-muted-foreground" />
-                    <div>
+                    <div className="text-left">
                       <h4 className="font-medium">Progress</h4>
                       <p className="text-sm text-muted-foreground">0% Complete</p>
                     </div>
@@ -157,7 +158,7 @@ export default function CourseDetail() {
                   <Separator />
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-                    <div>
+                    <div className="text-left">
                       <h4 className="font-medium">Level</h4>
                       <p className="text-sm text-muted-foreground">{course?.level}</p>
                     </div>
@@ -181,7 +182,7 @@ export default function CourseDetail() {
             </Button>
           </div>
           
-          {/* Tabs section */}
+          {/* Tabs section with consistent text alignment */}
           <Tabs defaultValue="overview" className="w-full">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -190,7 +191,7 @@ export default function CourseDetail() {
               <TabsTrigger value="quiz">Quiz</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="space-y-4 py-4">
+            <TabsContent value="overview" className="space-y-4 py-4 text-left">
               <h2 className="text-2xl font-bold">Course Overview</h2>
               <p>
                 Welcome to the {course?.title} course! In this course, you will learn...
@@ -210,7 +211,7 @@ export default function CourseDetail() {
             </TabsContent>
             
             <TabsContent value="lectures" className="space-y-4 py-4">
-              <h2 className="text-2xl font-bold">Course Lectures</h2>
+              <h2 className="text-2xl font-bold text-left">Course Lectures</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Video Section */}
@@ -224,13 +225,13 @@ export default function CourseDetail() {
                           className="w-full h-full object-cover rounded-md"
                         />
                       </AspectRatio>
-                      <div className="p-4">
+                      <div className="p-4 text-left">
                         <h3 className="text-lg font-semibold">{activeVideo.title}</h3>
                         <p className="text-muted-foreground text-sm">{activeVideo.description}</p>
                       </div>
                     </Card>
                   ) : (
-                    <p>No video selected.</p>
+                    <p className="text-left">No video selected.</p>
                   )}
                   
                   <div className="flex justify-between">
@@ -251,7 +252,7 @@ export default function CourseDetail() {
                   </div>
                   
                   {activeVideo && (
-                    <div className="mt-6">
+                    <div className="mt-6 text-left">
                       <VideoAnalysis video={activeVideo} />
                     </div>
                   )}
@@ -259,7 +260,7 @@ export default function CourseDetail() {
                 
                 {/* Video List */}
                 <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">Videos</h3>
+                  <h3 className="text-xl font-semibold text-left">Videos</h3>
                   {videos.map((video, index) => (
                     <Card 
                       key={video.id} 
@@ -267,7 +268,7 @@ export default function CourseDetail() {
                       onClick={() => handleVideoClick(video, index)}
                     >
                       <Video className="h-5 w-5" />
-                      <div>
+                      <div className="text-left">
                         <h4 className="font-medium">{video.title}</h4>
                         <p className="text-sm text-muted-foreground">{formatDuration(video.duration)}</p>
                       </div>
@@ -278,13 +279,13 @@ export default function CourseDetail() {
             </TabsContent>
             
             <TabsContent value="resources" className="space-y-4 py-4">
-              <h2 className="text-2xl font-bold">Course Resources</h2>
+              <h2 className="text-2xl font-bold text-left">Course Resources</h2>
               
               {notes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {notes.map(note => (
                     <Card key={note.id} className="bg-card border rounded-lg overflow-hidden">
-                      <div className="p-4">
+                      <div className="p-4 text-left">
                         <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
                         <p className="text-muted-foreground line-clamp-2 mb-4 text-sm">{note.description}</p>
                         <a href={note.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -295,12 +296,12 @@ export default function CourseDetail() {
                   ))}
                 </div>
               ) : (
-                <p>No resources available for this course.</p>
+                <p className="text-left">No resources available for this course.</p>
               )}
             </TabsContent>
             
             <TabsContent value="quiz" className="space-y-4 py-4">
-              <h2 className="text-2xl font-bold">Course Quiz</h2>
+              <h2 className="text-2xl font-bold text-left">Course Quiz</h2>
               {id && (
                 <CourseQuiz 
                   courseId={id}

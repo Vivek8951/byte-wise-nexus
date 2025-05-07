@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { Course } from "@/types";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +71,7 @@ export function CourseCard({ course }: CourseCardProps) {
           </div>
         </div>
         
-        <div className="p-4">
+        <div className="p-4 text-left">
           <div className="flex items-center justify-between mb-2">
             <Badge variant="outline" className="bg-card">
               {course.category}
