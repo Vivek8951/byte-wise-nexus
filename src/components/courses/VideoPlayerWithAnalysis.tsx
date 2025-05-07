@@ -47,43 +47,59 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         if (error) throw error;
         
         // If we have data from Supabase, use it
-        if (data && data.url) {
-          setVideoData({
+        if (data) {
+          const updateData: Partial<Video> = {
             ...video,
-            url: data.url,
             title: data.title || video.title,
             description: data.description || video.description,
-            analyzedContent: data.analyzed_content ? safeJsonToArray(data.analyzed_content) : video.analyzedContent
-          });
+          };
           
-          // Check if video has analysis
+          // If we have analyzed content, use it
           if (data.analyzed_content) {
+            updateData.analyzedContent = safeJsonToArray(data.analyzed_content);
             setHasAnalysis(true);
           }
           
-          setIsLoading(false);
-          return;
-        }
-        
-        // If no URL in database, try to get a video URL immediately
-        const result = await getVideoForCourse(video.id, courseId);
-        
-        if (result.success && result.videoUrl) {
-          setVideoData({
-            ...video,
-            url: result.videoUrl,
-            title: result.title || video.title,
-            description: result.description || video.description
-          });
+          // If we have a URL, use it
+          if (data.url) {
+            updateData.url = data.url;
+          }
           
-          // Update the database with this URL
-          await supabase
-            .from('videos')
-            .update({ url: result.videoUrl })
-            .eq('id', video.id);
+          setVideoData(prev => ({...prev, ...updateData}));
+          
+          // If no URL yet, try to get one immediately
+          if (!data.url) {
+            const result = await getVideoForCourse(video.id, courseId);
+            
+            if (result.success && result.videoUrl) {
+              setVideoData(prev => ({
+                ...prev,
+                url: result.videoUrl,
+                title: result.title || prev.title,
+                description: result.description || prev.description
+              }));
+            }
+          }
+        } else {
+          // If no data at all, try to get a video URL immediately
+          const result = await getVideoForCourse(video.id, courseId);
+          
+          if (result.success && result.videoUrl) {
+            setVideoData(prev => ({
+              ...prev,
+              url: result.videoUrl,
+              title: result.title || prev.title,
+              description: result.description || prev.description
+            }));
+          }
         }
       } catch (error) {
         console.error("Error loading video:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load video. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -96,7 +112,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
   useEffect(() => {
     const checkAnalysis = async () => {
       // First check if the video passed as prop has analyzedContent
-      if (video.analyzedContent) {
+      if (video.analyzedContent && video.analyzedContent.length > 0) {
         setHasAnalysis(true);
         return;
       }
@@ -112,11 +128,15 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         if (error) throw error;
         
         if (data && data.analyzed_content) {
+          const analyzedContent = safeJsonToArray(data.analyzed_content);
           setVideoData(prevData => ({
             ...prevData,
-            analyzedContent: safeJsonToArray(data.analyzed_content)
+            analyzedContent: analyzedContent
           }));
-          setHasAnalysis(true);
+          
+          if (analyzedContent.length > 0) {
+            setHasAnalysis(true);
+          }
         } else {
           setHasAnalysis(false);
         }
@@ -135,7 +155,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     try {
       toast({
         title: "Processing video",
-        description: "This may take a minute...",
+        description: "This may take a minute as we search for relevant content using AI...",
       });
       
       const result = await processVideo(video.id, courseId);
@@ -149,15 +169,15 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         // Update the video data with the new analysis and URL
         if (result.data) {
           const updatedVideo = {
-            ...video,
-            analyzedContent: safeJsonToArray(result.data.analyzedContent),
-            url: result.data.videoUrl || video.url,
-            title: result.data.title || video.title,
-            description: result.data.description || video.description
+            ...videoData,
+            analyzedContent: result.data.analyzedContent || [],
+            url: result.data.videoUrl || videoData.url,
+            title: result.data.title || videoData.title,
+            description: result.data.description || videoData.description
           };
           
           setVideoData(updatedVideo);
-          setHasAnalysis(true);
+          setHasAnalysis(!!result.data.analyzedContent);
           
           // Notify parent component if needed
           if (onAnalysisComplete) {
@@ -215,27 +235,25 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         </div>
       </Card>
       
-      {!hasAnalysis && (
-        <div className="flex justify-center p-4">
-          <Button 
-            onClick={handleGenerateAnalysis} 
-            disabled={isProcessing}
-            className="flex items-center gap-2"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Processing Video...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Generate Video Analysis
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-center p-4">
+        <Button 
+          onClick={handleGenerateAnalysis} 
+          disabled={isProcessing}
+          className="flex items-center gap-2"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing with Hugging Face AI...
+            </>
+          ) : (
+            <>
+              <Play className="h-4 w-4" />
+              {hasAnalysis ? "Regenerate Video Content" : "Generate Video Analysis"}
+            </>
+          )}
+        </Button>
+      </div>
       
       <VideoAnalysis video={videoData} />
     </div>

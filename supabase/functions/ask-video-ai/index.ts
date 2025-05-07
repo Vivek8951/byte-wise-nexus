@@ -13,20 +13,17 @@ const supabaseUrl = 'https://weiagpwgfmyjdglfpbeu.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Default API key from user
-const DEFAULT_GEMINI_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
+// Hugging Face API Key
+const HUGGING_FACE_API_KEY = Deno.env.get('HUGGING_FACE_API_KEY') || '';
 
-// Function to generate AI response based on video transcript
+// Function to generate AI response based on video transcript using Hugging Face
 async function generateVideoAIResponse(question: string, context: string, videoId: string): Promise<string> {
   try {
-    // Get API key from env or use default
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || DEFAULT_GEMINI_API_KEY;
-    
-    if (!geminiApiKey) {
-      throw new Error("Gemini API key not found");
+    if (!HUGGING_FACE_API_KEY) {
+      throw new Error("Hugging Face API key not found");
     }
     
-    // Construct the prompt for Gemini
+    // Construct the prompt for Hugging Face
     const prompt = `
       You are a helpful AI assistant specializing in educational content.
       
@@ -40,35 +37,35 @@ async function generateVideoAIResponse(question: string, context: string, videoI
       Format your answer in a conversational, helpful way, with paragraphs as needed for readability.
     `;
     
-    // Call Gemini API
-    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiApiKey}`;
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
+    // Call Hugging Face API
+    const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${HUGGING_FACE_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }]
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 800,
+          temperature: 0.7,
+          return_full_text: false
+        }
       })
     });
     
     if (!response.ok) {
-      console.error("Error response from Gemini API:", await response.text());
-      throw new Error(`Failed to get response from Gemini API: ${response.status} ${response.statusText}`);
+      console.error("Error response from Hugging Face API:", await response.text());
+      throw new Error(`Failed to get response from Hugging Face API: ${response.status} ${response.statusText}`);
     }
     
     const responseData = await response.json();
     
     // Extract the text response
-    const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const textResponse = responseData[0]?.generated_text;
     
     if (!textResponse) {
-      throw new Error("Invalid response from Gemini API");
+      throw new Error("Invalid response from Hugging Face API");
     }
     
     // Store the interaction in database for future reference (optional)

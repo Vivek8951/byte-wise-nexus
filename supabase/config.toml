@@ -4,24 +4,36 @@ project_id = "weiagpwgfmyjdglfpbeu"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage"]
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
 
 [studio]
-enabled = true
 port = 54323
-api_url = "http://localhost:54321"
+
+[inbucket]
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
 
 [storage]
 enabled = true
 
-[auth]
-enabled = true
-
-[functions]
-[functions.process-video]
+[edge_functions]
+[edge_functions.process-video]
 verify_jwt = true
-[functions.ask-video-ai]
+
+[edge_functions.ask-video-ai]
+verify_jwt = true
+
+[edge_functions.text-generation]
+verify_jwt = true
+
+[edge_functions.check-api-keys]
+verify_jwt = true
+
+[edge_functions.populate-courses]
 verify_jwt = true

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -122,13 +121,54 @@ async function getYouTubeVideoWithHuggingFace(courseTitle: string, videoTitle: s
       return null;
     }
     
-    // For now, we'll use the predefined videos since we can't actually call Hugging Face API directly
-    // In a real implementation, this would make an API call to get intelligent video recommendations
-    console.log(`Would use Hugging Face API to search for videos related to: ${courseTitle} - ${videoTitle}`);
+    // Formulate prompt for Hugging Face model
+    const prompt = `Find a YouTube educational video about "${courseTitle} - ${videoTitle}". 
+                   Return only the YouTube embed URL in this format: https://www.youtube-nocookie.com/embed/VIDEO_ID`;
     
-    return null;
+    console.log(`Calling Hugging Face API to find video for: ${courseTitle} - ${videoTitle}`);
+    
+    // Call Hugging Face API using text-generation endpoint
+    const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${HUGGING_FACE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 100,
+          temperature: 0.3,
+          top_p: 0.9,
+          do_sample: true
+        }
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`Hugging Face API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("Hugging Face response:", data);
+    
+    // Extract YouTube URL from response
+    const generatedText = data[0]?.generated_text || "";
+    const urlRegex = /https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]+)/;
+    const match = generatedText.match(urlRegex);
+    
+    if (match && match[0]) {
+      const videoUrl = match[0].replace("youtube.com", "youtube-nocookie.com"); // Ensure privacy-enhanced mode
+      console.log(`Found valid YouTube URL via Hugging Face: ${videoUrl}`);
+      return videoUrl;
+    } else {
+      console.log("No valid YouTube URL found in Hugging Face response");
+      return null;
+    }
+    
   } catch (error) {
-    console.error("Error calling Hugging Face API:", error);
+    console.error("Error calling Hugging Face API for video:", error);
     return null;
   }
 }
@@ -141,11 +181,71 @@ async function generateContentAnalysisWithHuggingFace(transcript: string, course
       return null;
     }
     
-    // For now, we'll generate a default analysis
-    // In a real implementation, this would call the Hugging Face API
-    console.log(`Would use Hugging Face API to analyze content related to: ${courseTitle} - ${videoTitle}`);
+    const prompt = `
+      Analyze this educational video transcript about "${courseTitle} - ${videoTitle}":
+      
+      ${transcript}
+      
+      Generate a comprehensive analysis including:
+      1. A concise summary (max 150 words)
+      2. 5 key questions with multiple-choice answers (4 options each, mark the correct one)
+      3. 5-7 important keywords from the content
+      
+      Format your response as a JSON object with these keys:
+      "summary": "...",
+      "questions": [...],
+      "keywords": [...]
+    `;
     
-    return null;
+    console.log(`Calling Hugging Face API to analyze content for: ${courseTitle} - ${videoTitle}`);
+    
+    const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${HUGGING_FACE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 1000,
+          temperature: 0.7,
+          return_full_text: false
+        }
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`Hugging Face API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("Hugging Face content analysis response received");
+    
+    try {
+      // Parse the JSON from the generated text
+      const generatedText = data[0]?.generated_text || "";
+      
+      // Extract JSON object if present
+      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const jsonStr = jsonMatch[0];
+        const analysisData = JSON.parse(jsonStr);
+        
+        if (analysisData.summary && analysisData.questions && analysisData.keywords) {
+          analysisData.transcript = transcript;
+          return analysisData;
+        }
+      }
+      
+      console.log("Could not parse valid content analysis from response");
+      return null;
+    } catch (parseError) {
+      console.error("Error parsing content analysis:", parseError);
+      return null;
+    }
+    
   } catch (error) {
     console.error("Error analyzing content with Hugging Face API:", error);
     return null;
@@ -160,6 +260,8 @@ async function getRelevantVideoUrl(category: string, courseTitle: string, videoT
     if (huggingFaceRecommendation) {
       return huggingFaceRecommendation;
     }
+    
+    console.log("Falling back to predefined video catalog");
     
     // Normalize inputs by converting to lowercase 
     const normalizedCategory = category.toLowerCase();
@@ -243,16 +345,48 @@ async function getRelevantVideoUrl(category: string, courseTitle: string, videoT
 // Generate a mock transcript based on course and video details
 async function generateMockTranscript(courseTitle: string, courseCategory: string, videoTitle: string): Promise<string> {
   try {
-    // Generate a more relevant mock transcript based on course details
-    const transcript = `Welcome to this lecture on ${videoTitle || courseTitle}. In this comprehensive ${courseCategory} course, 
+    // Try to generate transcript using Hugging Face
+    if (HUGGING_FACE_API_KEY) {
+      const prompt = `Create a detailed educational transcript for a video titled "${videoTitle}" 
+                      that would be part of a course on "${courseTitle}" in the field of ${courseCategory}.
+                      The transcript should be approximately 500 words and include technical terminology
+                      appropriate for the subject matter. Format it as a natural lecture transcript.`;
+      
+      const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${HUGGING_FACE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 800,
+            temperature: 0.7,
+            return_full_text: false
+          }
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const transcript = data[0]?.generated_text || "";
+        
+        if (transcript.length > 100) {
+          return transcript;
+        }
+      }
+    }
+    
+    // Fallback to basic transcript
+    return `Welcome to this lecture on ${videoTitle || courseTitle}. In this comprehensive ${courseCategory} course, 
     we'll explore fundamental concepts and advanced techniques. Today's video covers key principles that will help you 
     master ${courseTitle.toLowerCase()}. We'll start by discussing the core theoretical framework, then move into 
     practical applications with several code examples and case studies. By the end of this lecture, you'll have 
     a solid understanding of ${courseCategory} principles as they apply to ${courseTitle.toLowerCase()}.`;
     
-    return transcript;
   } catch (error) {
-    console.error("Error generating mock transcript:", error);
+    console.error("Error generating transcript:", error);
     return "Welcome to this educational video. We'll cover important concepts and practical applications.";
   }
 }
@@ -278,7 +412,7 @@ async function generateContentAnalysis(transcript: string, courseId: string, vid
       return huggingFaceAnalysis;
     }
     
-    // Create a more focused, relevant analysis based on course details
+    // Create a more focused, relevant analysis based on course details (fallback)
     const analysisData = {
       summary: `This video provides an in-depth exploration of ${videoTitle || courseTitle} concepts within the ${courseCategory} domain. The instructor expertly breaks down complex topics into digestible segments, covering both theoretical foundations and practical applications. Key focus areas include core principles, implementation strategies, and real-world examples that demonstrate the practical value of these concepts in professional settings.`,
       questions: [
@@ -398,7 +532,7 @@ async function processVideo(videoId: string, courseId: string) {
       throw new Error(`Error fetching course: ${courseError.message}`);
     }
     
-    // Get a relevant YouTube video URL
+    // Get a relevant YouTube video URL using Hugging Face API
     const videoUrl = await getRelevantVideoUrl(courseData.category, courseData.title, video.title);
     console.log(`Selected YouTube video URL: ${videoUrl}`);
     

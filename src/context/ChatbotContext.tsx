@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatbotContextType {
   messages: ChatMessage[];
@@ -18,9 +19,6 @@ interface ChatbotContextType {
 
 const ChatbotContext = createContext<ChatbotContextType | undefined>(undefined);
 
-// Default Gemini API key provided by user
-const DEFAULT_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
-
 export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -32,61 +30,30 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [apiKey, setApiKey] = useState<string>(() => {
-    // Use the default API key or any saved one
-    const savedKey = localStorage.getItem('gemini_api_key');
-    return savedKey || DEFAULT_API_KEY;
-  });
+  const [apiKey, setApiKey] = useState<string>("");
   const { toast } = useToast();
 
-  // Save the API key to localStorage whenever it changes
+  // Check for API key from Supabase secrets on component mount
   useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('gemini_api_key', apiKey);
-    }
-  }, [apiKey]);
-
-  // Validate API key on component mount
-  useEffect(() => {
-    const validateApiKey = async () => {
+    const checkApiKey = async () => {
       try {
-        // Simple validation request to check if API key works
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: "Hello, are you online?" }]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 50,
-            }
-          })
+        // Try to use the Supabase edge function to validate API key
+        const { data, error } = await supabase.functions.invoke("check-api-keys", {
+          body: { keyType: "huggingface" }
         });
-
-        if (!response.ok) {
-          console.warn("API key validation failed, using default key");
-          if (apiKey !== DEFAULT_API_KEY) {
-            setApiKey(DEFAULT_API_KEY);
-          }
+        
+        if (error) {
+          console.error("Error checking API key:", error);
+        } else if (data?.isValid) {
+          console.log("HuggingFace API key is valid");
         }
       } catch (error) {
         console.error("Error validating API key:", error);
-        // Fall back to default key if error
-        if (apiKey !== DEFAULT_API_KEY) {
-          setApiKey(DEFAULT_API_KEY);
-        }
       }
     };
-
-    validateApiKey();
-  }, [apiKey]);
+    
+    checkApiKey();
+  }, []);
 
   const toggleChatbot = () => {
     setIsOpen(prev => !prev);
@@ -107,103 +74,59 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Generate course description based on topic
+  // Generate course description based on topic using Hugging Face
   const generateCourseDescription = async (topic: string): Promise<string> => {
     try {
-      const keyToUse = apiKey || DEFAULT_API_KEY;
-      
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ 
-                text: `Create a comprehensive course description for a computer science course about ${topic}. 
+      // Call Supabase edge function to generate description
+      const { data, error } = await supabase.functions.invoke("text-generation", {
+        body: { 
+          prompt: `Create a comprehensive course description for a computer science course about ${topic}. 
                 Include learning objectives, key topics covered, and target audience.
-                Keep it concise but informative, maximum 150 words.` 
-              }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 500,
-          }
-        })
+                Keep it concise but informative, maximum 150 words.`,
+          maxTokens: 500
+        }
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate course description");
+      
+      if (error) {
+        throw new Error(error.message);
       }
-
-      const data = await response.json();
-      return data.candidates[0].content.parts[0].text;
+      
+      return data.generatedText || "";
     } catch (error) {
       console.error("Error generating course description:", error);
       toast({
         title: "Error",
-        description: "Failed to generate course description. Using default API key.",
+        description: "Failed to generate course description. Please try again.",
         variant: "destructive"
       });
-      // Try again with default key if custom key failed
-      if (apiKey !== DEFAULT_API_KEY) {
-        setApiKey(DEFAULT_API_KEY);
-        return generateCourseDescription(topic);
-      }
       return "";
     }
   };
 
-  // Get video transcription
+  // Get video transcription using Hugging Face
   const getVideoTranscription = async (videoUrl: string): Promise<string> => {
     try {
-      const keyToUse = apiKey || DEFAULT_API_KEY;
-      
-      // This is a placeholder - in a real implementation, you would send the video
-      // to a transcription service. For now, we'll use Gemini to generate a placeholder
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ 
-                text: `Create a short summary of what might be in a computer science educational video 
-                with this URL: ${videoUrl}. Pretend you are transcribing key points from the video.` 
-              }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 800,
-          }
-        })
+      // Call Supabase edge function to analyze video
+      const { data, error } = await supabase.functions.invoke("text-generation", {
+        body: { 
+          prompt: `Create a short summary of what might be in a computer science educational video 
+          with this URL: ${videoUrl}. Pretend you are transcribing key points from the video.`,
+          maxTokens: 800
+        }
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to analyze video content");
+      
+      if (error) {
+        throw new Error(error.message);
       }
-
-      const data = await response.json();
-      return data.candidates[0].content.parts[0].text;
+      
+      return data.generatedText || "";
     } catch (error) {
       console.error("Error analyzing video:", error);
       toast({
         title: "Error",
-        description: "Failed to analyze video content. Using default API key.",
+        description: "Failed to analyze video content. Please try again.",
         variant: "destructive"
       });
-      // Try again with default key if custom key failed
-      if (apiKey !== DEFAULT_API_KEY) {
-        setApiKey(DEFAULT_API_KEY);
-        return getVideoTranscription(videoUrl);
-      }
       return "";
     }
   };
@@ -222,12 +145,6 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      const keyToUse = apiKey || DEFAULT_API_KEY;
-      
-      if (!keyToUse) {
-        throw new Error('Please set your Gemini API key in the settings');
-      }
-      
       // Determine if request is for text or image generation
       const isImageRequest = content.toLowerCase().includes('diagram') || 
                             content.toLowerCase().includes('graph') || 
@@ -235,153 +152,61 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
                             content.toLowerCase().includes('image');
       
       if (isImageRequest) {
-        // Image generation with Gemini API
-        try {
-          // Gemini doesn't directly generate images, so let's create a descriptive response
-          const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: "user",
-                  parts: [
-                    {
-                      text: `Generate a detailed description for an image based on: ${content}`
-                    }
-                  ]
-                }
-              ],
-              generationConfig: {
-                temperature: 0.9,
-                maxOutputTokens: 500,
-              }
-            })
-          });
-          
-          if (!imageResponse.ok) {
-            throw new Error('Failed to generate image description');
+        // Generate image description
+        const { data: imageDescData, error: imageDescError } = await supabase.functions.invoke("text-generation", {
+          body: { 
+            prompt: `Generate a detailed description for an image based on: ${content}`,
+            maxTokens: 500
           }
-          
-          const responseData = await imageResponse.json();
-          const imageDesc = responseData.candidates?.[0]?.content?.parts?.[0]?.text || 
-                            "I've prepared a visual representation based on your request.";
-          
-          // Since Gemini doesn't directly generate images, use Unsplash for a relevant image
-          const botMessage: ChatMessage = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: imageDesc,
-            timestamp: new Date().toISOString(),
-            imageUrl: `https://source.unsplash.com/random/800x600/?${encodeURIComponent(content)}`,
-          };
-          
-          setMessages(prev => [...prev, botMessage]);
-        } catch (error) {
-          console.error("Image generation error:", error);
-          throw new Error('Failed to generate image response');
-        }
-      } else {
-        // Text completion with Gemini API
-        const chatResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { 
-                    text: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics. Include code examples when relevant."
-                  }
-                ]
-              },
-              ...messages.slice(-5).map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-              })),
-              {
-                role: "user",
-                parts: [{ text: content }]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 800,
-            }
-          })
         });
         
-        if (!chatResponse.ok) {
-          // Try again with default key
-          if (apiKey !== DEFAULT_API_KEY) {
-            setApiKey(DEFAULT_API_KEY);
-            
-            const defaultResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${DEFAULT_API_KEY}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    role: "user",
-                    parts: [
-                      { 
-                        text: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics."
-                      }
-                    ]
-                  },
-                  {
-                    role: "user",
-                    parts: [{ text: content }]
-                  }
-                ],
-                generationConfig: {
-                  temperature: 0.7,
-                  maxOutputTokens: 800,
-                }
-              })
-            });
-            
-            if (!defaultResponse.ok) {
-              throw new Error('Failed to get response. Please check your network connection and try again.');
-            }
-            
-            const chatData = await defaultResponse.json();
-            const responseText = chatData.candidates?.[0]?.content?.parts?.[0]?.text || 
-                              "I'm sorry, I couldn't generate a response.";
-            
-            const botMessage: ChatMessage = {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: responseText,
-              timestamp: new Date().toISOString(),
-            };
-            
-            setMessages(prev => [...prev, botMessage]);
-            
-          } else {
-            throw new Error('Failed to get response. Please check your network connection and try again.');
-          }
-        } else {
-          const chatData = await chatResponse.json();
-          const responseText = chatData.candidates?.[0]?.content?.parts?.[0]?.text || 
-                             "I'm sorry, I couldn't generate a response.";
-          
-          const botMessage: ChatMessage = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: responseText,
-            timestamp: new Date().toISOString(),
-          };
-          
-          setMessages(prev => [...prev, botMessage]);
+        if (imageDescError) {
+          throw new Error(imageDescError.message);
         }
+        
+        const imageDesc = imageDescData?.generatedText || 
+                        "I've prepared a visual representation based on your request.";
+        
+        // Since we can't generate images directly, use Unsplash for a relevant image
+        const botMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: imageDesc,
+          timestamp: new Date().toISOString(),
+          imageUrl: `https://source.unsplash.com/random/800x600/?${encodeURIComponent(content)}`,
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        // Regular text message - use the Hugging Face API through Supabase edge function
+        const recentMessages = messages.slice(-5).map(msg => ({
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content
+        }));
+        
+        const { data, error } = await supabase.functions.invoke("text-generation", {
+          body: { 
+            prompt: content,
+            context: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics. Include code examples when relevant.",
+            previousMessages: recentMessages,
+            maxTokens: 800
+          }
+        });
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        const responseText = data?.generatedText || "I'm sorry, I couldn't generate a response.";
+        
+        const botMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: responseText,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
       }
     } catch (error) {
       // Handle errors
@@ -390,7 +215,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I apologize, but I encountered an issue while processing your request. Let me try to help you without using external APIs. Please ask your question again or try a different topic.`,
+        content: `I apologize, but I encountered an issue while processing your request. Please try again or try a different question.`,
         timestamp: new Date().toISOString(),
       };
       
