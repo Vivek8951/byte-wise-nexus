@@ -246,7 +246,9 @@ export async function processVideo(videoId: string, courseId: string): Promise<{
         analyzedContent: data.analyzedContent,
         videoUrl: data.videoUrl,
         title: data.title,
-        description: data.description
+        description: data.description,
+        thumbnail: data.thumbnail,
+        downloadInfo: data.downloadInfo
       }
     };
   } catch (error) {

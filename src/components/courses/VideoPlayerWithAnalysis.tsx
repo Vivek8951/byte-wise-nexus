@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -72,30 +71,25 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             updateData.url = data.url;
           }
           
-          setVideoData(prev => ({...prev, ...updateData}));
+          setVideoData(prevData => ({...prevData, ...updateData}));
           
           // If no URL yet, try to get one immediately
           if (!data.url) {
             const result = await getVideoForCourse(video.id, courseId);
             
             if (result.success && result.videoUrl) {
-              const videoUpdate: Partial<Video> = {
-                ...videoData,
+              setVideoData(prevData => ({
+                ...prevData,
                 url: result.videoUrl,
-                title: result.title || videoData.title,
-                description: result.description || videoData.description,
-              };
-              
-              if (result.thumbnail) {
-                videoUpdate.thumbnail = result.thumbnail;
-              }
+                title: result.title || prevData.title,
+                description: result.description || prevData.description,
+                ...(result.thumbnail && { thumbnail: result.thumbnail }),
+                ...(result.downloadInfo && { download_info: result.downloadInfo })
+              }));
               
               if (result.downloadInfo) {
-                videoUpdate.download_info = result.downloadInfo;
                 setDownloadInfo(result.downloadInfo);
               }
-              
-              setVideoData(prev => ({...prev, ...videoUpdate}));
             }
           }
         } else {
@@ -103,22 +97,18 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           const result = await getVideoForCourse(video.id, courseId);
           
           if (result.success && result.videoUrl) {
-            const videoUpdate: Partial<Video> = {
+            setVideoData(prevData => ({
+              ...prevData,
               url: result.videoUrl,
-              title: result.title || video.title,
-              description: result.description || video.description,
-            };
-            
-            if (result.thumbnail) {
-              videoUpdate.thumbnail = result.thumbnail;
-            }
+              title: result.title || prevData.title,
+              description: result.description || prevData.description,
+              ...(result.thumbnail && { thumbnail: result.thumbnail }),
+              ...(result.downloadInfo && { download_info: result.downloadInfo })
+            }));
             
             if (result.downloadInfo) {
-              videoUpdate.download_info = result.downloadInfo;
               setDownloadInfo(result.downloadInfo);
             }
-            
-            setVideoData(prev => ({...prev, ...videoUpdate}));
           }
         }
       } catch (error) {

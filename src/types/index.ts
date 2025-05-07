@@ -34,8 +34,8 @@ export interface Video {
   duration: string;
   thumbnail?: string;
   order: number;
-  analyzedContent?: any[]; // Adding analyzedContent property to the Video interface
-  download_info?: any; // Adding download_info property
+  analyzedContent?: any[]; 
+  download_info?: any; // This property is now properly defined in the interface
 }
 
 export interface Note {
