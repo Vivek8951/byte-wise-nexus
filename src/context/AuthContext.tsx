@@ -134,13 +134,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
+      // Make sure role is properly set
+      console.log("Registering with role:", role);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name,
-            role
+            role // This will be stored in user metadata
           }
         }
       });
@@ -153,6 +156,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         setIsLoading(false);
         return false;
+      }
+      
+      // Important: Even if signUp succeeds, we now need to explicitly create
+      // a profile record to ensure the role is set correctly
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            name,
+            email,
+            role: role // Make sure role is explicitly set here
+          });
+            
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          toast({
+            title: "Profile creation failed",
+            description: "Your account was created but profile setup failed",
+            variant: "destructive",
+          });
+        }
       }
       
       toast({

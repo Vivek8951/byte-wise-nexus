@@ -1,10 +1,10 @@
 
 project_id = "weiagpwgfmyjdglfpbeu"
 
-# For development, you might want to disable email confirmation
+# For development, disabling email confirmation
 # This setting will be used when running Supabase locally with supabase CLI
 [auth]
 site_url = "http://localhost:3000"
-# Change to false to disable email confirmation
+# Disable email confirmation for development
 enable_confirmations = false
 

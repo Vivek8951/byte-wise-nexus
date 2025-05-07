@@ -38,6 +38,8 @@ export default function Register() {
     setIsSubmitting(true);
     
     try {
+      // Log the role being sent to ensure it's correct
+      console.log("Sending registration with role:", role);
       const success = await register(name, email, password, role);
       if (success) {
         // Email confirmation is likely required by Supabase
@@ -126,7 +128,12 @@ export default function Register() {
               
               <div className="space-y-2">
                 <Label>Account Type</Label>
-                <RadioGroup defaultValue="student" value={role} onValueChange={(value) => setRole(value as UserRole)} className="flex gap-4">
+                <RadioGroup 
+                  defaultValue="student" 
+                  value={role} 
+                  onValueChange={(value) => setRole(value as UserRole)} 
+                  className="flex gap-4"
+                >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="student" id="student" />
                     <Label htmlFor="student" className="cursor-pointer">Student</Label>
