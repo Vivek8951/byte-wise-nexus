@@ -270,7 +270,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       const videoForAnalysis: VideoType = {
         id: `temp_${index}`,
         title: videos[index].title || 'Untitled Video', // Provide a default title
-        description: videos[index].description || '',
+        description: videos[index].description || 'Video content', // Ensure description is always provided
         url: objectUrl,
         courseId: course?.id || '',
         order: index,
@@ -671,6 +671,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                             url: previewVideos.current[video.url],
                             courseId: course?.id || '',
                             title: video.title || 'Untitled Video', // Ensure title is always provided
+                            description: video.description || 'Video content', // Ensure description is always provided
                           }}
                           onAnalysisComplete={(analysis) => handleAnalysisComplete(index, analysis)}
                         />
