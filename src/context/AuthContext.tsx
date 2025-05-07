@@ -99,15 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Check if email needs confirmation first
-      const { data: userData } = await supabase.auth.admin.getUserByEmail(email);
-      
-      // If user exists but hasn't confirmed email, we can handle this case
-      if (userData?.user && !userData.user.email_confirmed_at) {
-        setIsLoading(false);
-        throw new Error("Email not confirmed");
-      }
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
