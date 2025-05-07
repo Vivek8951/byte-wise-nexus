@@ -121,17 +121,12 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
       <Card className="overflow-hidden">
         <AspectRatio ratio={16/9}>
           {video.url ? (
-            <video
-              src={video.url} 
-              ref={(el) => { // Using a simple ref callback instead of useRef
-                if (el) el.addEventListener('loadedmetadata', () => {
-                  handleVideoEvents(el);
-                });
-              }}
+            <iframe
+              src={video.url}
               className="w-full h-full object-cover"
-              controls
-              preload="metadata"
-              poster={video.thumbnail}
+              allowFullScreen
+              title={video.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">

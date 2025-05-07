@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -218,22 +219,43 @@ async function generateContentAnalysis(transcript: string, courseId: string, vid
 }
 
 // Get relevant YouTube video URL based on course category
-function getRelevantVideoUrl(category: string): string {
-  // Normalize category by converting to lowercase and finding best match
+function getRelevantVideoUrl(category: string, title: string): string {
+  // Normalize category and title by converting to lowercase 
   const normalizedCategory = category.toLowerCase();
+  const normalizedTitle = title.toLowerCase();
   
-  // Find matching category or default to "technology"
-  let videos = EDUCATIONAL_VIDEOS_BY_CATEGORY["technology"];
+  // Find best matching category
+  let bestMatchCategory = "technology"; // Default category
+  let bestMatchScore = 0;
   
-  for (const [cat, catVideos] of Object.entries(EDUCATIONAL_VIDEOS_BY_CATEGORY)) {
+  for (const cat of Object.keys(EDUCATIONAL_VIDEOS_BY_CATEGORY)) {
+    // Check if category contains our category name or vice versa
     if (normalizedCategory.includes(cat) || cat.includes(normalizedCategory)) {
-      videos = catVideos;
-      break;
+      const score = cat.length; // Longer match = better match
+      if (score > bestMatchScore) {
+        bestMatchScore = score;
+        bestMatchCategory = cat;
+      }
+    }
+    
+    // Also check if title contains category keywords
+    if (normalizedTitle.includes(cat)) {
+      const score = cat.length + 1; // Title match slightly preferred
+      if (score > bestMatchScore) {
+        bestMatchScore = score;
+        bestMatchCategory = cat;
+      }
     }
   }
   
-  // Return a random video from the category
-  return videos[Math.floor(Math.random() * videos.length)];
+  // Get videos for best matching category
+  const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[bestMatchCategory] || 
+                 EDUCATIONAL_VIDEOS_BY_CATEGORY["technology"]; // Fallback
+  
+  // Return a video from the category (consistently based on title's first char)
+  const charCode = title.charCodeAt(0) || 0;
+  const index = charCode % videos.length;
+  return videos[index];
 }
 
 // Process video function that orchestrates all steps
@@ -263,10 +285,8 @@ async function processVideo(videoId: string, courseId: string) {
       throw new Error(`Error fetching course: ${courseError.message}`);
     }
     
-    // If this is a YouTube placeholder video, keep it, otherwise get a relevant one
-    const videoUrl = video.url.includes('youtube') || video.url.includes('youtu.be') 
-      ? video.url 
-      : getRelevantVideoUrl(courseData.category);
+    // Get a relevant YouTube video URL based on course category and title
+    const videoUrl = getRelevantVideoUrl(courseData.category, courseData.title);
     
     // Extract filename from URL
     const urlParts = videoUrl.split('/');
@@ -290,7 +310,7 @@ async function processVideo(videoId: string, courseId: string) {
       throw new Error("Failed to generate content analysis");
     }
     
-    // Update video record with analysis data and potentially new YouTube URL
+    // Update video record with analysis data and YouTube URL
     const analyzedContent = {
       transcript: transcript,
       summary: contentAnalysis.summary,

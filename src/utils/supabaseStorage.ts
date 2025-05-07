@@ -96,7 +96,7 @@ export async function deleteFile(bucketName: string, filePath: string): Promise<
 
 /**
  * Runs the populate-courses edge function to seed the database with AI-generated courses
- * @param numberOfCourses Number of courses to generate (default: 1)
+ * @param numberOfCourses Number of courses to generate (default: 1, max: 30)
  * @returns Result of the operation
  */
 export async function populateCourses(numberOfCourses: number = 1): Promise<{ success: boolean; message: string }> {
