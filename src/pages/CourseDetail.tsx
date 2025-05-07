@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
   BookOpen, Clock, BarChart3, Calendar, Info, 
-  FileText, CheckCircle, AlertTriangle, Video
+  FileText, CheckCircle, AlertTriangle, Video,
+  Star, Users, Play, Download
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -185,83 +185,106 @@ export default function CourseDetail() {
         <div className="mb-6">
           <BackButton href="/courses" className="mb-6" />
           
-          {/* Course header section with consistent alignment */}
-          <div className="md:flex md:items-start gap-8">
-            <div className="md:w-2/3">
-              <h1 className="text-3xl font-bold heading-gradient mb-4 text-left">{course?.title}</h1>
-              <p className="text-muted-foreground mb-6 text-left">{course?.description}</p>
+          {/* New Course Header Design - Styled like the image */}
+          <div className="bg-[#0F1729] rounded-lg overflow-hidden">
+            <div className="flex flex-col md:flex-row">
+              {/* Left side content */}
+              <div className="md:w-2/3 p-8 text-left">
+                <div className="mb-6">
+                  <Badge className="bg-green-600 hover:bg-green-700 text-white mb-3">Beginner</Badge>
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{course?.title || "Modern Web Development"}</h1>
+                  <p className="text-gray-300 mb-6">{course?.description || "Build responsive and dynamic web applications using modern frameworks and best practices. Based on The Odin Project, a free open source coding curriculum."}</p>
+                  
+                  <div className="flex flex-wrap items-center gap-4 mb-6">
+                    <div className="flex items-center">
+                      <Star className="h-5 w-5 text-yellow-400 mr-1" />
+                      <span className="text-white">4.7</span>
+                      <span className="text-gray-400 ml-1">(2,100 students)</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="h-5 w-5 text-gray-400 mr-1" />
+                      <span className="text-gray-300">11 weeks</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Calendar className="h-5 w-5 text-gray-400 mr-1" />
+                      <span className="text-gray-300">Updated 11/10/2023</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
+                      A
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">Alex Thompson</p>
+                      <p className="text-gray-400 text-sm">Instructor</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
-              <div className="flex flex-wrap gap-2 mb-4 text-left">
-                <Badge variant="secondary"><BookOpen className="h-4 w-4 mr-2" /> {course?.category}</Badge>
-                <Badge variant="secondary"><Clock className="h-4 w-4 mr-2" /> {course?.duration}</Badge>
-                <Badge variant="secondary"><BarChart3 className="h-4 w-4 mr-2" /> {course?.level}</Badge>
-                <Badge variant="secondary"><Calendar className="h-4 w-4 mr-2" /> Updated {course?.updatedAt}</Badge>
+              {/* Right side content - Course details card */}
+              <div className="md:w-1/3 bg-[#13192A] p-6">
+                <div className="mb-8">
+                  <AspectRatio ratio={16 / 9} className="bg-black mb-4 rounded-md overflow-hidden">
+                    <img 
+                      src={course?.thumbnail || "/placeholder.svg"} 
+                      alt={course?.title || "Course thumbnail"} 
+                      className="object-cover w-full h-full"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30">
+                        <Play className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </AspectRatio>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center justify-between text-white">
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 mr-2" />
+                        <span>Course Content</span>
+                      </div>
+                      <span>6 items</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-white">
+                      <div className="flex items-center">
+                        <Video className="h-5 w-5 mr-2" />
+                        <span>Video Lectures</span>
+                      </div>
+                      <span>3 videos</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-white">
+                      <div className="flex items-center">
+                        <Download className="h-5 w-5 mr-2" />
+                        <span>Downloadable Notes</span>
+                      </div>
+                      <span>3 files</span>
+                    </div>
+                  </div>
+                  
+                  <Separator className="bg-gray-700 my-4" />
+                  
+                  <p className="text-gray-300 text-center mb-4">Enroll to get full access to course content</p>
+                  
+                  <Button 
+                    className="w-full py-6" 
+                    onClick={handleEnrollClick}
+                    disabled={isEnrolled || (isAuthenticated && user?.role === 'admin')}
+                  >
+                    {isEnrolled ? 'Already Enrolled' : 'Enroll Now - Free'}
+                  </Button>
+                </div>
               </div>
             </div>
-            
-            <div className="md:w-1/3">
-              <Card className="bg-card border rounded-lg overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="text-left">Course Details</CardTitle>
-                  <CardDescription className="text-left">Quick overview of the course</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-2 text-left">
-                    <Info className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <h4 className="font-medium">Instructor</h4>
-                      <p className="text-sm text-muted-foreground">{course?.instructor}</p>
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center gap-2 text-left">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <h4 className="font-medium">Lectures</h4>
-                      <p className="text-sm text-muted-foreground">{videos?.length} videos</p>
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center gap-2 text-left">
-                    <CheckCircle className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <h4 className="font-medium">Progress</h4>
-                      <p className="text-sm text-muted-foreground">0% Complete</p>
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center gap-2 text-left">
-                    <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <h4 className="font-medium">Level</h4>
-                      <p className="text-sm text-muted-foreground">{course?.level}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
-          
-          {/* Enrollment button section - centered */}
-          {!isEnrolled && (
-            <div className="my-6 flex justify-center">
-              <Button 
-                size="lg" 
-                className="px-8 py-6 text-lg" 
-                onClick={handleEnrollClick}
-                disabled={isAuthenticated && user?.role === 'admin'}
-              >
-                {isAuthenticated && user?.role === 'admin' 
-                  ? 'Admin cannot enroll in courses' 
-                  : 'Enroll in this Course'}
-              </Button>
-            </div>
-          )}
           
           {/* Tabs section only shown when enrolled */}
           {isEnrolled && (
             <Tabs defaultValue="overview" className="w-full mt-8">
-              <TabsList>
+              <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="lectures">Lectures</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -314,14 +337,24 @@ export default function CourseDetail() {
                     <div className="flex justify-between">
                       <Button 
                         variant="outline" 
-                        onClick={handlePrevVideo} 
+                        onClick={() => {
+                          if (videoIndex > 0) {
+                            setActiveVideo(videos[videoIndex - 1]);
+                            setVideoIndex(videoIndex - 1);
+                          }
+                        }} 
                         disabled={videoIndex === 0}
                       >
                         Previous
                       </Button>
                       <Button 
                         variant="outline" 
-                        onClick={handleNextVideo} 
+                        onClick={() => {
+                          if (videoIndex < videos.length - 1) {
+                            setActiveVideo(videos[videoIndex + 1]);
+                            setVideoIndex(videoIndex + 1);
+                          }
+                        }} 
                         disabled={videoIndex === videos.length - 1}
                       >
                         Next
@@ -335,26 +368,48 @@ export default function CourseDetail() {
                     )}
                   </div>
                   
-                  {/* Video List */}
+                  {/* Video List - Redesigned to match the image */}
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-left">Videos</h3>
-                    {videos.map((video, index) => (
-                      <Card 
-                        key={video.id} 
-                        className={`flex items-center gap-4 p-4 rounded-md border cursor-pointer hover:bg-secondary text-left ${activeVideo?.id === video.id ? 'bg-secondary text-secondary-foreground' : ''}`}
-                        onClick={() => handleVideoClick(video, index)}
-                      >
-                        <Video className="h-5 w-5" />
-                        <div>
-                          <h4 className="font-medium">{video.title}</h4>
-                          <p className="text-sm text-muted-foreground">{formatDuration(video.duration)}</p>
+                    <div className="space-y-2">
+                      {videos.length > 0 ? videos.map((video, index) => (
+                        <div 
+                          key={video.id}
+                          className={`flex bg-[#0F1729] border border-gray-800 rounded-lg overflow-hidden cursor-pointer hover:border-gray-600 transition-colors ${activeVideo?.id === video.id ? 'border-blue-500' : ''}`}
+                          onClick={() => {
+                            setActiveVideo(video);
+                            setVideoIndex(index);
+                          }}
+                        >
+                          <div className="w-32 h-24 relative flex-shrink-0">
+                            <img 
+                              src={video.thumbnail || "/placeholder.svg"} 
+                              alt={video.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <Play className="h-6 w-6 text-white" />
+                            </div>
+                            <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
+                              {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                            </div>
+                          </div>
+                          <div className="p-3 text-left flex-1">
+                            <h4 className="font-medium text-sm line-clamp-2">{video.title}</h4>
+                            <p className="text-xs text-gray-400 mt-1">Lecture {index + 1}</p>
+                          </div>
                         </div>
-                      </Card>
-                    ))}
+                      )) : (
+                        <Card className="p-6 text-center">
+                          <p>No videos available for this course.</p>
+                        </Card>
+                      )}
+                    </div>
                   </div>
                 </div>
               </TabsContent>
               
+              {/* Keep the existing TabsContent for resources and quiz */}
               <TabsContent value="resources" className="space-y-4 py-4">
                 <h2 className="text-2xl font-bold text-left">Course Resources</h2>
                 
@@ -394,17 +449,89 @@ export default function CourseDetail() {
           
           {/* Course preview section - center content but left-align text */}
           {!isEnrolled && (
-            <div className="my-10 p-6 border rounded-lg bg-muted/10">
-              <h2 className="text-2xl font-bold text-center">Course Preview</h2>
-              <p className="text-center text-muted-foreground">Enroll in this course to access all lectures, resources, and quizzes.</p>
-              <div className="mt-6 max-w-lg mx-auto">
-                <h3 className="text-xl font-semibold mb-2 text-left">What you'll learn</h3>
-                <ul className="list-disc list-inside text-left">
-                  <li>Understand the basic principles of...</li>
-                  <li>Apply these principles to real-world scenarios</li>
-                  <li>Build your own...</li>
-                </ul>
-              </div>
+            <div className="mt-8">
+              <Tabs defaultValue="content" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="content">Course Content</TabsTrigger>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="content" className="space-y-4 py-4">
+                  <div className="space-y-4">
+                    <div className="bg-[#0F1729] rounded-lg overflow-hidden border border-gray-800">
+                      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                        <h3 className="font-semibold">Web Development Basics</h3>
+                        <span className="text-sm text-gray-400">32:45</span>
+                      </div>
+                      <div className="p-4 text-gray-300 text-sm">
+                        <p>Introduction to HTML, CSS, and JavaScript fundamentals</p>
+                        <div className="mt-2 flex justify-between items-center">
+                          <span>Lecture 1</span>
+                          <Button variant="outline" size="sm" className="flex items-center gap-1">
+                            <Play className="h-3 w-3" />
+                            <span>Watch</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-[#0F1729] rounded-lg overflow-hidden border border-gray-800">
+                      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                        <h3 className="font-semibold">Responsive Web Design</h3>
+                        <span className="text-sm text-gray-400">38:10</span>
+                      </div>
+                      <div className="p-4 text-gray-300 text-sm">
+                        <p>Creating websites that work across devices and screen sizes</p>
+                        <div className="mt-2 flex justify-between items-center">
+                          <span>Lecture 2</span>
+                          <Button variant="outline" size="sm" className="flex items-center gap-1">
+                            <Play className="h-3 w-3" />
+                            <span>Watch</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-[#0F1729] rounded-lg overflow-hidden border border-gray-800">
+                      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                        <h3 className="font-semibold">JavaScript and DOM Manipulation</h3>
+                        <span className="text-sm text-gray-400">41:25</span>
+                      </div>
+                      <div className="p-4 text-gray-300 text-sm">
+                        <p>Working with the Document Object Model using JavaScript</p>
+                        <div className="mt-2 flex justify-between items-center">
+                          <span>Lecture 3</span>
+                          <Button variant="outline" size="sm" className="flex items-center gap-1">
+                            <Play className="h-3 w-3" />
+                            <span>Watch</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="overview" className="space-y-4 py-4">
+                  <h2 className="text-2xl font-bold text-left">Course Overview</h2>
+                  <p className="text-left">
+                    This course provides a comprehensive introduction to modern web development practices. You'll learn HTML, CSS, JavaScript and more advanced concepts to build responsive web applications.
+                  </p>
+                  
+                  <h3 className="text-xl font-semibold mt-4 text-left">What you'll learn</h3>
+                  <ul className="list-disc list-inside text-left">
+                    <li>HTML structure and semantic elements</li>
+                    <li>CSS styling and responsive design techniques</li>
+                    <li>JavaScript fundamentals and DOM manipulation</li>
+                    <li>Modern frameworks and development workflows</li>
+                    <li>Best practices for web development</li>
+                  </ul>
+                  
+                  <h3 className="text-xl font-semibold mt-4 text-left">Prerequisites</h3>
+                  <p className="text-left">
+                    No prior experience is required for this beginner-level course. Just bring your enthusiasm to learn web development!
+                  </p>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </div>
