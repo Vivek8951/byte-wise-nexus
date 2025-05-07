@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { User, UserRole } from '../types';
-import { useToast } from "@/hooks/use-toast"; // Updated import path
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
@@ -18,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
@@ -59,14 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.id);
+      (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.id);
         setIsLoading(true);
+        setSession(currentSession);
         
-        if (session?.user) {
+        if (currentSession?.user) {
           // Use setTimeout to prevent recursion issues
           setTimeout(async () => {
-            const profile = await fetchUserProfile(session.user.id);
+            const profile = await fetchUserProfile(currentSession.user.id);
             setUser(profile);
             setIsLoading(false);
           }, 0);
@@ -81,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       const { data } = await supabase.auth.getSession();
       console.log("Initial session check:", data.session?.user?.id);
+      setSession(data.session);
       
       if (data.session?.user) {
         try {
@@ -111,17 +114,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        // Important: Let the error bubble up to the component for handling
         throw error;
       }
       
       if (data.user) {
-        const profile = await fetchUserProfile(data.user.id);
-        setUser(profile);
-        
+        // Session is automatically handled by onAuthStateChange
         toast({
           title: "Login successful!",
-          description: `Welcome back, ${profile?.name || data.user.email}`,
+          description: `Welcome back!`,
         });
         
         return true;
