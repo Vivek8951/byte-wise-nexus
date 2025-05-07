@@ -25,6 +25,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { Course, Video as VideoType, Note } from '@/types';
 import { Progress } from '@/components/ui/progress';
+import { VideoAnalysis } from '@/components/courses/VideoAnalysis';
 
 interface CourseEditorProps {
   course?: Course;
