@@ -1,18 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { User, UserRole } from '../types';
-import { useToast } from "@/hooks/use-toast";
+import { Session } from '@supabase/supabase-js';
+import { User } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  register: (name: string, email: string, password: string, role?: UserRole) => Promise<boolean>;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-}
+import { useAuthOperations } from "@/hooks/useAuthOperations";
+import { fetchUserProfile } from "@/utils/authUtils";
+import { AuthContextType } from "@/types/auth";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -20,47 +13,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  
-  // Fetch and set user data from Supabase
-  const fetchUserProfile = async (userId: string) => {
-    if (!userId) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-      
-      if (!data) return null;
-      
-      // Fetch enrolled courses
-      const { data: enrollments } = await supabase
-        .from('course_enrollments')
-        .select('course_id')
-        .eq('user_id', userId);
-      
-      const enrolledCourses = enrollments?.map(enrollment => enrollment.course_id) || [];
-      
-      return {
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        role: data.role as UserRole,
-        avatar: data.avatar,
-        enrolledCourses
-      };
-    } catch (err) {
-      console.error("Error in fetchUserProfile:", err);
-      return null;
-    }
-  };
+  const { login, logout, register, isLoading: operationLoading } = useAuthOperations();
   
   useEffect(() => {
     let isMounted = true;
@@ -121,141 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    
-    try {
-      console.log("Attempting login with:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        console.error("Login error:", error.message);
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      if (data.user) {
-        toast({
-          title: "Login successful!",
-          description: `Welcome back!`,
-        });
-        return true;
-      }
-      
-      return false;
-    } catch (error: any) {
-      console.error("Login exception:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (name: string, email: string, password: string, role: UserRole = 'student') => {
-    setIsLoading(true);
-    
-    try {
-      console.log("Registering with role:", role);
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role
-          }
-        }
-      });
-      
-      if (error) {
-        toast({
-          title: "Registration failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      // Create profile record to ensure the role is set correctly
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            name,
-            email,
-            role: role
-          });
-            
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast({
-            title: "Profile creation failed",
-            description: "Your account was created but profile setup failed",
-            variant: "destructive",
-          });
-          return false;
-        }
-      }
-      
-      toast({
-        title: "Registration successful!",
-        description: "Your account has been created.",
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Error",
-        description: "Failed to log out",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setUser(null);
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
-  };
-
   const authContextValue: AuthContextType = {
     user, 
     login, 
     logout, 
     register, 
-    isLoading, 
+    isLoading: isLoading || operationLoading, 
     isAuthenticated: !!user 
   };
 
