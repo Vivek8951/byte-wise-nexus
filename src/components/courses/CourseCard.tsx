@@ -39,11 +39,8 @@ export function CourseCard({ course }: CourseCardProps) {
       return;
     }
 
-    // Enrollment logic would go here
-    toast({
-      title: "Enrollment successful",
-      description: `You've been enrolled in ${course.title}.`,
-    });
+    // If authenticated, navigate to course detail page
+    navigate(`/courses/${course.id}`);
   };
 
   const getLevelColor = (level: string) => {
