@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -16,6 +17,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { register } = useAuth();
   const navigate = useNavigate();
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,16 +34,14 @@ export default function Register() {
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    toast({
-      title: "Registration successful!",
-      description: "Your account has been created. Please log in.",
-    });
-    
-    setIsSubmitting(false);
-    navigate("/login");
+    try {
+      const success = await register(name, email, password);
+      if (success) {
+        navigate("/login");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -59,7 +59,7 @@ export default function Register() {
             </p>
           </div>
           
-          <div className="bg-card rounded-lg p-6 shadow-sm border">
+          <div className="bg-card rounded-lg p-6 shadow-sm border animate-fade-in">
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
@@ -70,6 +70,7 @@ export default function Register() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
                 />
               </div>
               
@@ -83,6 +84,7 @@ export default function Register() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
                 />
               </div>
               
@@ -96,6 +98,7 @@ export default function Register() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
                 />
               </div>
               
@@ -109,12 +112,13 @@ export default function Register() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
                 />
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full bg-tech-blue hover:bg-tech-darkblue"
+                className="w-full bg-tech-blue hover:bg-tech-darkblue transition-all duration-300 transform hover:scale-[1.02]"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Creating account..." : "Create account"}
@@ -124,7 +128,7 @@ export default function Register() {
           
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="font-medium text-tech-purple hover:text-tech-blue">
+            <Link to="/login" className="font-medium text-tech-purple hover:text-tech-blue transition-colors">
               Sign in
             </Link>
           </p>

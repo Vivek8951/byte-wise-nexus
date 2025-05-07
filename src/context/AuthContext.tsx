@@ -8,23 +8,52 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  register: (name: string, email: string, password: string, role?: UserRole) => Promise<boolean>;
   isLoading: boolean;
   isAuthenticated: boolean;
+}
+
+interface StoredUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+  enrolledCourses?: string[];
+  password: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<StoredUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
   useEffect(() => {
-    // Check for saved user in localStorage (in a real app, we would validate the token)
+    // Initialize users if not already in localStorage
+    const storedUsers = localStorage.getItem('techlearn_users');
+    if (!storedUsers) {
+      // Convert mockUsers to StoredUsers with passwords
+      const initialUsers = mockUsers.map(user => ({
+        ...user,
+        password: 'password' // Default password for mock users
+      }));
+      localStorage.setItem('techlearn_users', JSON.stringify(initialUsers));
+      setUsers(initialUsers);
+    } else {
+      setUsers(JSON.parse(storedUsers));
+    }
+    
+    // Check for saved user session
     const savedUser = localStorage.getItem('techlearn_user');
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        // Remove password from user object before setting it in state
+        const { password, ...userWithoutPassword } = parsedUser;
+        setUser(userWithoutPassword);
       } catch (e) {
         localStorage.removeItem('techlearn_user');
       }
@@ -33,22 +62,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Simulate API call with mock data
     setIsLoading(true);
     
     // Simple delay to simulate backend call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // In a real app, we would validate credentials against a backend
-    const mockUser = mockUsers.find(user => user.email === email);
+    const foundUser = users.find(user => user.email === email && user.password === password);
     
-    if (mockUser) {
-      setUser(mockUser);
-      localStorage.setItem('techlearn_user', JSON.stringify(mockUser));
+    if (foundUser) {
+      // Remove password before setting in state and localStorage
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem('techlearn_user', JSON.stringify(foundUser));
+      
       toast({
         title: "Login successful!",
-        description: `Welcome back, ${mockUser.name}`,
+        description: `Welcome back, ${foundUser.name}`,
       });
+      
       setIsLoading(false);
       return true;
     }
@@ -63,6 +94,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return false;
   };
 
+  const register = async (name: string, email: string, password: string, role: UserRole = 'student') => {
+    setIsLoading(true);
+    
+    // Check if email already exists
+    if (users.some(user => user.email === email)) {
+      toast({
+        title: "Registration failed",
+        description: "Email is already registered",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return false;
+    }
+    
+    // Simple delay to simulate backend call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Create new user
+    const newUser: StoredUser = {
+      id: `${Date.now()}`, // Generate a unique ID
+      name,
+      email,
+      role,
+      password,
+      avatar: '/placeholder.svg',
+      enrolledCourses: [],
+    };
+    
+    // Add to users array and update localStorage
+    const updatedUsers = [...users, newUser];
+    setUsers(updatedUsers);
+    localStorage.setItem('techlearn_users', JSON.stringify(updatedUsers));
+    
+    toast({
+      title: "Registration successful!",
+      description: "You can now log in with your credentials",
+    });
+    
+    setIsLoading(false);
+    return true;
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('techlearn_user');
@@ -73,7 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      register, 
+      isLoading, 
+      isAuthenticated: !!user 
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -26,7 +26,7 @@ export function Navbar() {
             <span className="sr-only">Toggle menu</span>
           </Button>
           
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-tech-blue">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-tech-blue hover-scale">
             <Book className="h-6 w-6" />
             <span>TechLearn</span>
           </Link>
@@ -34,11 +34,13 @@ export function Navbar() {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6 text-sm">
-          <Link to="/" className="font-medium transition-colors hover:text-tech-blue">Home</Link>
-          <Link to="/courses" className="font-medium transition-colors hover:text-tech-blue">Courses</Link>
-          {user && <Link to="/dashboard" className="font-medium transition-colors hover:text-tech-blue">Dashboard</Link>}
+          <Link to="/" className="font-medium transition-colors hover:text-tech-blue animated-link">Home</Link>
+          <Link to="/courses" className="font-medium transition-colors hover:text-tech-blue animated-link">Courses</Link>
+          {user && <Link to="/dashboard" className="font-medium transition-colors hover:text-tech-blue animated-link">Dashboard</Link>}
           {user?.role === 'admin' && (
-            <Link to="/admin" className="font-medium transition-colors hover:text-tech-blue">Admin</Link>
+            <>
+              <Link to="/admin/courses" className="font-medium transition-colors hover:text-tech-blue animated-link">Manage Courses</Link>
+            </>
           )}
         </nav>
         
@@ -48,7 +50,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="rounded-full"
+                className="rounded-full hover-scale"
                 onClick={() => setIsSearchOpen(true)}
               >
                 <Search className="h-5 w-5" />
@@ -58,30 +60,36 @@ export function Navbar() {
               
               {user ? (
                 <div className="flex items-center gap-4">
-                  <Button variant="ghost" size="icon" className="rounded-full">
+                  <Button variant="ghost" size="icon" className="rounded-full hover-scale">
                     <Bell className="h-5 w-5" />
                     <span className="sr-only">Notifications</span>
                   </Button>
                   <Link to="/dashboard">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tech-purple text-white">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tech-purple text-white hover-scale">
                       {user.name.charAt(0)}
                     </div>
                   </Link>
-                  <Button variant="ghost" onClick={logout} className="hidden md:inline-flex">Logout</Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={logout} 
+                    className="hidden md:inline-flex hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 transition-colors"
+                  >
+                    Logout
+                  </Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <Link to="/login">
-                    <Button variant="ghost">Login</Button>
+                    <Button variant="ghost" className="hover-scale">Login</Button>
                   </Link>
                   <Link to="/register" className="hidden md:inline-flex">
-                    <Button>Sign Up</Button>
+                    <Button className="bg-tech-blue hover:bg-tech-darkblue hover-scale">Sign Up</Button>
                   </Link>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 animate-fade-in">
               <Input 
                 type="search" 
                 placeholder="Search courses..." 
@@ -124,16 +132,22 @@ export function Navbar() {
               </Link>
             )}
             {user?.role === 'admin' && (
-              <Link 
-                to="/admin" 
-                className="flex items-center gap-2 font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Admin Panel
-              </Link>
+              <>
+                <Link 
+                  to="/admin/courses" 
+                  className="flex items-center gap-2 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Manage Courses
+                </Link>
+              </>
             )}
             {user ? (
-              <Button variant="outline" onClick={() => { logout(); setIsMenuOpen(false); }}>
+              <Button 
+                variant="outline" 
+                className="hover:bg-red-100 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950 dark:hover:text-red-400"
+                onClick={() => { logout(); setIsMenuOpen(false); }}
+              >
                 Logout
               </Button>
             ) : (
@@ -142,7 +156,7 @@ export function Navbar() {
                   <Button variant="outline" className="w-full">Login</Button>
                 </Link>
                 <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                  <Button className="w-full">Sign Up</Button>
+                  <Button className="w-full bg-tech-blue hover:bg-tech-darkblue">Sign Up</Button>
                 </Link>
               </div>
             )}
