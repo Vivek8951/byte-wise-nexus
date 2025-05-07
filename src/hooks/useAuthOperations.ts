@@ -20,11 +20,21 @@ export const useAuthOperations = () => {
       
       if (error) {
         console.error("Login error:", error.message);
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        
+        // Handle specific error messages
+        if (error.message.includes("Email not confirmed")) {
+          toast({
+            title: "Email not confirmed",
+            description: "Please check your email for a confirmation link",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return false;
       }
       
@@ -68,11 +78,20 @@ export const useAuthOperations = () => {
       });
       
       if (error) {
-        toast({
-          title: "Registration failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        // Handle specific registration errors
+        if (error.message.includes("rate limit")) {
+          toast({
+            title: "Too many registration attempts",
+            description: "Please wait a moment before trying again",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return false;
       }
       
@@ -96,14 +115,24 @@ export const useAuthOperations = () => {
           });
           return false;
         }
+        
+        // Check if email confirmation is disabled in config
+        if (data.session) {
+          // If we have a session, email confirmation is not required
+          toast({
+            title: "Registration successful!",
+            description: "Your account has been created and you are now logged in.",
+          });
+        } else {
+          toast({
+            title: "Registration successful!",
+            description: "Please check your email to confirm your account.",
+          });
+        }
+        return true;
       }
       
-      toast({
-        title: "Registration successful!",
-        description: "Your account has been created.",
-      });
-      
-      return true;
+      return false;
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
@@ -118,22 +147,29 @@ export const useAuthOperations = () => {
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      console.error("Error signing out:", error);
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error signing out:", error);
+        toast({
+          title: "Error",
+          description: "Failed to log out",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to log out",
-        variant: "destructive",
+        title: "Logged out",
+        description: "You have been successfully logged out",
       });
-      return;
+    } catch (error) {
+      console.error("Error in logout:", error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
   };
 
   return { login, logout, register, isLoading };

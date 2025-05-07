@@ -16,31 +16,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { login, logout, register, isLoading: operationLoading } = useAuthOperations();
   
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
         
-        if (!isMounted) return;
+        if (!mounted) return;
         
         // Always update session state
         setSession(currentSession);
         
         if (currentSession?.user) {
-          // When we have a session and user, get their profile
-          // Use setTimeout to prevent recursion issues
-          setTimeout(async () => {
-            if (!isMounted) return;
-            
+          try {
+            // When we have a session and user, get their profile
             const profile = await fetchUserProfile(currentSession.user.id);
-            setUser(profile);
-            setIsLoading(false);
-          }, 0);
+            if (mounted) {
+              setUser(profile);
+              setIsLoading(false);
+            }
+          } catch (error) {
+            console.error("Error fetching user profile:", error);
+            if (mounted) setIsLoading(false);
+          }
         } else {
-          setUser(null);
-          setIsLoading(false);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
         }
       }
     );
@@ -51,25 +55,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data } = await supabase.auth.getSession();
         console.log("Initial session check:", data.session?.user?.id);
         
-        if (!isMounted) return;
+        if (!mounted) return;
         
         setSession(data.session);
         
         if (data.session?.user) {
           const profile = await fetchUserProfile(data.session.user.id);
-          setUser(profile);
+          if (mounted) setUser(profile);
         }
       } catch (error) {
         console.error("Error setting up initial auth:", error);
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
     
     initializeAuth();
     
     return () => {
-      isMounted = false;
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
