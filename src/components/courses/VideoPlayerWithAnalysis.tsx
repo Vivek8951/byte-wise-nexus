@@ -43,7 +43,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
       try {
         const { data, error } = await supabase
           .from('videos')
-          .select('analyzed_content, url')
+          .select('analyzed_content, url, title, description')
           .eq('id', video.id)
           .maybeSingle();
           
@@ -53,9 +53,20 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           setVideoData({
             ...video,
             analyzedContent: safeJsonToArray(data.analyzed_content),
-            url: data.url || video.url
+            url: data.url || video.url,
+            title: data.title || video.title,
+            description: data.description || video.description
           });
           setHasAnalysis(true);
+        } else if (data && data.url) {
+          // If we have a URL but no analysis yet
+          setVideoData({
+            ...video,
+            url: data.url,
+            title: data.title || video.title,
+            description: data.description || video.description
+          });
+          setHasAnalysis(false);
         } else {
           setHasAnalysis(false);
         }
@@ -90,7 +101,9 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           const updatedVideo = {
             ...video,
             analyzedContent: safeJsonToArray(result.data.analyzedContent),
-            url: result.data.videoUrl || video.url
+            url: result.data.videoUrl || video.url,
+            title: result.data.title || video.title,
+            description: result.data.description || video.description
           };
           
           setVideoData(updatedVideo);
@@ -136,7 +149,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
               <div className="text-center p-4">
                 <AlertTriangle className="mx-auto h-10 w-10 text-yellow-400 mb-2" />
-                <p>Video not available</p>
+                <p>Video not available. Click generate to fetch a relevant video.</p>
               </div>
             </div>
           )}

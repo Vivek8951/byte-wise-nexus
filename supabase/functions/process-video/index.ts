@@ -59,6 +59,20 @@ const EDUCATIONAL_VIDEOS_BY_CATEGORY = {
     "https://www.youtube-nocookie.com/embed/Z1RJmh_OqeA", // PHP Tutorial for Beginners
     "https://www.youtube-nocookie.com/embed/fBNz5xF-Kx4", // Node.js Tutorial for Beginners
     "https://www.youtube-nocookie.com/embed/rfscVS0vtbw"  // Python Tutorial - Python Full Course for Beginners
+  ],
+  "react": [
+    "https://www.youtube-nocookie.com/embed/w7ejDZ8SWv8", // React JS Crash Course 2021
+    "https://www.youtube-nocookie.com/embed/4UZrsTqkcW4", // Full React Tutorial
+    "https://www.youtube-nocookie.com/embed/QFaFIcGhPoM", // React JS Crash Course
+    "https://www.youtube-nocookie.com/embed/bMknfKXIFA8", // React Course - Beginner's Tutorial for React JavaScript Library 2022
+    "https://www.youtube-nocookie.com/embed/RVFAyFWO4go"  // React JS Tutorial for Beginners - Full Course in 12 Hours 2023
+  ],
+  "javascript": [
+    "https://www.youtube-nocookie.com/embed/PkZNo7MFNFg", // Learn JavaScript - Full Course for Beginners
+    "https://www.youtube-nocookie.com/embed/W6NZfCO5SIk", // JavaScript Tutorial for Beginners: Learn JavaScript in 1 Hour
+    "https://www.youtube-nocookie.com/embed/jS4aFq5-91M", // JavaScript Programming - Full Course
+    "https://www.youtube-nocookie.com/embed/hdI2bqOjy3c", // JavaScript Crash Course For Beginners
+    "https://www.youtube-nocookie.com/embed/8dWL3wF_OMw"  // Essential JavaScript Concepts
   ]
 };
 
@@ -224,7 +238,21 @@ function getRelevantVideoUrl(category: string, title: string): string {
   const normalizedCategory = category.toLowerCase();
   const normalizedTitle = title.toLowerCase();
   
-  // Find best matching category
+  // First check for specific keywords in title
+  const keywords = ["react", "javascript", "web", "data", "programming", "design", "business", "technology"];
+  for (const keyword of keywords) {
+    if (normalizedTitle.includes(keyword)) {
+      // Try to match with a specific category first
+      if (EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword]) {
+        const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword];
+        // Return a consistent video based on the first character of the title
+        const index = title.charCodeAt(0) % videos.length;
+        return videos[index];
+      }
+    }
+  }
+  
+  // Find best matching category if no keyword match
   let bestMatchCategory = "technology"; // Default category
   let bestMatchScore = 0;
   
@@ -287,13 +315,10 @@ async function processVideo(videoId: string, courseId: string) {
     
     // Get a relevant YouTube video URL based on course category and title
     const videoUrl = getRelevantVideoUrl(courseData.category, courseData.title);
-    
-    // Extract filename from URL
-    const urlParts = videoUrl.split('/');
-    const videoKey = urlParts[urlParts.length - 1];
+    console.log(`Selected YouTube video URL: ${videoUrl}`);
     
     // Extract audio from video
-    const audioKey = await extractAudio(videoKey, courseId);
+    const audioKey = await extractAudio(videoId.toString(), courseId);
     if (!audioKey) {
       throw new Error("Failed to extract audio");
     }
@@ -317,6 +342,8 @@ async function processVideo(videoId: string, courseId: string) {
       questions: contentAnalysis.questions,
       keywords: contentAnalysis.keywords
     };
+    
+    console.log(`Updating video ${videoId} with YouTube URL: ${videoUrl}`);
     
     const { error: updateError } = await supabase
       .from('videos')
@@ -362,7 +389,9 @@ async function processVideo(videoId: string, courseId: string) {
       status: "success",
       videoId: videoId,
       analyzedContent: analyzedContent,
-      videoUrl: videoUrl
+      videoUrl: videoUrl,
+      title: video.title,
+      description: video.description
     };
   } catch (error) {
     console.error("Error processing video:", error);

@@ -134,18 +134,32 @@ export async function populateCourses(numberOfCourses: number = 1): Promise<{ su
  */
 export async function processVideo(videoId: string, courseId: string): Promise<{ success: boolean; message: string; data?: any }> {
   try {
+    console.log(`Processing video ${videoId} for course ${courseId}`);
     const { data, error } = await supabase.functions.invoke("process-video", {
       body: { videoId, courseId }
     });
     
     if (error) {
+      console.error("Error from edge function:", error);
       throw error;
     }
+    
+    if (data.status === "error") {
+      console.error("Error processing video:", data.message);
+      throw new Error(data.message || "Failed to process video");
+    }
+    
+    console.log("Video processed successfully:", data);
     
     return {
       success: true,
       message: "Video processed successfully",
-      data
+      data: {
+        analyzedContent: data.analyzedContent,
+        videoUrl: data.videoUrl,
+        title: data.title,
+        description: data.description
+      }
     };
   } catch (error) {
     console.error("Error processing video:", error);
