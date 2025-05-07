@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Book, Users, Play, FileText, Settings, Clock, ChevronRight, BarChart } from "lucide-react";
@@ -52,9 +51,7 @@ export default function Dashboard() {
   
   // Admin Dashboard
   if (user.role === 'admin') {
-    const totalStudents = 245; // Mock data
     const totalCourses = courses.length;
-    const totalEnrollments = 742; // Mock data
     
     return (
       <>
@@ -65,20 +62,7 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Manage courses, users, and platform analytics</p>
           </header>
           
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalStudents}</div>
-                <p className="text-xs text-muted-foreground">
-                  +12% from last month
-                </p>
-              </CardContent>
-            </Card>
-            
+          <div className="grid gap-6 md:grid-cols-1">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
@@ -86,22 +70,6 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalCourses}</div>
-                <p className="text-xs text-muted-foreground">
-                  +2 added this month
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
-                <Play className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalEnrollments}</div>
-                <p className="text-xs text-muted-foreground">
-                  +85 from last week
-                </p>
               </CardContent>
             </Card>
           </div>
@@ -178,7 +146,11 @@ export default function Dashboard() {
                     Add New Course
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button className="w-full justify-between" variant="outline">
+                  <Button 
+                    className="w-full justify-between" 
+                    variant="outline"
+                    onClick={() => navigate("/admin/users")}
+                  >
                     Manage Users
                     <ChevronRight className="h-4 w-4" />
                   </Button>
