@@ -11,12 +11,14 @@ import { Footer } from "@/components/layout/Footer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BackButton } from "@/components/ui/back-button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
@@ -47,11 +49,15 @@ export default function Login() {
       if (success) {
         console.log("Login successful, redirecting...");
         navigate("/dashboard", { replace: true });
+      } else {
+        // If login returns false but no error was thrown
+        setError("Login failed. Please check your credentials and try again.");
       }
     } catch (err: any) {
       const errorMsg = err?.message || "An error occurred during login";
       console.error("Login error:", errorMsg);
       setError(errorMsg);
+      setShowErrorDialog(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -62,10 +68,12 @@ export default function Login() {
     return (
       <>
         <Navbar />
-        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center">
-              <Skeleton className="h-12 w-12 rounded-full mx-auto" />
+              <div className="mx-auto h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
               <Skeleton className="h-10 w-48 mt-6 mx-auto" />
               <Skeleton className="h-4 w-64 mt-2 mx-auto" />
             </div>
@@ -100,7 +108,7 @@ export default function Login() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <div className="absolute top-20 left-4 md:left-8">
@@ -133,6 +141,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -155,6 +164,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -164,7 +174,16 @@ export default function Login() {
                 className="w-full bg-primary hover:bg-primary/90 transition-all duration-300"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Signing in..." : "Sign in"}
+                {isSubmitting ? 
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Signing in...
+                  </span> : 
+                  "Sign in"
+                }
               </Button>
             </form>
           </div>
@@ -177,6 +196,21 @@ export default function Login() {
           </p>
         </div>
       </div>
+      
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login Error</DialogTitle>
+            <DialogDescription>
+              {error || "An error occurred during login. Please try again."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowErrorDialog(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <Footer />
     </>
   );

@@ -30,7 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   // Initialize auth state from Supabase
   useEffect(() => {
+    let mounted = true;
+    
     async function initializeAuth() {
+      if (!mounted) return;
       setIsLoading(true);
       
       try {
@@ -46,32 +49,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   .from('profiles')
                   .select('*')
                   .eq('id', session.user.id)
-                  .single();
+                  .maybeSingle();
                 
-                if (profile) {
-                  setUser({
-                    id: session.user.id,
-                    name: profile.name || session.user.email?.split('@')[0] || '',
-                    email: profile.email || session.user.email || '',
-                    role: profile.role as UserRole || 'student',
-                    avatar: profile.avatar
-                  });
-                } else {
-                  console.log("No profile found for user", session.user.id);
-                  // Use basic user data from auth if profile not found
-                  setUser({
-                    id: session.user.id,
-                    name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
-                    email: session.user.email || '',
-                    role: (session.user.user_metadata?.role as UserRole) || 'student'
-                  });
+                if (mounted) {
+                  if (profile) {
+                    // Make sure to cast role as UserRole
+                    const userRole = profile.role as UserRole;
+                    
+                    setUser({
+                      id: session.user.id,
+                      name: profile.name || session.user.email?.split('@')[0] || '',
+                      email: profile.email || session.user.email || '',
+                      role: userRole || 'student',
+                      avatar: profile.avatar
+                    });
+                  } else {
+                    console.log("No profile found for user", session.user.id);
+                    // Use basic user data from auth if profile not found
+                    const userRole = (session.user.user_metadata?.role as UserRole) || 'student';
+                    
+                    setUser({
+                      id: session.user.id,
+                      name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
+                      email: session.user.email || '',
+                      role: userRole
+                    });
+                  }
+                  setIsLoading(false);
                 }
               } catch (error) {
                 console.error("Error fetching user profile:", error);
-                setUser(null);
+                if (mounted) {
+                  setUser(null);
+                  setIsLoading(false);
+                }
               }
             } else {
-              setUser(null);
+              if (mounted) {
+                setUser(null);
+                setIsLoading(false);
+              }
             }
           }
         );
@@ -79,36 +96,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Then check for existing session
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session && session.user) {
+        if (session && session.user && mounted) {
           try {
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
             
-            if (profile) {
-              setUser({
-                id: session.user.id,
-                name: profile.name || session.user.email?.split('@')[0] || '',
-                email: profile.email || session.user.email || '',
-                role: profile.role as UserRole || 'student',
-                avatar: profile.avatar
-              });
-            } else {
-              setUser({
-                id: session.user.id,
-                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
-                email: session.user.email || '',
-                role: (session.user.user_metadata?.role as UserRole) || 'student'
-              });
+            if (mounted) {
+              if (profile) {
+                // Make sure to cast role as UserRole
+                const userRole = profile.role as UserRole;
+                
+                setUser({
+                  id: session.user.id,
+                  name: profile.name || session.user.email?.split('@')[0] || '',
+                  email: profile.email || session.user.email || '',
+                  role: userRole || 'student',
+                  avatar: profile.avatar
+                });
+              } else {
+                const userRole = (session.user.user_metadata?.role as UserRole) || 'student';
+                
+                setUser({
+                  id: session.user.id,
+                  name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
+                  email: session.user.email || '',
+                  role: userRole
+                });
+              }
             }
           } catch (error) {
             console.error("Error fetching user profile during initialization:", error);
-            setUser(null);
+            if (mounted) {
+              setUser(null);
+            }
           }
-        } else {
-          setUser(null);
+        }
+        
+        // Set loading to false at the end regardless of outcome
+        if (mounted) {
+          setIsLoading(false);
         }
         
         return () => {
@@ -116,13 +145,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       } catch (error) {
         console.error("Error initializing auth:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
       }
     }
     
     initializeAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
   
   return (
