@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,21 @@ import { useToast } from "@/components/ui/use-toast";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { UserRole } from "@/types";
 
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("student");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { register } = useAuth();
   const navigate = useNavigate();
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
@@ -35,7 +38,7 @@ export default function Register() {
     setIsSubmitting(true);
     
     try {
-      const success = await register(name, email, password);
+      const success = await register(name, email, password, role);
       if (success) {
         navigate("/login");
       }
@@ -114,6 +117,20 @@ export default function Register() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Account Type</Label>
+                <RadioGroup defaultValue="student" value={role} onValueChange={(value) => setRole(value as UserRole)} className="flex gap-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="student" id="student" />
+                    <Label htmlFor="student" className="cursor-pointer">Student</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="admin" id="admin" />
+                    <Label htmlFor="admin" className="cursor-pointer">Administrator</Label>
+                  </div>
+                </RadioGroup>
               </div>
               
               <Button 
