@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -10,6 +9,16 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function uploadFile(file: File, bucketName: string, filePath: string): Promise<string | null> {
   try {
+    // Create bucket if it doesn't exist (will be no-op if bucket exists)
+    const { error: bucketError } = await supabase.storage.createBucket(
+      bucketName, 
+      { public: true }
+    );
+    
+    if (bucketError && bucketError.message !== 'Bucket already exists') {
+      throw bucketError;
+    }
+    
     // Upload file to Supabase Storage
     const { data, error } = await supabase
       .storage
@@ -81,5 +90,30 @@ export async function deleteFile(bucketName: string, filePath: string): Promise<
   } catch (error) {
     console.error("Error deleting file:", error);
     return false;
+  }
+}
+
+/**
+ * Runs the populate-courses edge function to seed the database
+ * @returns Result of the operation
+ */
+export async function populateCourses(): Promise<{ success: boolean; message: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke("populate-courses");
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { 
+      success: true, 
+      message: `Successfully added ${data?.coursesAdded || 0} courses to the platform.`
+    };
+  } catch (error) {
+    console.error("Error populating courses:", error);
+    return { 
+      success: false, 
+      message: error.message || "Failed to populate courses. Please try again."
+    };
   }
 }

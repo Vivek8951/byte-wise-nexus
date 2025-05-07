@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -10,6 +9,8 @@ import {
   File,
   EyeOff,
   Eye,
+  Download,
+  Loader2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCourses } from "@/context/CourseContext";
@@ -35,7 +36,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CourseEditor } from "@/components/admin/CourseEditor";
 import { Course, Video, Note } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
+import { populateCourses } from "@/utils/supabaseStorage";
 
 export default function AdminCourses() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -58,6 +60,7 @@ export default function AdminCourses() {
   const [isNewCourse, setIsNewCourse] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isPopulating, setIsPopulating] = useState(false);
   
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -221,6 +224,36 @@ export default function AdminCourses() {
     });
   };
   
+  const handlePopulateCourses = async () => {
+    setIsPopulating(true);
+    try {
+      const result = await populateCourses();
+      
+      if (result.success) {
+        toast({
+          title: "Courses populated",
+          description: result.message,
+        });
+        // Refresh courses data
+        window.location.reload();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPopulating(false);
+    }
+  };
+  
   return (
     <>
       <Navbar />
@@ -230,12 +263,27 @@ export default function AdminCourses() {
             <h1 className="text-3xl font-bold heading-gradient">Course Management</h1>
             <p className="text-muted-foreground">Manage and update course content</p>
           </div>
-          <Button 
-            onClick={handleAddCourse}
-            className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in"
-          >
-            <Plus className="h-4 w-4" /> New Course
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handlePopulateCourses}
+              variant="outline"
+              disabled={isPopulating}
+              className="flex items-center gap-2"
+            >
+              {isPopulating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {isPopulating ? "Populating..." : "Populate Demo Courses"}
+            </Button>
+            <Button 
+              onClick={handleAddCourse}
+              className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in"
+            >
+              <Plus className="h-4 w-4" /> New Course
+            </Button>
+          </div>
         </header>
         
         <div className="grid grid-cols-1 gap-6">
