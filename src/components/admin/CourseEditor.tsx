@@ -275,7 +275,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
         courseId: course?.id || '',
         order: index,
         thumbnail: '',
-        duration: ''
+        duration: videos[index].duration || '0:00', // Ensure duration is always provided
       };
       
       // Set current video for auto-analysis
@@ -672,6 +672,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                             courseId: course?.id || '',
                             title: video.title || 'Untitled Video', // Ensure title is always provided
                             description: video.description || 'Video content', // Ensure description is always provided
+                            duration: video.duration || '0:00', // Ensure duration is always provided
                           }}
                           onAnalysisComplete={(analysis) => handleAnalysisComplete(index, analysis)}
                         />
