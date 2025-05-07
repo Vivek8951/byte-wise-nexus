@@ -6,11 +6,11 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
   
   return (
-    <footer className="border-t bg-background">
+    <footer className="border-t bg-slate-50 dark:bg-background">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <Link to="/" className="flex items-center gap-2 font-bold text-xl text-tech-blue">
+            <Link to="/" className="flex items-center gap-2 font-bold text-xl text-[#0056D2]">
               <Book className="h-6 w-6" />
               <span>TechLearn</span>
             </Link>

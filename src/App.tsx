@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { CourseProvider } from "./context/CourseContext";
@@ -20,9 +20,23 @@ import NotFound from "./pages/NotFound";
 import "./App.css";
 
 function App() {
+  // Update the favicon dynamically to match Coursera's blue theme
+  useEffect(() => {
+    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    if (favicon) {
+      favicon.href = '/favicon.ico'; // We'll keep using the existing favicon
+    }
+    
+    // Add meta theme color for mobile browsers
+    const metaThemeColor = document.createElement('meta');
+    metaThemeColor.name = 'theme-color';
+    metaThemeColor.content = '#0056D2'; // Coursera blue
+    document.head.appendChild(metaThemeColor);
+  }, []);
+
   return (
     <>
-      <ThemeProvider defaultTheme="dark" attribute="class">
+      <ThemeProvider defaultTheme="light" attribute="class">
         <Router>
           <AuthProvider>
             <CourseProvider>
@@ -47,5 +61,8 @@ function App() {
     </>
   );
 }
+
+// Import useEffect for favicon update
+import { useEffect } from "react";
 
 export default App;

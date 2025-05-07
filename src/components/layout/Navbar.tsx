@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Search, X, Book, Bell } from "lucide-react";
+import { Menu, Search, X, Book, Bell, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -43,7 +43,7 @@ export function Navbar() {
   };
   
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b bg-white dark:bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <Button 
@@ -58,14 +58,27 @@ export function Navbar() {
           
           <Link 
             to={user ? (user.role === 'admin' ? "/admin/courses" : "/dashboard") : "/"}
-            className="flex items-center gap-2 font-bold text-xl text-tech-blue hover-scale"
+            className="flex items-center gap-2 font-bold text-xl text-[#0056D2] hover-scale"
           >
             <Book className="h-6 w-6" />
             <span>TechLearn</span>
           </Link>
+          
+          <div className="hidden md:flex items-center ml-6 space-x-1">
+            <Button variant="ghost" className="text-sm font-medium">
+              Explore <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+            <Link to="/courses">
+              <Button variant="ghost" className="text-sm font-medium">Courses</Button>
+            </Link>
+            {user && (
+              <Button variant="ghost" className="text-sm font-medium" onClick={goToDashboard}>
+                My Learning
+              </Button>
+            )}
+          </div>
         </div>
         
-        {/* Empty middle section - no navigation links */}
         <div className="flex-1 md:flex"></div>
         
         <div className="flex items-center gap-4">
@@ -91,7 +104,7 @@ export function Navbar() {
                   <Button 
                     variant="ghost"
                     size="icon"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-tech-purple text-white hover-scale"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0056D2] text-white hover-scale"
                     onClick={goToDashboard}
                   >
                     {user.name.charAt(0)}
@@ -111,7 +124,7 @@ export function Navbar() {
                     <Button variant="ghost" className="hover-scale">Login</Button>
                   </Link>
                   <Link to="/register" className="hidden md:inline-flex">
-                    <Button className="bg-tech-blue hover:bg-tech-darkblue hover-scale">Sign Up</Button>
+                    <Button className="bg-[#0056D2] hover:bg-[#003d96] hover-scale text-white">Sign Up</Button>
                   </Link>
                 </div>
               )}
@@ -134,15 +147,32 @@ export function Navbar() {
       
       {/* Mobile Menu - with simplified navigation */}
       {isMenuOpen && (
-        <div className="fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row auto-rows-max overflow-auto bg-background p-6 pb-32 shadow-md animate-in slide-in-from-top md:hidden">
+        <div className="fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row auto-rows-max overflow-auto bg-white dark:bg-background p-6 pb-32 shadow-md animate-in slide-in-from-top md:hidden">
           <nav className="flex flex-col gap-6 text-lg">
+            <Link to="/courses" onClick={() => setIsMenuOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start">Courses</Button>
+            </Link>
+            {user && (
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start"
+                onClick={() => {
+                  goToDashboard();
+                  setIsMenuOpen(false);
+                }}
+              >
+                My Learning
+              </Button>
+            )}
             {user?.role === 'admin' && (
               <Link 
                 to="/admin/courses" 
                 className="flex items-center gap-2 font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Manage Courses
+                <Button variant="ghost" className="w-full justify-start">
+                  Manage Courses
+                </Button>
               </Link>
             )}
             {user ? (
@@ -160,7 +190,7 @@ export function Navbar() {
                   <Button variant="outline" className="w-full">Login</Button>
                 </Link>
                 <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                  <Button className="w-full bg-tech-blue hover:bg-tech-darkblue">Sign Up</Button>
+                  <Button className="w-full bg-[#0056D2] hover:bg-[#003d96] text-white">Sign Up</Button>
                 </Link>
               </div>
             )}
