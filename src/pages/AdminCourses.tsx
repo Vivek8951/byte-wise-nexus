@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -110,11 +109,26 @@ export default function AdminCourses() {
         // Add videos and notes
         if (newCourse) {
           for (const video of videosData) {
-            await addVideo({ ...video, courseId: newCourse.id });
+            await addVideo({ 
+              courseId: newCourse.id, 
+              title: video.title || '',
+              description: video.description || '',
+              url: video.url || '',
+              duration: video.duration || '',
+              thumbnail: video.thumbnail,
+              order: video.order || 0 
+            });
           }
           
           for (const note of notesData) {
-            await addNote({ ...note, courseId: newCourse.id });
+            await addNote({ 
+              courseId: newCourse.id, 
+              title: note.title || '',
+              description: note.description || '',
+              fileUrl: note.fileUrl || '',
+              fileType: note.fileType || 'pdf',
+              order: note.order || 0 
+            });
           }
         }
         
@@ -141,11 +155,26 @@ export default function AdminCourses() {
         
         // Add new videos and notes
         for (const video of videosData) {
-          await addVideo({ ...video, courseId: currentCourse.id });
+          await addVideo({ 
+            courseId: currentCourse.id, 
+            title: video.title || '',
+            description: video.description || '',
+            url: video.url || '',
+            duration: video.duration || '',
+            thumbnail: video.thumbnail,
+            order: video.order || 0 
+          });
         }
         
         for (const note of notesData) {
-          await addNote({ ...note, courseId: currentCourse.id });
+          await addNote({ 
+            courseId: currentCourse.id, 
+            title: note.title || '',
+            description: note.description || '',
+            fileUrl: note.fileUrl || '',
+            fileType: note.fileType || 'pdf',
+            order: note.order || 0 
+          });
         }
         
         toast({
@@ -284,7 +313,7 @@ export default function AdminCourses() {
                     
                     <div className="flex flex-wrap gap-3 pt-2">
                       <div className="flex items-center gap-1 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs">
-                        <Video className="h-3 w-3" />
+                        <VideoIcon className="h-3 w-3" />
                         <span>{videos.length} Videos</span>
                       </div>
                       <div className="flex items-center gap-1 bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 px-3 py-1 rounded-full text-xs">
