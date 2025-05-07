@@ -273,7 +273,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
         description: videos[index].description || 'Video content', // Ensure description is always provided
         url: objectUrl,
         courseId: course?.id || '',
-        order: index,
+        order: index + 1, // Ensure order is always provided
         thumbnail: '',
         duration: videos[index].duration || '0:00', // Ensure duration is always provided
       };
@@ -673,6 +673,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                             title: video.title || 'Untitled Video', // Ensure title is always provided
                             description: video.description || 'Video content', // Ensure description is always provided
                             duration: video.duration || '0:00', // Ensure duration is always provided
+                            order: index + 1, // Ensure order is always provided
                           }}
                           onAnalysisComplete={(analysis) => handleAnalysisComplete(index, analysis)}
                         />
