@@ -96,10 +96,10 @@ export async function deleteFile(bucketName: string, filePath: string): Promise<
 
 /**
  * Runs the populate-courses edge function to seed the database with AI-generated courses
- * @param numberOfCourses Optional number of courses to generate (default: 5)
+ * @param numberOfCourses Number of courses to generate (default: 1)
  * @returns Result of the operation
  */
-export async function populateCourses(numberOfCourses: number = 5): Promise<{ success: boolean; message: string }> {
+export async function populateCourses(numberOfCourses: number = 1): Promise<{ success: boolean; message: string }> {
   try {
     const { data, error } = await supabase.functions.invoke("populate-courses", {
       body: { numberOfCourses }

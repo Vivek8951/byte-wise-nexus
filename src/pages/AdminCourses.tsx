@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -234,7 +233,7 @@ export default function AdminCourses() {
       
       if (result.success) {
         toast({
-          title: "Courses populated",
+          title: "Courses generated",
           description: result.message,
         });
         // Refresh courses data
@@ -288,7 +287,7 @@ export default function AdminCourses() {
                 ) : (
                   <Download className="h-4 w-4" />
                 )}
-                {isPopulating ? "Generating..." : "Generate AI Courses"}
+                {isPopulating ? "Generating..." : "Generate Random Courses"}
               </Button>
             </div>
             <Button 

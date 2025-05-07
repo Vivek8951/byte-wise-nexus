@@ -187,202 +187,165 @@ const coursesData = [
   }
 ];
 
-// Simplified list of the rest of the courses to add
-const additionalCourses = [
+// Simplified list of other course templates
+const courseTemplates = [
   {
     title: "Data Structures and Algorithms",
     category: "Computer Science",
     level: "intermediate",
-    instructor: "Robert Sedgewick"
+    instructor: "Robert Sedgewick",
+    description: "Master essential data structures like arrays, linked lists, trees, and graphs. Learn algorithms for sorting, searching, and graph traversal, with complexity analysis and optimization techniques.",
+    videos: [
+      { title: "Introduction to Algorithms", description: "Basic concepts and importance of algorithms" },
+      { title: "Arrays and Linked Lists", description: "Understanding linear data structures" },
+      { title: "Trees and Graphs", description: "Advanced data structures for complex relationships" }
+    ]
   },
   {
     title: "React.js Fundamentals",
     category: "Web Development",
     level: "intermediate",
-    instructor: "Kent C. Dodds"
+    instructor: "Kent C. Dodds",
+    description: "Learn the core concepts of React.js including components, props, state, hooks, and the virtual DOM. Build interactive user interfaces with the most popular JavaScript library.",
+    videos: [
+      { title: "React Components and JSX", description: "Understanding the building blocks of React applications" },
+      { title: "State and Props", description: "Managing data within React components" },
+      { title: "Hooks and Effects", description: "Using functional components with React hooks" }
+    ]
   },
   {
     title: "Introduction to Artificial Intelligence",
     category: "Data Science",
     level: "intermediate",
-    instructor: "Sebastian Thrun"
+    instructor: "Sebastian Thrun",
+    description: "Explore the fundamentals of AI including search algorithms, knowledge representation, machine learning, natural language processing, and computer vision applications.",
+    videos: [
+      { title: "Foundations of AI", description: "History and core concepts of artificial intelligence" },
+      { title: "Search Algorithms", description: "Problem-solving with search strategies" },
+      { title: "Knowledge Representation", description: "Representing and reasoning with knowledge" }
+    ]
   },
   {
     title: "Mobile App Development with Flutter",
     category: "Mobile Development",
     level: "intermediate",
-    instructor: "Angela Yu"
+    instructor: "Angela Yu",
+    description: "Create cross-platform mobile applications for iOS and Android using Flutter and Dart. Learn UI design, state management, and how to deploy apps to app stores.",
+    videos: [
+      { title: "Dart Programming Basics", description: "Learning the language behind Flutter" },
+      { title: "Flutter Widgets", description: "Building UI components with Flutter" },
+      { title: "State Management", description: "Managing application state effectively" }
+    ]
   },
   {
     title: "Cybersecurity Fundamentals",
     category: "Cybersecurity",
     level: "beginner",
-    instructor: "Kevin Mitnick"
-  },
-  {
-    title: "Cloud Computing with AWS",
-    category: "Cloud Computing",
-    level: "intermediate",
-    instructor: "James Beswick"
-  },
-  {
-    title: "DevOps and CI/CD Pipelines",
-    category: "DevOps",
-    level: "advanced",
-    instructor: "Jez Humble"
-  },
-  {
-    title: "Database Design and SQL",
-    category: "Databases",
-    level: "beginner",
-    instructor: "Jennifer Widom"
-  },
-  {
-    title: "Node.js Backend Development",
-    category: "Web Development",
-    level: "intermediate",
-    instructor: "Ryan Dahl"
-  },
-  {
-    title: "Docker and Kubernetes",
-    category: "DevOps",
-    level: "intermediate",
-    instructor: "Kelsey Hightower"
-  },
-  {
-    title: "Full Stack JavaScript Development",
-    category: "Web Development",
-    level: "advanced",
-    instructor: "Wes Bos"
-  },
-  {
-    title: "Introduction to Blockchain",
-    category: "Blockchain",
-    level: "beginner",
-    instructor: "Andreas Antonopoulos"
-  },
-  {
-    title: "Data Visualization with D3.js",
-    category: "Data Science",
-    level: "intermediate",
-    instructor: "Mike Bostock"
-  },
-  {
-    title: "Game Development with Unity",
-    category: "Game Development",
-    level: "intermediate",
-    instructor: "Will Goldstone"
-  },
-  {
-    title: "TypeScript Fundamentals",
-    category: "Programming",
-    level: "intermediate",
-    instructor: "Anders Hejlsberg"
-  },
-  {
-    title: "UX/UI Design Principles",
-    category: "Design",
-    level: "beginner",
-    instructor: "Don Norman"
-  },
-  {
-    title: "GraphQL API Development",
-    category: "Web Development",
-    level: "intermediate",
-    instructor: "Lee Byron"
-  },
-  {
-    title: "Agile Project Management",
-    category: "Project Management",
-    level: "beginner",
-    instructor: "Jeff Sutherland"
-  },
-  {
-    title: "Natural Language Processing",
-    category: "Data Science",
-    level: "advanced",
-    instructor: "Christopher Manning"
-  },
-  {
-    title: "iOS App Development with Swift",
-    category: "Mobile Development",
-    level: "intermediate",
-    instructor: "Paul Hudson"
-  },
-  {
-    title: "Android App Development with Kotlin",
-    category: "Mobile Development",
-    level: "intermediate",
-    instructor: "Donn Felker"
-  },
-  {
-    title: "Microservices Architecture",
-    category: "Software Architecture",
-    level: "advanced",
-    instructor: "Sam Newman"
-  },
-  {
-    title: "Data Engineering with Apache Spark",
-    category: "Data Science",
-    level: "advanced",
-    instructor: "Matei Zaharia"
-  },
-  {
-    title: "Software Testing and QA",
-    category: "Software Development",
-    level: "intermediate",
-    instructor: "Lisa Crispin"
-  },
-  {
-    title: "Ethical Hacking",
-    category: "Cybersecurity",
-    level: "advanced",
-    instructor: "Troy Hunt"
-  },
-  {
-    title: "Vue.js Framework",
-    category: "Web Development",
-    level: "intermediate",
-    instructor: "Evan You"
-  },
-  {
-    title: "Responsive Web Design",
-    category: "Web Development",
-    level: "beginner",
-    instructor: "Ethan Marcotte"
+    instructor: "Kevin Mitnick",
+    description: "Learn essential security concepts including threat modeling, encryption, network security, web security, and ethical hacking techniques to protect systems from attacks.",
+    videos: [
+      { title: "Security Mindset", description: "Thinking like a security professional" },
+      { title: "Common Vulnerabilities", description: "Understanding attack vectors and weaknesses" },
+      { title: "Defense Strategies", description: "Implementing effective security controls" }
+    ]
   }
 ];
 
+// Video sources for content, grouped by category
+const videoSources = {
+  "Programming": [
+    "https://archive.org/download/pythonlearn/PY_Intro_01_Introduction_to_Python_in_the_Cloud.mp4",
+    "https://archive.org/download/pythonlearn/PY_Intro_02_UsingPython_variables.mp4",
+    "https://archive.org/download/pythonlearn/PY_Intro_03_Conditional_Execution.mp4",
+    "https://archive.org/download/pythonlearn/PY_Intro_04_Functions.mp4"
+  ],
+  "Web Development": [
+    "https://archive.org/download/fcc-javascript-and-algorithms/1-html-css/1-basic-html-and-html5/1-say-hello-to-html-elements.mp4",
+    "https://archive.org/download/fcc-javascript-and-algorithms/1-html-css/2-basic-css/1-change-the-color-of-text.mp4",
+    "https://archive.org/download/fcc-javascript-and-algorithms/2-javascript-algorithms-and-data-structures/1-basic-javascript/1-comment-your-javascript-code.mp4"
+  ],
+  "Data Science": [
+    "https://archive.org/download/youtube-jnOZB46CbYw/Introduction_to_Machine_Learning_Andrew_Ng-jnOZB46CbYw.mp4",
+    "https://archive.org/download/youtube-kHwlB_j7Hkc/Linear_Regression_with_One_Variable-kHwlB_j7Hkc.mp4",
+    "https://archive.org/download/youtube-hCOIMkcsm_g/Logistic_Regression_and_Classification-hCOIMkcsm_g.mp4"
+  ],
+  "default": [
+    "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+    "https://archive.org/download/ElephantsDream/ed_hd.mp4",
+    "https://archive.org/download/SintelTrailer/sintel_trailer-480p.mp4"
+  ]
+};
+
+// Function to get video URLs based on course category
+function getVideosForCategory(category: string, count: number = 3) {
+  const sources = videoSources[category] || videoSources.default;
+  // If we don't have enough videos in the category, cycle through them
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(sources[i % sources.length]);
+  }
+  return result;
+}
+
 // Analyze video content function
-function generateAnalyzedContent(title: string, description: string) {
-  // Generate a realistic transcript
-  const transcript = `Welcome to this lecture on ${title}. In this session, we'll be diving deep into the key concepts related to ${description.split('.')[0].toLowerCase()}. First, we'll discuss the fundamental principles and why they're important. Then, we'll move on to practical applications and examples. Throughout this lecture, we'll cover several important topics and highlight the interconnections between various concepts. By the end of this session, you should have a good understanding of ${title.toLowerCase()} and be able to apply this knowledge in real-world scenarios.`;
+function generateAnalyzedContent(title: string, description: string, courseTitle: string, courseCategory: string) {
+  // Generate a realistic transcript related to the course content
+  const transcript = `Welcome to this lecture on ${title} as part of our ${courseTitle} course. 
+  In this session, we'll be exploring key concepts related to ${description.split('.')[0].toLowerCase()}. 
+  This knowledge is fundamental to understanding ${courseCategory}. 
+  We'll start with the basic principles, then move on to more advanced topics and practical applications.
+  Throughout this lecture, we'll cover several important techniques and methodologies used in the field,
+  and discuss how they relate to real-world scenarios in ${courseCategory}.
+  By the end of this lecture, you'll have a solid understanding of ${title.toLowerCase()} 
+  and be able to apply this knowledge in your own ${courseCategory} projects.`;
   
-  // Generate a summary
-  const summary = `This lecture provides a comprehensive introduction to ${title.toLowerCase()}. It covers the core concepts, practical applications, and best practices in the field.`;
+  // Generate a summary related to the course topic
+  const summary = `This lecture on ${title} provides essential knowledge for ${courseCategory} students.
+  It covers core concepts, practical applications, and best practices in the context of ${courseTitle}.
+  The material builds a foundation for more advanced topics in later modules.`;
   
-  // Generate quiz questions
+  // Generate quiz questions related to the course content
   const questions = [
     {
-      question: `What is the main focus of ${title}?`,
-      options: ['Learning theoretical concepts only', 'Practical applications and concepts', 'Historical development', 'Software tools only'],
+      question: `Which best describes the main focus of ${title} in ${courseCategory}?`,
+      options: [
+        `Understanding fundamental concepts in ${courseCategory}`, 
+        `Advanced topics beyond the scope of this course`, 
+        `Historical development of unrelated technologies`, 
+        `Theoretical aspects with no practical applications`
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: `What is a key benefit of mastering ${title} as presented in this lecture?`,
+      options: [
+        `It's not useful for practical applications`, 
+        `It helps build a foundation for advanced ${courseCategory} skills`, 
+        `It's only relevant for academic research`, 
+        `It's becoming obsolete in the industry`
+      ],
       correctAnswer: 1
     },
     {
-      question: "Which approach is recommended for beginners in this field?",
-      options: ['Start with advanced topics', 'Focus on theory before practice', 'Practice with simple examples', 'Read academic papers'],
+      question: `Which approach is recommended when applying ${title} concepts in real-world ${courseCategory} scenarios?`,
+      options: [
+        `Ignoring best practices for faster development`, 
+        `Using only deprecated methods for compatibility`, 
+        `Applying structured methodology with proper testing`, 
+        `Avoiding documentation to save time`
+      ],
       correctAnswer: 2
-    },
-    {
-      question: "What is emphasized as the most important aspect in this lecture?",
-      options: ['Understanding core principles', 'Memorizing terms', 'Working quickly', 'Avoiding mistakes'],
-      correctAnswer: 0
     }
   ];
   
-  // Generate keywords
-  const keywords = title.toLowerCase().split(' ')
-    .concat(description.toLowerCase().split(' ').filter(word => word.length > 5))
+  // Generate keywords related to the course topic
+  const commonKeywords = courseCategory.toLowerCase().split(' ')
+    .concat(courseTitle.toLowerCase().split(' '));
+  
+  const specificKeywords = title.toLowerCase().split(' ')
+    .concat(description.toLowerCase().split(' ').filter(word => word.length > 5));
+  
+  const allKeywords = [...commonKeywords, ...specificKeywords]
     .filter((word, index, self) => self.indexOf(word) === index && word.length > 3)
     .slice(0, 6);
   
@@ -390,12 +353,17 @@ function generateAnalyzedContent(title: string, description: string) {
     transcript,
     summary,
     questions,
-    keywords
+    keywords: allKeywords
   };
 }
 
 // Function to populate courses
-async function populateCourses() {
+async function populateCourses(requestedCount = 1) {
+  const maxCount = Math.min(requestedCount, 30);  // Limit max courses to 30
+  const actualCount = Math.max(1, maxCount);      // Ensure at least 1 course
+  
+  console.log(`Generating ${actualCount} courses`);
+  
   try {
     // Clear existing courses (for testing purposes)
     // In production, you might want to check if courses already exist
@@ -409,8 +377,14 @@ async function populateCourses() {
       return { success: false, error: clearError };
     }
 
-    // Process the fully detailed courses first
-    for (const course of coursesData) {
+    let coursesAdded = 0;
+    const totalToAdd = Math.min(actualCount, coursesData.length + courseTemplates.length);
+    
+    // Process the fully detailed courses first, up to the requested count
+    const detailedCourseLimit = Math.min(actualCount, coursesData.length);
+    for (let i = 0; i < detailedCourseLimit; i++) {
+      const course = coursesData[i];
+      
       // Insert course
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
@@ -436,9 +410,14 @@ async function populateCourses() {
       
       const courseId = courseData.id;
       
-      // Insert videos
+      // Insert videos with content specific to the course
       for (const video of course.videos) {
-        const analyzedContent = generateAnalyzedContent(video.title, video.description);
+        const analyzedContent = generateAnalyzedContent(
+          video.title, 
+          video.description,
+          course.title,
+          course.category
+        );
         
         const { error: videoError } = await supabase
           .from('videos')
@@ -458,7 +437,7 @@ async function populateCourses() {
         }
       }
       
-      // Insert quizzes
+      // Insert quizzes with questions directly related to the course content
       for (const quiz of course.quizzes) {
         const { error: quizError } = await supabase
           .from('quizzes')
@@ -490,98 +469,151 @@ async function populateCourses() {
       if (noteError) {
         console.error("Error inserting note:", noteError);
       }
+      
+      coursesAdded++;
     }
     
-    // Process the additional courses with less detail
-    for (const course of additionalCourses) {
-      // Generate a description if not provided
-      const description = course.description || 
-        `A comprehensive course on ${course.title} covering all essential topics and providing hands-on practice for students at the ${course.level} level.`;
+    // If we need more courses, fill in with template-based courses
+    if (coursesAdded < actualCount) {
+      // How many more courses to generate from templates
+      const remainingToAdd = actualCount - coursesAdded;
       
-      // Generate a thumbnail URL
-      const thumbnail = course.thumbnail || 
-        `https://images.unsplash.com/photo-${Math.floor(1500000000 + Math.random() * 500000000)}?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3`;
-      
-      // Insert course
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .insert({
-          title: course.title,
-          description: description,
-          category: course.category,
-          thumbnail: thumbnail,
-          instructor: course.instructor,
-          duration: `${Math.floor(4 + Math.random() * 8)} weeks`,
-          level: course.level,
-          featured: Math.random() > 0.8, // 20% chance to be featured
-          enrolled_count: 0,
-          rating: 4 + Math.random() * 1 // Random rating between 4.0 and 5.0
-        })
-        .select()
-        .single();
-      
-      if (courseError) {
-        console.error("Error inserting additional course:", courseError);
-        continue;
-      }
-      
-      const courseId = courseData.id;
-      
-      // Insert a sample video with analyzed content
-      const videoTitle = `Introduction to ${course.title}`;
-      const videoDescription = `An overview of key concepts in ${course.title}`;
-      const analyzedContent = generateAnalyzedContent(videoTitle, videoDescription);
-      
-      const { error: videoError } = await supabase
-        .from('videos')
-        .insert({
-          course_id: courseId,
-          title: videoTitle,
-          description: videoDescription,
-          url: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4", // Placeholder video
-          duration: "600",
-          thumbnail: thumbnail,
-          order_num: 1,
-          analyzed_content: analyzedContent
-        });
-      
-      if (videoError) {
-        console.error("Error inserting video for additional course:", videoError);
-      }
-      
-      // Insert a sample quiz
-      const { error: quizError } = await supabase
-        .from('quizzes')
-        .insert({
-          course_id: courseId,
-          title: `${course.title} Assessment`,
-          description: `Test your understanding of ${course.title} concepts`,
-          order_num: 1,
-          questions: [
-            {
-              text: `What is the primary focus of ${course.title}?`,
-              options: ['Theory', 'Practice', 'Both theory and practical applications', 'Historical context'],
-              correctAnswer: 2
-            },
-            {
-              text: "Which of the following is most important when learning this subject?",
-              options: ['Memorization', 'Understanding concepts', 'Speed of execution', 'Following instructions exactly'],
-              correctAnswer: 1
-            },
-            {
-              text: "What approach should beginners take when studying this subject?",
-              options: ['Jump into advanced topics', 'Start with fundamentals', 'Focus only on practical exercises', 'Read academic papers'],
-              correctAnswer: 1
-            }
-          ]
-        });
-      
-      if (quizError) {
-        console.error("Error inserting quiz for additional course:", quizError);
+      // We'll cycle through the templates if we need more than we have templates for
+      for (let i = 0; i < remainingToAdd; i++) {
+        const templateIdx = i % courseTemplates.length;
+        const template = courseTemplates[templateIdx];
+        
+        // Generate a thumbnail URL
+        const thumbnail = `https://images.unsplash.com/photo-${Math.floor(1500000000 + Math.random() * 500000000)}?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3`;
+        
+        // Insert course
+        const { data: courseData, error: courseError } = await supabase
+          .from('courses')
+          .insert({
+            title: template.title,
+            description: template.description,
+            category: template.category,
+            thumbnail: thumbnail,
+            instructor: template.instructor,
+            duration: `${Math.floor(4 + Math.random() * 8)} weeks`,
+            level: template.level,
+            featured: Math.random() > 0.8, // 20% chance to be featured
+            enrolled_count: 0,
+            rating: 4 + Math.random() * 1 // Random rating between 4.0 and 5.0
+          })
+          .select()
+          .single();
+        
+        if (courseError) {
+          console.error("Error inserting template course:", courseError);
+          continue;
+        }
+        
+        const courseId = courseData.id;
+        
+        // Get appropriate videos for this category
+        const videoUrls = getVideosForCategory(template.category, 3);
+        
+        // Insert videos with content matching the course
+        for (let v = 0; v < Math.min(template.videos.length, videoUrls.length); v++) {
+          const videoTemplate = template.videos[v];
+          const videoUrl = videoUrls[v];
+          
+          const analyzedContent = generateAnalyzedContent(
+            videoTemplate.title,
+            videoTemplate.description,
+            template.title,
+            template.category
+          );
+          
+          const { error: videoError } = await supabase
+            .from('videos')
+            .insert({
+              course_id: courseId,
+              title: videoTemplate.title,
+              description: videoTemplate.description,
+              url: videoUrl,
+              duration: Math.floor(300 + Math.random() * 600).toString(), // Random duration
+              thumbnail: thumbnail,
+              order_num: v + 1,
+              analyzed_content: analyzedContent
+            });
+          
+          if (videoError) {
+            console.error("Error inserting video for template course:", videoError);
+          }
+        }
+        
+        // Create a quiz related to the course content
+        const quizTitle = `${template.title} Assessment`;
+        const quizDescription = `Test your understanding of ${template.title} concepts`;
+        
+        // Generate quiz questions specific to this course
+        const quizQuestions = [
+          {
+            text: `What is the primary focus of ${template.title}?`,
+            options: [`Core ${template.category} concepts and applications`, 
+                      `Unrelated technological topics`, 
+                      `Historical perspectives only`, 
+                      `Basic introductory material only`],
+            correctAnswer: 0
+          },
+          {
+            text: `Which skill is most important when studying ${template.category}?`,
+            options: [`Memorization without understanding`, 
+                      `Practical application of concepts`, 
+                      `Skipping foundational topics`, 
+                      `Working without proper planning`],
+            correctAnswer: 1
+          },
+          {
+            text: `What approach does the course recommend for mastering ${template.title}?`,
+            options: [`Focusing only on theory`, 
+                      `Ignoring best practices`, 
+                      `Consistent practice and application`, 
+                      `Learning in isolation`],
+            correctAnswer: 2
+          }
+        ];
+        
+        const { error: quizError } = await supabase
+          .from('quizzes')
+          .insert({
+            course_id: courseId,
+            title: quizTitle,
+            description: quizDescription,
+            order_num: 1,
+            questions: quizQuestions
+          });
+        
+        if (quizError) {
+          console.error("Error inserting quiz for template course:", quizError);
+        }
+        
+        // Add study materials
+        const { error: noteError } = await supabase
+          .from('notes')
+          .insert({
+            course_id: courseId,
+            title: `${template.title} - Study Guide`,
+            description: `Essential materials for mastering ${template.title}`,
+            file_url: "https://cdn.lovablecdn.com/demo-content/sample-course-notes.pdf",
+            file_type: "pdf",
+            order_num: 1
+          });
+        
+        if (noteError) {
+          console.error("Error inserting note for template course:", noteError);
+        }
+        
+        coursesAdded++;
       }
     }
     
-    return { success: true, coursesAdded: coursesData.length + additionalCourses.length };
+    return { 
+      success: true, 
+      coursesAdded: coursesAdded 
+    };
   } catch (error) {
     console.error("Error in populateCourses:", error);
     return { success: false, error: error.message };
@@ -595,13 +627,19 @@ serve(async (req) => {
   }
   
   try {
-    const result = await populateCourses();
+    const requestData = await req.json();
+    const numberOfCourses = requestData.numberOfCourses || 1;
+    
+    console.log(`Received request to generate ${numberOfCourses} courses`);
+    
+    const result = await populateCourses(numberOfCourses);
     
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("Error handling request:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

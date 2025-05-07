@@ -81,7 +81,10 @@ export function CourseQuiz({
                 // Handle array of questions
                 contentQuestions.forEach((q: any, qIndex: number) => {
                   if (q.question && q.options) {
-                    const options = Array.isArray(q.options) ? q.options : [];
+                    const options = Array.isArray(q.options) 
+                      ? q.options.map((opt: any) => String(opt)) 
+                      : [];
+                    
                     const correctAnswer = typeof q.correctAnswer === 'number' 
                       ? q.correctAnswer 
                       : (typeof q.correctOption === 'number' 
@@ -90,7 +93,7 @@ export function CourseQuiz({
                     
                     quizQuestions.push({
                       id: `video_${videoIndex}_q_${qIndex}`,
-                      text: q.question,
+                      text: String(q.question),
                       options: options,
                       correctAnswer: correctAnswer
                     });
@@ -100,7 +103,10 @@ export function CourseQuiz({
                 // Handle single question object
                 const q = contentQuestions;
                 if (q.question && q.options) {
-                  const options = Array.isArray(q.options) ? q.options : [];
+                  const options = Array.isArray(q.options) 
+                    ? q.options.map((opt: any) => String(opt)) 
+                    : [];
+                  
                   const correctAnswer = typeof q.correctAnswer === 'number' 
                     ? q.correctAnswer 
                     : (typeof q.correctOption === 'number' 
@@ -109,7 +115,7 @@ export function CourseQuiz({
                   
                   quizQuestions.push({
                     id: `video_${videoIndex}_q_single`,
-                    text: q.question,
+                    text: String(q.question),
                     options: options,
                     correctAnswer: correctAnswer
                   });
@@ -166,10 +172,7 @@ export function CourseQuiz({
         }
       } catch (error) {
         console.error("Error loading questions:", error);
-        toast({
-          title: "Error loading quiz",
-          description: "Failed to load quiz questions. Using default questions instead."
-        });
+        toast("Failed to load quiz questions. Using default questions instead.");
         
         // Use fallback questions
         const fallbackQuestions: Question[] = [
@@ -237,9 +240,7 @@ export function CourseQuiz({
 
   const handleSubmit = async () => {
     if (!user) {
-      toast({
-        title: "Please log in to submit your quiz"
-      });
+      toast("Please log in to submit your quiz");
       return;
     }
 
@@ -273,10 +274,9 @@ export function CourseQuiz({
           
           if (progressData) {
             // Update existing progress
-            const completedQuizzes = typeof progressData.completed_quizzes === 'object' && 
-                                     progressData.completed_quizzes !== null && 
-                                     Array.isArray(progressData.completed_quizzes) 
-                                     ? progressData.completed_quizzes : [];
+            const completedQuizzes = Array.isArray(progressData.completed_quizzes)
+              ? [...progressData.completed_quizzes]
+              : [];
             
             if (!completedQuizzes.includes(quizId)) {
               completedQuizzes.push(quizId);
@@ -313,19 +313,14 @@ export function CourseQuiz({
           await markQuizAsCompleted(user.id, courseId, quizId, result.percentage);
         }
         
-        toast({
-          title: `Quiz completed! Your score: ${result.percentage}%`
-        });
+        toast(`Quiz completed! Your score: ${result.percentage}%`);
         
         if (onComplete) {
           onComplete(result.percentage);
         }
       } catch (error) {
         console.error("Error saving quiz progress:", error);
-        toast({
-          title: "Failed to save your quiz results",
-          description: "Please try again later"
-        });
+        toast("Failed to save your quiz results. Please try again later");
       }
     }
     
