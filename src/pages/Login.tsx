@@ -18,15 +18,15 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [showResendDialog, setShowResendDialog] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if already authenticated
+  // Only redirect if authenticated and not loading
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isLoading && isAuthenticated) {
       navigate("/dashboard");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -82,6 +82,19 @@ export default function Login() {
     setShowResendDialog(false);
     setResendSuccess(false);
   };
+  
+  // If still loading auth state, show loading indicator
+  if (isLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tech-blue"></div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
   
   return (
     <>

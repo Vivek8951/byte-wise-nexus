@@ -41,13 +41,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
-  // Wait for auth state to initialize
+  // Wait for auth state to initialize - show loading indicator
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tech-blue"></div>
     </div>;
   }
   
+  // Only redirect if both not loading and authenticated
   if (isAuthenticated) {
     return <Navigate to="/dashboard" />;
   }

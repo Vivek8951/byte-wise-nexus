@@ -7,3 +7,4 @@ project_id = "weiagpwgfmyjdglfpbeu"
 site_url = "http://localhost:3000"
 # Change to false to disable email confirmation
 enable_confirmations = false
+
