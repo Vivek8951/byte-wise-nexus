@@ -17,11 +17,15 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const HUGGING_FACE_API_KEY = Deno.env.get('HUGGING_FACE_API_KEY') || '';
 
 // Function to generate AI response based on video transcript using Hugging Face
-async function generateVideoAIResponse(question: string, context: string, videoId: string): Promise<string> {
+async function generateVideoAIResponse(question, context, videoId) {
   try {
+    // First check if we have a valid API key
     if (!HUGGING_FACE_API_KEY) {
-      throw new Error("Hugging Face API key not found");
+      console.log("No Hugging Face API key, using fallback response");
+      return generateFallbackResponse(question, context);
     }
+    
+    console.log("Generating response with Hugging Face API");
     
     // Construct the prompt for Hugging Face
     const prompt = `
@@ -85,6 +89,56 @@ async function generateVideoAIResponse(question: string, context: string, videoI
     return textResponse;
   } catch (error) {
     console.error("Error generating AI response:", error);
+    return generateFallbackResponse(question, context);
+  }
+}
+
+// Generate a fallback response based on basic context matching
+function generateFallbackResponse(question, context) {
+  try {
+    // Simple fallback method when API is not available
+    const transcript = context.includes("transcript:") 
+      ? context.split("transcript:")[1].split("And this summary:")[0].trim()
+      : "";
+    
+    const summary = context.includes("summary:") 
+      ? context.split("summary:")[1].trim()
+      : "";
+    
+    // Extract keywords from question
+    const questionWords = question.toLowerCase().split(/\W+/).filter(word => 
+      word.length > 3 && !['what', 'when', 'where', 'why', 'how', 'the', 'about'].includes(word)
+    );
+    
+    // Find relevant parts of the transcript
+    let relevantParts = [];
+    let response = "";
+    
+    if (transcript) {
+      // Split transcript into sentences
+      const sentences = transcript.split(/[.!?]+/).filter(s => s.trim().length > 0);
+      
+      // Find sentences matching keywords
+      for (const word of questionWords) {
+        const matchingSentences = sentences.filter(s => 
+          s.toLowerCase().includes(word.toLowerCase())
+        );
+        relevantParts = [...relevantParts, ...matchingSentences];
+      }
+    }
+    
+    // Construct response
+    if (relevantParts.length > 0) {
+      response = `Based on the video content, I found this information that might help answer your question: "${relevantParts.slice(0, 3).join('. ')}"`;
+    } else if (summary) {
+      response = `I couldn't find specific information about that in the video. However, the video is about: ${summary}`;
+    } else {
+      response = `I'm sorry, I don't have enough information in the video transcript to answer your question about "${questionWords.join(', ')}". You might want to watch the full video for more details.`;
+    }
+    
+    return response;
+  } catch (error) {
+    console.error("Error in fallback response:", error);
     return "I'm sorry, I couldn't process your question at this time. Please try again later.";
   }
 }

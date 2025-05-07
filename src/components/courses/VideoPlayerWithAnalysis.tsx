@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useToast } from '@/components/ui/use-toast';
 import { Video } from '@/types';
-import { Loader2, AlertTriangle, Play } from 'lucide-react';
+import { Loader2, AlertTriangle, Play, Download } from 'lucide-react';
 import { VideoAnalysis } from './VideoAnalysis';
 import { processVideo, getVideoForCourse } from '@/utils/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
   const [isLoading, setIsLoading] = useState(true);
   const [videoData, setVideoData] = useState<Video>(video);
   const [hasAnalysis, setHasAnalysis] = useState(false);
+  const [downloadInfo, setDownloadInfo] = useState<any>(null);
   const { toast } = useToast();
 
   // Helper function to safely convert Json to any[]
@@ -40,7 +41,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         // Always try to get the latest video data from Supabase
         const { data, error } = await supabase
           .from('videos')
-          .select('url, title, description, analyzed_content')
+          .select('url, title, description, analyzed_content, thumbnail, download_info')
           .eq('id', video.id)
           .maybeSingle();
         
@@ -52,12 +53,19 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             ...video,
             title: data.title || video.title,
             description: data.description || video.description,
+            thumbnail: data.thumbnail || video.thumbnail,
           };
           
           // If we have analyzed content, use it
           if (data.analyzed_content) {
             updateData.analyzedContent = safeJsonToArray(data.analyzed_content);
             setHasAnalysis(true);
+          }
+          
+          // If we have download info, use it
+          if (data.download_info) {
+            updateData.download_info = data.download_info;
+            setDownloadInfo(data.download_info);
           }
           
           // If we have a URL, use it
@@ -76,8 +84,14 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
                 ...prev,
                 url: result.videoUrl,
                 title: result.title || prev.title,
-                description: result.description || prev.description
+                description: result.description || prev.description,
+                thumbnail: result.thumbnail || prev.thumbnail,
+                download_info: result.downloadInfo || prev.download_info
               }));
+              
+              if (result.downloadInfo) {
+                setDownloadInfo(result.downloadInfo);
+              }
             }
           }
         } else {
@@ -89,8 +103,14 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
               ...prev,
               url: result.videoUrl,
               title: result.title || prev.title,
-              description: result.description || prev.description
+              description: result.description || prev.description,
+              thumbnail: result.thumbnail || prev.thumbnail,
+              download_info: result.downloadInfo || prev.download_info
             }));
+            
+            if (result.downloadInfo) {
+              setDownloadInfo(result.downloadInfo);
+            }
           }
         }
       } catch (error) {
@@ -121,21 +141,38 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
       try {
         const { data, error } = await supabase
           .from('videos')
-          .select('analyzed_content')
+          .select('analyzed_content, download_info, thumbnail')
           .eq('id', video.id)
           .maybeSingle();
           
         if (error) throw error;
         
-        if (data && data.analyzed_content) {
-          const analyzedContent = safeJsonToArray(data.analyzed_content);
-          setVideoData(prevData => ({
-            ...prevData,
-            analyzedContent: analyzedContent
-          }));
+        if (data) {
+          const updates: Partial<Video> = {};
           
-          if (analyzedContent.length > 0) {
-            setHasAnalysis(true);
+          if (data.analyzed_content) {
+            const analyzedContent = safeJsonToArray(data.analyzed_content);
+            updates.analyzedContent = analyzedContent;
+            
+            if (analyzedContent.length > 0) {
+              setHasAnalysis(true);
+            }
+          }
+          
+          if (data.download_info) {
+            updates.download_info = data.download_info;
+            setDownloadInfo(data.download_info);
+          }
+          
+          if (data.thumbnail) {
+            updates.thumbnail = data.thumbnail;
+          }
+          
+          if (Object.keys(updates).length > 0) {
+            setVideoData(prevData => ({
+              ...prevData,
+              ...updates
+            }));
           }
         } else {
           setHasAnalysis(false);
@@ -149,13 +186,31 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     checkAnalysis();
   }, [video.id, video.analyzedContent]);
   
+  const handleDownload = () => {
+    if (downloadInfo && downloadInfo.downloadableUrl) {
+      // Open in new tab for the user to download
+      window.open(downloadInfo.downloadableUrl, '_blank');
+      
+      toast({
+        title: "Download Started",
+        description: "The video will open in a new tab where you can download it",
+      });
+    } else {
+      toast({
+        title: "Download Not Available",
+        description: "Please generate video content first to enable downloads",
+        variant: "destructive"
+      });
+    }
+  };
+  
   const handleGenerateAnalysis = async () => {
     setIsProcessing(true);
     
     try {
       toast({
         title: "Processing video",
-        description: "This may take a minute as we search for relevant content using AI...",
+        description: "This may take a minute as we search for relevant content...",
       });
       
       const result = await processVideo(video.id, courseId);
@@ -173,11 +228,17 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             analyzedContent: result.data.analyzedContent || [],
             url: result.data.videoUrl || videoData.url,
             title: result.data.title || videoData.title,
-            description: result.data.description || videoData.description
+            description: result.data.description || videoData.description,
+            thumbnail: result.data.thumbnail || videoData.thumbnail,
+            download_info: result.data.downloadInfo || videoData.download_info
           };
           
           setVideoData(updatedVideo);
           setHasAnalysis(!!result.data.analyzedContent);
+          
+          if (result.data.downloadInfo) {
+            setDownloadInfo(result.data.downloadInfo);
+          }
           
           // Notify parent component if needed
           if (onAnalysisComplete) {
@@ -219,6 +280,20 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
               title={videoData.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
+          ) : videoData.thumbnail ? (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 relative">
+              <img 
+                src={videoData.thumbnail} 
+                alt={videoData.title || "Video thumbnail"} 
+                className="w-full h-full object-cover absolute inset-0"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                <div className="text-center p-4">
+                  <Play className="mx-auto h-16 w-16 text-white opacity-80" />
+                  <p className="mt-2 text-white text-lg font-medium">Click generate to fetch video</p>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
               <div className="text-center p-4">
@@ -232,6 +307,21 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         <div className="p-4 space-y-2">
           <h3 className="text-lg font-medium">{videoData.title}</h3>
           <p className="text-muted-foreground text-sm">{videoData.description}</p>
+          
+          {/* Video action buttons */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            {downloadInfo && downloadInfo.downloadableUrl && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleDownload}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download Video
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
       

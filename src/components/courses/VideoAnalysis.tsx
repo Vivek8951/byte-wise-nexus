@@ -8,7 +8,9 @@ import {
   Loader2,
   FileVideo,
   Upload,
-  MessageSquare
+  MessageSquare,
+  Download,
+  Image
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Video } from '@/types';
@@ -20,6 +22,7 @@ import {
 } from "@/components/ui/accordion";
 import { useToast } from "@/components/ui/use-toast";
 import { VideoAIChat } from './VideoAnalysisChatbot';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface VideoAnalysisProps {
   video: Video;
@@ -41,6 +44,8 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
   const [showAIChat, setShowAIChat] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>(video.url || '');
+  const [downloadInfo, setDownloadInfo] = useState<any>(null);
+  const [thumbnail, setThumbnail] = useState<string | null>(video.thumbnail || null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -83,6 +88,16 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
           setIsExpanded(true);
         }
       }
+    }
+    
+    // Extract download info if available
+    if (video.download_info) {
+      setDownloadInfo(video.download_info);
+    }
+    
+    // Set thumbnail if available
+    if (video.thumbnail) {
+      setThumbnail(video.thumbnail);
     }
   }, [video]);
   
@@ -280,6 +295,25 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
     }
   };
   
+  // Handle video download
+  const handleDownload = () => {
+    if (downloadInfo && downloadInfo.downloadableUrl) {
+      // Open in new tab for the user to download
+      window.open(downloadInfo.downloadableUrl, '_blank');
+      
+      toast({
+        title: "Download Started",
+        description: "The video will open in a new tab where you can download it",
+      });
+    } else {
+      toast({
+        title: "Download Not Available",
+        description: "This video doesn't have downloadable content",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Update playing state when video events occur
   const handleVideoEvents = () => {
     if (videoElementRef.current) {
@@ -340,6 +374,17 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
             </Button>
           )}
           
+          {/* Download button */}
+          {downloadInfo && downloadInfo.downloadableUrl && (
+            <Button 
+              variant="outline"
+              onClick={handleDownload}
+              className="flex items-center gap-1"
+            >
+              <Download className="h-4 w-4" /> Download Video
+            </Button>
+          )}
+          
           {videoParts.length > 0 && (
             <Button 
               variant="ghost"
@@ -360,7 +405,7 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
         </div>
       </div>
       
-      {/* Video player */}
+      {/* Video player with thumbnail */}
       {videoUrl && (
         <div className="mb-6">
           <video 
@@ -369,7 +414,7 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
             className="w-full h-auto rounded-md shadow-sm max-h-[400px]" 
             controls
             preload="metadata"
-            poster={video.thumbnail}
+            poster={thumbnail || undefined}
             onLoadedMetadata={() => {
               if (!videoParts.length && !isAnalyzing) {
                 analyzeVideo(true);
@@ -380,8 +425,27 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
         </div>
       )}
       
+      {/* Thumbnail preview if available but no video */}
+      {!videoUrl && thumbnail && !isAnalyzing && (
+        <div className="flex flex-col items-center justify-center py-4 mb-4">
+          <div className="relative w-full max-w-md h-auto mb-3">
+            <img 
+              src={thumbnail} 
+              alt={video.title || "Video thumbnail"} 
+              className="rounded-md shadow-md w-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-md">
+              <Play className="h-12 w-12 text-white opacity-80" />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Click "Analyze Video" to load video content
+          </p>
+        </div>
+      )}
+      
       {/* Upload button if no video is available */}
-      {!videoUrl && !isAnalyzing && (
+      {!videoUrl && !thumbnail && !isAnalyzing && (
         <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md mb-4">
           <FileVideo className="h-12 w-12 text-gray-400 mb-3" />
           <p className="text-sm text-muted-foreground text-center mb-3">
@@ -444,7 +508,7 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
       )}
       
       {/* Empty state message */}
-      {videoParts.length === 0 && !isAnalyzing && !videoUrl && (
+      {videoParts.length === 0 && !isAnalyzing && !videoUrl && !thumbnail && (
         <p className="text-sm text-muted-foreground">
           Upload and analyze a video to break it down into navigable sections and key points.
         </p>

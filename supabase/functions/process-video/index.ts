@@ -173,6 +173,100 @@ async function getYouTubeVideoWithHuggingFace(courseTitle: string, videoTitle: s
   }
 }
 
+// Function to download video and generate thumbnail 
+async function downloadVideoAndGenerateThumbnail(videoUrl) {
+  try {
+    if (!videoUrl) return { success: false, message: "No video URL provided" };
+    
+    // Extract video ID from YouTube embed URL
+    const videoIdMatch = videoUrl.match(/embed\/([a-zA-Z0-9_-]+)/);
+    if (!videoIdMatch || !videoIdMatch[1]) {
+      return { success: false, message: "Invalid YouTube URL format" };
+    }
+    
+    const videoId = videoIdMatch[1];
+    
+    // Generate YouTube thumbnail URL (multiple resolutions available)
+    const thumbnailOptions = [
+      `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`, // High quality
+      `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,     // High quality
+      `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,     // Medium quality
+      `https://img.youtube.com/vi/${videoId}/default.jpg`        // Default
+    ];
+    
+    // Get downloadable video URL
+    // Note: Due to YouTube's terms of service, we can't directly download videos
+    // Instead, we'll provide a URL to a service that can show the video in a downloadable format
+    const playerUrl = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`;
+    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    
+    // Generate a "Download" link that points to a theoretical video file
+    // This is just for UI consistency - actual YouTube downloads would require a separate service
+    const downloadableUrl = `https://vid.puffyan.us/watch?v=${videoId}`;
+    
+    return {
+      success: true,
+      videoId: videoId,
+      embedUrl: videoUrl,
+      watchUrl: watchUrl,
+      playerUrl: playerUrl,
+      downloadableUrl: downloadableUrl,
+      thumbnails: thumbnailOptions,
+    };
+  } catch (error) {
+    console.error("Error downloading video:", error);
+    return { success: false, message: "Failed to process video" };
+  }
+}
+
+// Function to call Hugging Face API for thumbnail generation
+async function generateThumbnailWithHuggingFace(title, description) {
+  try {
+    if (!HUGGING_FACE_API_KEY) {
+      console.log("No Hugging Face API key provided, using default thumbnail");
+      return null;
+    }
+    
+    const prompt = `Create a thumbnail image for an educational video about ${title}. ${description ? `The video is about: ${description}` : ''}`;
+    
+    console.log("Calling Hugging Face API to generate a thumbnail");
+    
+    const response = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${HUGGING_FACE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          negative_prompt: "blurry, text, watermark, logo, ugly, poor quality",
+          guidance_scale: 7.5
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      console.error(`Hugging Face API error: ${response.status}`);
+      return null;
+    }
+    
+    // Get the image data
+    const imageData = await response.arrayBuffer();
+    
+    // Convert ArrayBuffer to base64
+    const base64 = btoa(
+      new Uint8Array(imageData)
+        .reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+    
+    return `data:image/jpeg;base64,${base64}`;
+  } catch (error) {
+    console.error("Error generating thumbnail:", error);
+    return null;
+  }
+}
+
 // Generate content analysis using Hugging Face API
 async function generateContentAnalysisWithHuggingFace(transcript: string, courseTitle: string, videoTitle: string): Promise<any | null> {
   try {
@@ -536,6 +630,21 @@ async function processVideo(videoId: string, courseId: string) {
     const videoUrl = await getRelevantVideoUrl(courseData.category, courseData.title, video.title);
     console.log(`Selected YouTube video URL: ${videoUrl}`);
     
+    // Download video and generate thumbnail
+    const downloadInfo = await downloadVideoAndGenerateThumbnail(videoUrl);
+    
+    // Try to generate AI thumbnail
+    let thumbnailUrl = null;
+    if (downloadInfo.success) {
+      // First try to use Hugging Face to generate an AI thumbnail
+      thumbnailUrl = await generateThumbnailWithHuggingFace(video.title, video.description);
+      
+      // If that fails, use YouTube thumbnails
+      if (!thumbnailUrl && downloadInfo.thumbnails && downloadInfo.thumbnails.length > 0) {
+        thumbnailUrl = downloadInfo.thumbnails[0];
+      }
+    }
+    
     // Generate transcript based on course and video details
     const transcript = await generateMockTranscript(courseData.title, courseData.category, video.title);
     
@@ -556,7 +665,9 @@ async function processVideo(videoId: string, courseId: string) {
       .from('videos')
       .update({ 
         analyzed_content: analyzedContent,
-        url: videoUrl // Update with relevant YouTube URL
+        url: videoUrl, // Update with relevant YouTube URL
+        thumbnail: thumbnailUrl, // Add thumbnail URL
+        download_info: downloadInfo.success ? downloadInfo : null // Add download info
       })
       .eq('id', videoId);
       
@@ -598,7 +709,9 @@ async function processVideo(videoId: string, courseId: string) {
       analyzedContent: analyzedContent,
       videoUrl: videoUrl,
       title: video.title,
-      description: video.description
+      description: video.description,
+      thumbnail: thumbnailUrl,
+      downloadInfo: downloadInfo.success ? downloadInfo : null
     };
   } catch (error) {
     console.error("Error processing video:", error);

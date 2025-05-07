@@ -57,7 +57,7 @@ export function VideoAIChat({ videoId, transcript, summary }: VideoAIChatProps) 
         Please answer the following question from a student.
       `;
 
-      // Call Gemini API through Supabase Edge Function
+      // Call Hugging Face API through Supabase Edge Function
       const { data, error } = await supabase.functions.invoke("ask-video-ai", {
         body: { 
           question: inputValue,
@@ -148,7 +148,7 @@ export function VideoAIChat({ videoId, transcript, summary }: VideoAIChatProps) 
                 <div className="max-w-[80%] rounded-lg p-3 bg-secondary">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <p className="text-sm">AI is thinking...</p>
+                    <p className="text-sm">Generating response...</p>
                   </div>
                 </div>
               </div>
