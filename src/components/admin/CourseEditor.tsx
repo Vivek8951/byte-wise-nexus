@@ -266,10 +266,10 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       // Set the video URL
       updateVideo(index, 'url', file.name);
       
-      // Create a mock Video object for analysis
-      const videoForAnalysis = {
+      // Create a Video object for analysis
+      const videoForAnalysis: VideoType = {
         id: `temp_${index}`,
-        title: videos[index].title || '',
+        title: videos[index].title || 'Untitled Video', // Provide a default title
         description: videos[index].description || '',
         url: objectUrl,
         courseId: course?.id || '',
@@ -670,6 +670,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                             id: `temp_${index}`,
                             url: previewVideos.current[video.url],
                             courseId: course?.id || '',
+                            title: video.title || 'Untitled Video', // Ensure title is always provided
                           }}
                           onAnalysisComplete={(analysis) => handleAnalysisComplete(index, analysis)}
                         />
