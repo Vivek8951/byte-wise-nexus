@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Book, Calendar, BarChart, Clock, Download, Play, Star, Users, FileText } from "lucide-react";
@@ -17,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { VideoAnalysis } from "@/components/courses/VideoAnalysis";
 import { Video } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -38,9 +38,25 @@ export default function CourseDetail() {
       document.title = `${course.title} - TechLearn`;
     }
     
-    if (user && user.enrolledCourses && id) {
-      setIsEnrolled(user.enrolledCourses.includes(id));
-    }
+    // Check if user is enrolled in this course
+    const checkEnrollment = async () => {
+      if (user && id) {
+        try {
+          const { data, error } = await supabase
+            .from('course_enrollments')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('course_id', id)
+            .maybeSingle();
+          
+          setIsEnrolled(!!data);
+        } catch (error) {
+          console.error("Error checking enrollment:", error);
+        }
+      }
+    };
+    
+    checkEnrollment();
   }, [course, user, id]);
   
   if (!course) {
@@ -63,17 +79,64 @@ export default function CourseDetail() {
     );
   }
   
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
     
-    setIsEnrolled(true);
-    toast({
-      title: "Enrolled Successfully",
-      description: `You are now enrolled in ${course.title}`,
-    });
+    if (!user || !id) return;
+    
+    try {
+      // Create enrollment record
+      const { error } = await supabase
+        .from('course_enrollments')
+        .insert({
+          user_id: user.id,
+          course_id: id,
+          enrollment_date: new Date().toISOString(),
+          is_completed: false,
+          certificate_issued: false
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Create initial progress record
+      await supabase
+        .from('course_progress')
+        .insert({
+          user_id: user.id,
+          course_id: id,
+          completed_videos: [],
+          completed_quizzes: [],
+          last_accessed: new Date().toISOString(),
+          overall_progress: 0
+        });
+      
+      // Update course enrollment count
+      if (course) {
+        const newCount = (course.enrolledCount || 0) + 1;
+        await supabase
+          .from('courses')
+          .update({ enrolled_count: newCount })
+          .eq('id', id);
+      }
+      
+      setIsEnrolled(true);
+      toast({
+        title: "Enrolled Successfully",
+        description: `You are now enrolled in ${course?.title}`,
+      });
+    } catch (error) {
+      console.error("Error enrolling:", error);
+      toast({
+        title: "Enrollment Failed",
+        description: "There was an error processing your enrollment",
+        variant: "destructive"
+      });
+    }
   };
   
   const getLevelColor = (level: string) => {
@@ -107,10 +170,9 @@ export default function CourseDetail() {
   };
   
   // Handle video analysis completion
-  const handleVideoAnalysisComplete = (videoId: string, analysis: { title?: string, description?: string, parts: any[] }) => {
+  const handleVideoAnalysisComplete = async (videoId: string, analysis: { title?: string, description?: string, parts: any[] }) => {
     if (analysis && analysis.parts && analysis.parts.length > 0) {
-      // Update the video with analysis data
-      updateVideo(videoId, {
+      await updateVideo(videoId, {
         analyzedContent: analysis.parts,
         description: analysis.description || ""
       });

@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, UserRole } from '../types';
-import { mockUsers } from '../data/mockData';
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   user: User | null;
@@ -13,132 +14,190 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-interface StoredUser {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  avatar?: string;
-  enrolledCourses?: string[];
-  password: string;
-}
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<StoredUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
-  useEffect(() => {
-    // Initialize users if not already in localStorage
-    const storedUsers = localStorage.getItem('techlearn_users');
-    if (!storedUsers) {
-      // Convert mockUsers to StoredUsers with passwords
-      const initialUsers = mockUsers.map(user => ({
-        ...user,
-        password: 'password' // Default password for mock users
-      }));
-      localStorage.setItem('techlearn_users', JSON.stringify(initialUsers));
-      setUsers(initialUsers);
-    } else {
-      setUsers(JSON.parse(storedUsers));
+  // Fetch and set user data from Supabase
+  const fetchUserProfile = async (userId: string) => {
+    if (!userId) return null;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
     }
     
-    // Check for saved user session
-    const savedUser = localStorage.getItem('techlearn_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        // Remove password from user object before setting it in state
-        const { password, ...userWithoutPassword } = parsedUser;
-        setUser(userWithoutPassword);
-      } catch (e) {
-        localStorage.removeItem('techlearn_user');
+    if (!data) return null;
+    
+    // Fetch enrolled courses
+    const { data: enrollments } = await supabase
+      .from('course_enrollments')
+      .select('course_id')
+      .eq('user_id', userId);
+    
+    const enrolledCourses = enrollments?.map(enrollment => enrollment.course_id) || [];
+    
+    return {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      role: data.role as UserRole,
+      avatar: data.avatar,
+      enrolledCourses
+    };
+  };
+  
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setIsLoading(true);
+        
+        if (session?.user) {
+          // Use setTimeout to prevent recursion issues
+          setTimeout(async () => {
+            const profile = await fetchUserProfile(session.user.id);
+            setUser(profile);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
       }
-    }
-    setIsLoading(false);
+    );
+    
+    // THEN check for existing session
+    const initializeAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      
+      if (data.session?.user) {
+        const profile = await fetchUserProfile(data.session.user.id);
+        setUser(profile);
+      }
+      
+      setIsLoading(false);
+    };
+    
+    initializeAuth();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
-    // Simple delay to simulate backend call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const foundUser = users.find(user => user.email === email && user.password === password);
-    
-    if (foundUser) {
-      // Remove password before setting in state and localStorage
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('techlearn_user', JSON.stringify(foundUser));
-      
-      toast({
-        title: "Login successful!",
-        description: `Welcome back, ${foundUser.name}`,
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
       
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return false;
+      }
+      
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        setUser(profile);
+        
+        toast({
+          title: "Login successful!",
+          description: `Welcome back, ${profile?.name || data.user.email}`,
+        });
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
       setIsLoading(false);
-      return true;
     }
-    
-    toast({
-      title: "Login failed",
-      description: "Invalid email or password",
-      variant: "destructive",
-    });
-    
-    setIsLoading(false);
-    return false;
   };
 
   const register = async (name: string, email: string, password: string, role: UserRole = 'student') => {
     setIsLoading(true);
     
-    // Check if email already exists
-    if (users.some(user => user.email === email)) {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role
+          }
+        }
+      });
+      
+      if (error) {
+        toast({
+          title: "Registration failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return false;
+      }
+      
+      toast({
+        title: "Registration successful!",
+        description: "Please check your email for a verification link",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
-        description: "Email is already registered",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Simple delay to simulate backend call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Create new user
-    const newUser: StoredUser = {
-      id: `${Date.now()}`, // Generate a unique ID
-      name,
-      email,
-      role,
-      password,
-      avatar: '/placeholder.svg',
-      enrolledCourses: [],
-    };
-    
-    // Add to users array and update localStorage
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    localStorage.setItem('techlearn_users', JSON.stringify(updatedUsers));
-    
-    toast({
-      title: "Registration successful!",
-      description: "You can now log in with your credentials",
-    });
-    
-    setIsLoading(false);
-    return true;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setUser(null);
-    localStorage.removeItem('techlearn_user');
     toast({
       title: "Logged out",
       description: "You have been successfully logged out",

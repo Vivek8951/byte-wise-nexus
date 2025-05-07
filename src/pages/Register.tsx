@@ -40,6 +40,11 @@ export default function Register() {
     try {
       const success = await register(name, email, password, role);
       if (success) {
+        // Email confirmation is likely required by Supabase
+        toast({
+          title: "Registration successful",
+          description: "Please check your email to confirm your account before logging in.",
+        });
         navigate("/login");
       }
     } finally {

@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Course, Video, Note } from '../types';
-import { mockCourses, mockVideos, mockNotes } from '../data/mockData';
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from './AuthContext';
 
 interface CourseContextType {
   courses: Course[];
@@ -32,42 +33,111 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
   
+  // Fetch data from Supabase
   useEffect(() => {
-    // Load data from localStorage or use mockData
-    const loadData = () => {
-      const storedCourses = localStorage.getItem('techlearn_courses');
-      const storedVideos = localStorage.getItem('techlearn_videos');
-      const storedNotes = localStorage.getItem('techlearn_notes');
+    const fetchData = async () => {
+      setIsLoading(true);
       
-      if (storedCourses && storedVideos && storedNotes) {
-        setCourses(JSON.parse(storedCourses));
-        setVideos(JSON.parse(storedVideos));
-        setNotes(JSON.parse(storedNotes));
-      } else {
-        // Initialize with mock data
-        setCourses(mockCourses);
-        setVideos(mockVideos);
-        setNotes(mockNotes);
+      try {
+        // Fetch courses
+        const { data: coursesData, error: coursesError } = await supabase
+          .from('courses')
+          .select('*')
+          .order('created_at', { ascending: false });
         
-        // Store in localStorage
-        localStorage.setItem('techlearn_courses', JSON.stringify(mockCourses));
-        localStorage.setItem('techlearn_videos', JSON.stringify(mockVideos));
-        localStorage.setItem('techlearn_notes', JSON.stringify(mockNotes));
+        if (coursesError) {
+          throw coursesError;
+        }
+        
+        // Fetch videos
+        const { data: videosData, error: videosError } = await supabase
+          .from('videos')
+          .select('*')
+          .order('order_num', { ascending: true });
+        
+        if (videosError) {
+          throw videosError;
+        }
+        
+        // Fetch notes
+        const { data: notesData, error: notesError } = await supabase
+          .from('notes')
+          .select('*')
+          .order('order_num', { ascending: true });
+        
+        if (notesError) {
+          throw notesError;
+        }
+        
+        // Map Supabase data to our interfaces
+        const mappedCourses: Course[] = coursesData.map(course => ({
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          category: course.category,
+          thumbnail: course.thumbnail,
+          instructor: course.instructor,
+          duration: course.duration,
+          level: course.level as 'beginner' | 'intermediate' | 'advanced',
+          rating: course.rating || 0,
+          enrolledCount: course.enrolled_count || 0,
+          featured: course.featured || false,
+          createdAt: course.created_at,
+          updatedAt: course.updated_at
+        }));
+        
+        const mappedVideos: Video[] = videosData.map(video => ({
+          id: video.id,
+          courseId: video.course_id,
+          title: video.title,
+          description: video.description,
+          url: video.url,
+          duration: video.duration,
+          thumbnail: video.thumbnail,
+          order: video.order_num,
+          analyzedContent: video.analyzed_content
+        }));
+        
+        const mappedNotes: Note[] = notesData.map(note => ({
+          id: note.id,
+          courseId: note.course_id,
+          title: note.title,
+          description: note.description,
+          fileUrl: note.file_url,
+          fileType: note.file_type as 'pdf' | 'doc' | 'txt',
+          order: note.order_num
+        }));
+        
+        setCourses(mappedCourses);
+        setVideos(mappedVideos);
+        setNotes(mappedNotes);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load courses data",
+          variant: "destructive",
+        });
+        
+        // Use local storage as fallback if available
+        const storedCourses = localStorage.getItem('techlearn_courses');
+        const storedVideos = localStorage.getItem('techlearn_videos');
+        const storedNotes = localStorage.getItem('techlearn_notes');
+        
+        if (storedCourses && storedVideos && storedNotes) {
+          setCourses(JSON.parse(storedCourses));
+          setVideos(JSON.parse(storedVideos));
+          setNotes(JSON.parse(storedNotes));
+        }
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
     
-    // Simulate API loading
-    setTimeout(loadData, 1000);
-  }, []);
-  
-  const saveData = () => {
-    localStorage.setItem('techlearn_courses', JSON.stringify(courses));
-    localStorage.setItem('techlearn_videos', JSON.stringify(videos));
-    localStorage.setItem('techlearn_notes', JSON.stringify(notes));
-  };
+    fetchData();
+  }, [toast]);
   
   const featuredCourses = courses.filter(course => course.featured);
   
@@ -88,18 +158,47 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   // Course CRUD operations
   const addCourse = async (courseData: Omit<Course, 'id' | 'createdAt' | 'updatedAt'>): Promise<Course | null> => {
     try {
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('courses')
+        .insert({
+          title: courseData.title,
+          description: courseData.description,
+          category: courseData.category,
+          thumbnail: courseData.thumbnail,
+          instructor: courseData.instructor,
+          duration: courseData.duration,
+          level: courseData.level,
+          rating: courseData.rating || 0,
+          enrolled_count: courseData.enrolledCount || 0,
+          featured: courseData.featured || false
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Map the returned data to our Course interface
       const newCourse: Course = {
-        ...courseData,
-        id: `course_${Date.now()}`,
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
-        enrolledCount: 0,
-        rating: 0,
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        thumbnail: data.thumbnail,
+        instructor: data.instructor,
+        duration: data.duration,
+        level: data.level as 'beginner' | 'intermediate' | 'advanced',
+        rating: data.rating || 0,
+        enrolledCount: data.enrolled_count || 0,
+        featured: data.featured || false,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
       };
       
-      const updatedCourses = [...courses, newCourse];
-      setCourses(updatedCourses);
-      localStorage.setItem('techlearn_courses', JSON.stringify(updatedCourses));
+      // Update local state
+      setCourses(prevCourses => [...prevCourses, newCourse]);
       
       toast({
         title: "Course created",
@@ -120,17 +219,44 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   
   const updateCourse = async (id: string, courseData: Partial<Course>): Promise<boolean> => {
     try {
-      const updatedCourses = courses.map(course => 
-        course.id === id ? 
-        { 
-          ...course, 
-          ...courseData, 
-          updatedAt: new Date().toISOString().split('T')[0] 
-        } : course
+      // Transform data for Supabase (snake_case column names)
+      const supabaseData: any = {};
+      
+      if (courseData.title) supabaseData.title = courseData.title;
+      if (courseData.description) supabaseData.description = courseData.description;
+      if (courseData.category) supabaseData.category = courseData.category;
+      if (courseData.thumbnail) supabaseData.thumbnail = courseData.thumbnail;
+      if (courseData.instructor) supabaseData.instructor = courseData.instructor;
+      if (courseData.duration) supabaseData.duration = courseData.duration;
+      if (courseData.level) supabaseData.level = courseData.level;
+      if (courseData.rating !== undefined) supabaseData.rating = courseData.rating;
+      if (courseData.enrolledCount !== undefined) supabaseData.enrolled_count = courseData.enrolledCount;
+      if (courseData.featured !== undefined) supabaseData.featured = courseData.featured;
+      
+      // Always update the updated_at timestamp
+      supabaseData.updated_at = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('courses')
+        .update(supabaseData)
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setCourses(prevCourses => 
+        prevCourses.map(course => 
+          course.id === id ? 
+          { ...course, ...courseData, updatedAt: supabaseData.updated_at } : course
+        )
       );
       
-      setCourses(updatedCourses);
-      localStorage.setItem('techlearn_courses', JSON.stringify(updatedCourses));
+      toast({
+        title: "Course updated",
+        description: "Course has been updated successfully",
+      });
       
       return true;
     } catch (error) {
@@ -146,32 +272,27 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   
   const deleteCourse = async (id: string): Promise<boolean> => {
     try {
-      const courseToDelete = courses.find(course => course.id === id);
+      // Supabase will cascade delete videos and notes due to ON DELETE CASCADE
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', id);
       
-      if (courseToDelete) {
-        // Delete course videos and notes
-        const courseVideos = videos.filter(video => video.courseId === id);
-        const courseNotes = notes.filter(note => note.courseId === id);
-        
-        // Update videos array removing course videos
-        const updatedVideos = videos.filter(video => video.courseId !== id);
-        setVideos(updatedVideos);
-        localStorage.setItem('techlearn_videos', JSON.stringify(updatedVideos));
-        
-        // Update notes array removing course notes
-        const updatedNotes = notes.filter(note => note.courseId !== id);
-        setNotes(updatedNotes);
-        localStorage.setItem('techlearn_notes', JSON.stringify(updatedNotes));
-        
-        // Remove course
-        const updatedCourses = courses.filter(course => course.id !== id);
-        setCourses(updatedCourses);
-        localStorage.setItem('techlearn_courses', JSON.stringify(updatedCourses));
-        
-        return true;
+      if (error) {
+        throw error;
       }
       
-      return false;
+      // Update local state
+      setCourses(prevCourses => prevCourses.filter(course => course.id !== id));
+      setVideos(prevVideos => prevVideos.filter(video => video.courseId !== id));
+      setNotes(prevNotes => prevNotes.filter(note => note.courseId !== id));
+      
+      toast({
+        title: "Course deleted",
+        description: "Course has been removed successfully",
+      });
+      
+      return true;
     } catch (error) {
       console.error("Error deleting course:", error);
       toast({
@@ -186,30 +307,83 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   // Video CRUD operations
   const addVideo = async (videoData: Omit<Video, 'id'>): Promise<Video | null> => {
     try {
+      const { data, error } = await supabase
+        .from('videos')
+        .insert({
+          course_id: videoData.courseId,
+          title: videoData.title,
+          description: videoData.description,
+          url: videoData.url,
+          duration: videoData.duration,
+          thumbnail: videoData.thumbnail,
+          order_num: videoData.order,
+          analyzed_content: videoData.analyzedContent || null
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Map to our Video interface
       const newVideo: Video = {
-        ...videoData,
-        id: `video_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        id: data.id,
+        courseId: data.course_id,
+        title: data.title,
+        description: data.description,
+        url: data.url,
+        duration: data.duration,
+        thumbnail: data.thumbnail,
+        order: data.order_num,
+        analyzedContent: data.analyzed_content
       };
       
-      const updatedVideos = [...videos, newVideo];
-      setVideos(updatedVideos);
-      localStorage.setItem('techlearn_videos', JSON.stringify(updatedVideos));
+      // Update local state
+      setVideos(prevVideos => [...prevVideos, newVideo]);
       
       return newVideo;
     } catch (error) {
       console.error("Error adding video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add the video",
+        variant: "destructive",
+      });
       return null;
     }
   };
   
   const updateVideo = async (id: string, videoData: Partial<Video>): Promise<boolean> => {
     try {
-      const updatedVideos = videos.map(video => 
-        video.id === id ? { ...video, ...videoData } : video
-      );
+      const supabaseData: any = {};
       
-      setVideos(updatedVideos);
-      localStorage.setItem('techlearn_videos', JSON.stringify(updatedVideos));
+      if (videoData.courseId) supabaseData.course_id = videoData.courseId;
+      if (videoData.title) supabaseData.title = videoData.title;
+      if (videoData.description) supabaseData.description = videoData.description;
+      if (videoData.url) supabaseData.url = videoData.url;
+      if (videoData.duration) supabaseData.duration = videoData.duration;
+      if (videoData.thumbnail) supabaseData.thumbnail = videoData.thumbnail;
+      if (videoData.order !== undefined) supabaseData.order_num = videoData.order;
+      if (videoData.analyzedContent) supabaseData.analyzed_content = videoData.analyzedContent;
+      
+      supabaseData.updated_at = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('videos')
+        .update(supabaseData)
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setVideos(prevVideos => 
+        prevVideos.map(video => 
+          video.id === id ? { ...video, ...videoData } : video
+        )
+      );
       
       return true;
     } catch (error) {
@@ -220,9 +394,17 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   
   const deleteVideo = async (id: string): Promise<boolean> => {
     try {
-      const updatedVideos = videos.filter(video => video.id !== id);
-      setVideos(updatedVideos);
-      localStorage.setItem('techlearn_videos', JSON.stringify(updatedVideos));
+      const { error } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
       
       return true;
     } catch (error) {
@@ -234,14 +416,36 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   // Note/Document CRUD operations
   const addNote = async (noteData: Omit<Note, 'id'>): Promise<Note | null> => {
     try {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert({
+          course_id: noteData.courseId,
+          title: noteData.title,
+          description: noteData.description,
+          file_url: noteData.fileUrl,
+          file_type: noteData.fileType,
+          order_num: noteData.order
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Map to Note interface
       const newNote: Note = {
-        ...noteData,
-        id: `note_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        id: data.id,
+        courseId: data.course_id,
+        title: data.title,
+        description: data.description,
+        fileUrl: data.file_url,
+        fileType: data.file_type as 'pdf' | 'doc' | 'txt',
+        order: data.order_num
       };
       
-      const updatedNotes = [...notes, newNote];
-      setNotes(updatedNotes);
-      localStorage.setItem('techlearn_notes', JSON.stringify(updatedNotes));
+      // Update local state
+      setNotes(prevNotes => [...prevNotes, newNote]);
       
       return newNote;
     } catch (error) {
@@ -252,12 +456,32 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   
   const updateNote = async (id: string, noteData: Partial<Note>): Promise<boolean> => {
     try {
-      const updatedNotes = notes.map(note => 
-        note.id === id ? { ...note, ...noteData } : note
-      );
+      const supabaseData: any = {};
       
-      setNotes(updatedNotes);
-      localStorage.setItem('techlearn_notes', JSON.stringify(updatedNotes));
+      if (noteData.courseId) supabaseData.course_id = noteData.courseId;
+      if (noteData.title) supabaseData.title = noteData.title;
+      if (noteData.description) supabaseData.description = noteData.description;
+      if (noteData.fileUrl) supabaseData.file_url = noteData.fileUrl;
+      if (noteData.fileType) supabaseData.file_type = noteData.fileType;
+      if (noteData.order !== undefined) supabaseData.order_num = noteData.order;
+      
+      supabaseData.updated_at = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('notes')
+        .update(supabaseData)
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          note.id === id ? { ...note, ...noteData } : note
+        )
+      );
       
       return true;
     } catch (error) {
@@ -268,9 +492,17 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   
   const deleteNote = async (id: string): Promise<boolean> => {
     try {
-      const updatedNotes = notes.filter(note => note.id !== id);
-      setNotes(updatedNotes);
-      localStorage.setItem('techlearn_notes', JSON.stringify(updatedNotes));
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
       
       return true;
     } catch (error) {
