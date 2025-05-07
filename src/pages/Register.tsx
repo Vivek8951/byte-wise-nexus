@@ -5,12 +5,13 @@ import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UserRole } from "@/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -19,19 +20,22 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<UserRole>("student");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { register } = useAuth();
+  const { register, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirect if already authenticated
+  if (isAuthenticated && !isLoading) {
+    navigate("/dashboard", { replace: true });
+  }
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match",
-        variant: "destructive",
-      });
+      setError("Passwords don't match. Please make sure your passwords match.");
       return;
     }
     
@@ -39,20 +43,34 @@ export default function Register() {
     
     try {
       // Log the role being sent to ensure it's correct
-      console.log("Sending registration with role:", role);
+      console.log("Submitting registration with role:", role);
       const success = await register(name, email, password, role);
       if (success) {
-        // Email confirmation is likely required by Supabase
         toast({
-          title: "Registration successful",
-          description: "Please check your email to confirm your account before logging in.",
+          title: "Registration successful!",
+          description: "You can now log in with your credentials.",
         });
         navigate("/login");
       }
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      setError(err?.message || "Registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  if (isLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tech-blue"></div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
   
   return (
     <>
@@ -70,6 +88,12 @@ export default function Register() {
           </div>
           
           <div className="bg-card rounded-lg p-6 shadow-sm border animate-fade-in">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>

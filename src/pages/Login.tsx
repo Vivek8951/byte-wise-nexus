@@ -1,3 +1,4 @@
+
 import { useState, FormEvent, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
@@ -21,11 +22,12 @@ export default function Login() {
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  // Only redirect if authenticated and not loading
+  // Check for authentication status on every render
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       console.log("User is authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
+      return;
     }
   }, [isAuthenticated, isLoading, navigate]);
   
@@ -37,7 +39,7 @@ export default function Login() {
     try {
       console.log("Attempting login with:", email);
       await login(email, password);
-      // The redirect will happen automatically via the useEffect
+      // Redirect happens in useEffect when isAuthenticated updates
     } catch (err: any) {
       const errorMsg = err?.message || "An error occurred during login";
       console.error("Login error:", errorMsg);

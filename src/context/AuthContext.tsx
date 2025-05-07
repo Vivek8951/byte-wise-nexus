@@ -26,48 +26,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (userId: string) => {
     if (!userId) return null;
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching user profile:', error);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+      
+      if (!data) return null;
+      
+      // Fetch enrolled courses
+      const { data: enrollments } = await supabase
+        .from('course_enrollments')
+        .select('course_id')
+        .eq('user_id', userId);
+      
+      const enrolledCourses = enrollments?.map(enrollment => enrollment.course_id) || [];
+      
+      return {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role as UserRole,
+        avatar: data.avatar,
+        enrolledCourses
+      };
+    } catch (err) {
+      console.error("Error in fetchUserProfile:", err);
       return null;
     }
-    
-    if (!data) return null;
-    
-    // Fetch enrolled courses
-    const { data: enrollments } = await supabase
-      .from('course_enrollments')
-      .select('course_id')
-      .eq('user_id', userId);
-    
-    const enrolledCourses = enrollments?.map(enrollment => enrollment.course_id) || [];
-    
-    return {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      role: data.role as UserRole,
-      avatar: data.avatar,
-      enrolledCourses
-    };
   };
   
   useEffect(() => {
+    let isMounted = true;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
-        setIsLoading(true);
+        
+        if (!isMounted) return;
+        
         setSession(currentSession);
         
         if (currentSession?.user) {
           // Use setTimeout to prevent recursion issues
           setTimeout(async () => {
+            if (!isMounted) return;
+            
             const profile = await fetchUserProfile(currentSession.user.id);
             setUser(profile);
             setIsLoading(false);
@@ -81,25 +92,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // THEN check for existing session
     const initializeAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      console.log("Initial session check:", data.session?.user?.id);
-      setSession(data.session);
-      
-      if (data.session?.user) {
-        try {
+      try {
+        const { data } = await supabase.auth.getSession();
+        console.log("Initial session check:", data.session?.user?.id);
+        
+        if (!isMounted) return;
+        
+        setSession(data.session);
+        
+        if (data.session?.user) {
           const profile = await fetchUserProfile(data.session.user.id);
           setUser(profile);
-        } catch (error) {
-          console.error("Error setting up initial auth:", error);
         }
+      } catch (error) {
+        console.error("Error setting up initial auth:", error);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
     
     initializeAuth();
     
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -117,13 +132,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
+      // Session handling happens via onAuthStateChange
       if (data.user) {
-        // Session is automatically handled by onAuthStateChange
         toast({
           title: "Login successful!",
           description: `Welcome back!`,
         });
-        
         return true;
       }
       
@@ -160,7 +174,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           description: error.message,
           variant: "destructive",
         });
-        setIsLoading(false);
         return false;
       }
       
@@ -183,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: "Your account was created but profile setup failed",
             variant: "destructive",
           });
+          return false;
         }
       }
       
@@ -192,11 +206,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
       toast({
         title: "Registration failed",
-        description: "An unexpected error occurred",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
       return false;
@@ -225,15 +239,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const authContextValue: AuthContextType = {
+    user, 
+    login, 
+    logout, 
+    register, 
+    isLoading, 
+    isAuthenticated: !!user 
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      register, 
-      isLoading, 
-      isAuthenticated: !!user 
-    }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
