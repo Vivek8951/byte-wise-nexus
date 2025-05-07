@@ -172,13 +172,28 @@ export const useAuthOperations = () => {
   const logout = async () => {
     try {
       setIsLoading(true);
+      console.log("Attempting to log out...");
+
+      // Check if there's a current session first
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        console.log("No active session found, considering user as already logged out");
+        toast({
+          title: "Already logged out",
+          description: "You don't have an active session",
+        });
+        return;
+      }
+      
+      // Proceed with logout if we have a session
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("Error signing out:", error);
         toast({
           title: "Error",
-          description: "Failed to log out",
+          description: "Failed to log out: " + error.message,
           variant: "destructive",
         });
         return;
@@ -188,8 +203,14 @@ export const useAuthOperations = () => {
         title: "Logged out",
         description: "You have been successfully logged out",
       });
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error("Error in logout:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during logout",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

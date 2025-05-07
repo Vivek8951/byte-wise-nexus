@@ -1,16 +1,37 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu, Search, X, Book, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Close mobile menu if open
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+      navigate('/');
+    } catch (error: any) {
+      console.error("Logout failed:", error);
+      toast({
+        title: "Logout failed",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -71,10 +92,11 @@ export function Navbar() {
                   </Link>
                   <Button 
                     variant="ghost" 
-                    onClick={logout} 
+                    onClick={handleLogout}
+                    disabled={isLoading}
                     className="hidden md:inline-flex hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 transition-colors"
                   >
-                    Logout
+                    {isLoading ? 'Logging out...' : 'Logout'}
                   </Button>
                 </div>
               ) : (
@@ -146,9 +168,10 @@ export function Navbar() {
               <Button 
                 variant="outline" 
                 className="hover:bg-red-100 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950 dark:hover:text-red-400"
-                onClick={() => { logout(); setIsMenuOpen(false); }}
+                onClick={handleLogout}
+                disabled={isLoading}
               >
-                Logout
+                {isLoading ? 'Logging out...' : 'Logout'}
               </Button>
             ) : (
               <div className="flex flex-col gap-2">
