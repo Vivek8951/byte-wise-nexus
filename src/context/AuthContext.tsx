@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     id: session.user.id,
                     name: profile.name || session.user.email?.split('@')[0] || '',
                     email: profile.email || session.user.email || '',
-                    role: profile.role || 'student',
-                    avatar: profile.avatar_url
+                    role: profile.role as UserRole || 'student',
+                    avatar: profile.avatar
                   });
                 } else {
                   console.log("No profile found for user", session.user.id);
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     id: session.user.id,
                     name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
                     email: session.user.email || '',
-                    role: session.user.user_metadata?.role || 'student'
+                    role: (session.user.user_metadata?.role as UserRole) || 'student'
                   });
                 }
               } catch (error) {
@@ -92,15 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 id: session.user.id,
                 name: profile.name || session.user.email?.split('@')[0] || '',
                 email: profile.email || session.user.email || '',
-                role: profile.role || 'student',
-                avatar: profile.avatar_url
+                role: profile.role as UserRole || 'student',
+                avatar: profile.avatar
               });
             } else {
               setUser({
                 id: session.user.id,
                 name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
                 email: session.user.email || '',
-                role: session.user.user_metadata?.role || 'student'
+                role: (session.user.user_metadata?.role as UserRole) || 'student'
               });
             }
           } catch (error) {
