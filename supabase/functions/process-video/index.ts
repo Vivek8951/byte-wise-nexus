@@ -12,6 +12,10 @@ const supabaseUrl = 'https://weiagpwgfmyjdglfpbeu.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Default API keys from user
+const DEFAULT_GEMINI_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
+const DEFAULT_HUGGING_FACE_API_KEY = "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";
+
 // Extract audio from video using ffmpeg
 async function extractAudio(videoKey: string, courseId: string): Promise<string | null> {
   try {
@@ -49,9 +53,9 @@ async function transcribeAudio(audioKey: string): Promise<string | null> {
   try {
     console.log(`Transcribing audio: ${audioKey}`);
     
-    // This would normally call the Hugging Face API
-    // For demo purposes, we'll simulate a successful response
-    const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY');
+    // Use environment variable or default to provided key
+    const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY') || DEFAULT_HUGGING_FACE_API_KEY;
+    
     if (!huggingFaceApiKey) {
       throw new Error("Hugging Face API key not found");
     }
@@ -73,12 +77,15 @@ async function generateContentAnalysis(transcript: string): Promise<any | null> 
   try {
     console.log("Generating content analysis using Gemini API");
     
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    // Use environment variable or default to provided key
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || DEFAULT_GEMINI_API_KEY;
+    
     if (!geminiApiKey) {
       throw new Error("Gemini API key not found");
     }
     
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+    // Updated to use the v1 endpoint
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiApiKey}`;
     
     const prompt = `
       Analyze this video transcript and create:
@@ -104,6 +111,11 @@ async function generateContentAnalysis(transcript: string): Promise<any | null> 
         }]
       })
     });
+    
+    if (!response.ok) {
+      console.error("Error response from Gemini API:", await response.text());
+      throw new Error(`Failed to get response from Gemini API: ${response.status} ${response.statusText}`);
+    }
     
     const responseData = await response.json();
     

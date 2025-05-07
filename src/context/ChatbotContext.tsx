@@ -70,7 +70,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     try {
       const keyToUse = apiKey || DEFAULT_API_KEY;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       
       // This is a placeholder - in a real implementation, you would send the video
       // to a transcription service. For now, we'll use Gemini to generate a placeholder
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -186,7 +186,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         // Image generation with Gemini API
         try {
           // Gemini doesn't directly generate images, so let's create a descriptive response
-          const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
+          const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -233,7 +233,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         // Text completion with Gemini API
-        const chatResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
+        const chatResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${keyToUse}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

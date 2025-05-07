@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Default Gemini API key from user
+const DEFAULT_GEMINI_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -22,12 +25,14 @@ serve(async (req) => {
       );
     }
     
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    // Use environment variable or default to provided key
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || DEFAULT_GEMINI_API_KEY;
     if (!geminiApiKey) {
       throw new Error("Gemini API key not found");
     }
     
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+    // Updated to use the v1 endpoint
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiApiKey}`;
     
     const prompt = `
       You are an educational assistant helping a student understand a video.
@@ -40,6 +45,7 @@ serve(async (req) => {
       If the question is not related to the video content, politely explain that you can only answer questions about this specific video.
     `;
     
+    console.log("Sending request to Gemini API");
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -54,7 +60,14 @@ serve(async (req) => {
       })
     });
     
+    if (!response.ok) {
+      console.error("Error response from Gemini API:", await response.text());
+      throw new Error(`Failed to get response from Gemini API: ${response.status} ${response.statusText}`);
+    }
+    
     const responseData = await response.json();
+    console.log("Received response from Gemini API");
+    
     const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!textResponse) {
