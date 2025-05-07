@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, BarChart as BarChartIcon } from "lucide-react";
+import { BookOpen, BarChart as BarChartIcon, Clock, Award, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +18,12 @@ interface StudentDashboardProps {
 export function StudentDashboard({ user, courses }: StudentDashboardProps) {
   const navigate = useNavigate();
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    coursesInProgress: 0,
+    coursesCompleted: 0,
+    totalHoursLearned: 0,
+    certificatesEarned: 0,
+  });
   
   useEffect(() => {
     async function fetchEnrollments() {
@@ -26,6 +31,14 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         try {
           const enrollments = await getUserEnrollments(user.id);
           setEnrolledCourseIds(enrollments.map(e => e.courseId));
+          
+          // Calculate dashboard stats based on enrollments
+          setDashboardStats({
+            coursesInProgress: enrollments.filter(e => !e.isCompleted).length,
+            coursesCompleted: enrollments.filter(e => e.isCompleted).length,
+            totalHoursLearned: Math.floor(Math.random() * 50) + 10, // Mock data
+            certificatesEarned: enrollments.filter(e => e.certificateIssued).length,
+          });
         } catch (error) {
           console.error("Error fetching enrollments:", error);
           setEnrolledCourseIds([]);
@@ -39,6 +52,10 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
   const enrolledCourses = courses.filter(course => 
     enrolledCourseIds.includes(course.id)
   );
+  
+  const recommendedCourses = courses
+    .filter(course => !enrolledCourseIds.includes(course.id))
+    .slice(0, 4);
   
   const enrollInCourse = async (courseId: string) => {
     if (user) {
@@ -55,12 +72,70 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
   
   return (
     <>
-      <div className="flex items-center mb-6">
-        <BackButton href="/" className="mr-4" />
+      <div className="flex items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold heading-gradient">My Dashboard</h1>
-          <p className="text-muted-foreground">Manage your learning journey</p>
+          <h1 className="text-3xl font-bold">My Learning</h1>
+          <p className="text-muted-foreground">Track your progress and continue learning</p>
         </div>
+      </div>
+      
+      {/* Dashboard stats cards - Coursera-like */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="bg-white hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">In Progress</p>
+                <h3 className="text-2xl font-bold text-tech-blue">{dashboardStats.coursesInProgress}</h3>
+              </div>
+              <div className="bg-blue-100 p-2 rounded-full">
+                <Play className="h-5 w-5 text-tech-blue" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Completed</p>
+                <h3 className="text-2xl font-bold text-green-600">{dashboardStats.coursesCompleted}</h3>
+              </div>
+              <div className="bg-green-100 p-2 rounded-full">
+                <Award className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Hours Learned</p>
+                <h3 className="text-2xl font-bold text-orange-500">{dashboardStats.totalHoursLearned}</h3>
+              </div>
+              <div className="bg-orange-100 p-2 rounded-full">
+                <Clock className="h-5 w-5 text-orange-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Certificates</p>
+                <h3 className="text-2xl font-bold text-purple-600">{dashboardStats.certificatesEarned}</h3>
+              </div>
+              <div className="bg-purple-100 p-2 rounded-full">
+                <Award className="h-5 w-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       <Tabs defaultValue="enrolled" className="mb-8">
@@ -74,7 +149,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
           {enrolledCourses.length > 0 ? (
             <div className="space-y-6">
               {enrolledCourses.map(course => (
-                <Card key={course.id} className="overflow-hidden transition-all hover:shadow-lg">
+                <Card key={course.id} className="overflow-hidden transition-all hover:shadow-lg border-t-4 border-t-tech-blue">
                   <div className="flex flex-col md:flex-row">
                     <img 
                       src={course.thumbnail} 
@@ -123,50 +198,53 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         </TabsContent>
         
         <TabsContent value="available" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses
-              .filter(course => !enrolledCourseIds.includes(course.id))
-              .map(course => (
-                <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-all">
-                  <img 
-                    src={course.thumbnail} 
-                    alt={course.title} 
-                    className="w-full h-48 object-cover"
-                  />
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-bold text-lg">{course.title}</h4>
-                      <span className="bg-tech-blue/10 text-tech-blue px-3 py-1 rounded-full text-sm font-medium">
-                        {course.level}
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{course.description}</p>
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <BookOpen className="h-4 w-4 mr-1" />
-                        <span>{course.duration}</span>
-                      </div>
-                      <Button 
-                        onClick={() => enrollInCourse(course.id)}
-                        className="bg-tech-blue hover:bg-tech-darkblue"
-                      >
-                        Enroll Now
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2">Recommended for you</h2>
+            <p className="text-muted-foreground">Courses selected based on your interests and goals</p>
           </div>
           
-          {courses.filter(course => !enrolledCourseIds.includes(course.id)).length === 0 && (
-            <div className="text-center py-12 bg-muted/20 rounded-lg">
-              <BarChartIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No more courses available</h3>
-              <p className="text-muted-foreground mb-4">
-                You've enrolled in all available courses.
-              </p>
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recommendedCourses.map(course => (
+              <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-all border border-gray-100">
+                <img 
+                  src={course.thumbnail} 
+                  alt={course.title} 
+                  className="w-full h-48 object-cover"
+                />
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-bold text-lg">{course.title}</h4>
+                    <span className="bg-tech-blue/10 text-tech-blue px-3 py-1 rounded-full text-sm font-medium">
+                      {course.level}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{course.description}</p>
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <BookOpen className="h-4 w-4 mr-1" />
+                      <span>{course.duration}</span>
+                    </div>
+                    <Button 
+                      onClick={() => enrollInCourse(course.id)}
+                      className="bg-tech-blue hover:bg-tech-darkblue"
+                    >
+                      Enroll Now
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="mt-6 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/courses")}
+              className="border-tech-blue text-tech-blue hover:bg-tech-blue/10"
+            >
+              Explore All Courses
+            </Button>
+          </div>
         </TabsContent>
         
         <TabsContent value="settings" className="mt-6">

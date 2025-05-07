@@ -24,14 +24,19 @@ function App() {
   useEffect(() => {
     const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
     if (favicon) {
-      favicon.href = '/favicon.ico'; // We'll keep using the existing favicon
+      favicon.href = '/favicon.ico'; // Keep using the existing favicon
     }
     
-    // Add meta theme color for mobile browsers
+    // Add meta theme color to match Coursera's blue
     const metaThemeColor = document.createElement('meta');
     metaThemeColor.name = 'theme-color';
     metaThemeColor.content = '#0056D2'; // Coursera blue
     document.head.appendChild(metaThemeColor);
+
+    // Update CSS variables to match Coursera's color scheme
+    document.documentElement.style.setProperty('--tech-blue', '#0056D2');
+    document.documentElement.style.setProperty('--tech-darkblue', '#00419E');
+    document.documentElement.style.setProperty('--tech-purple', '#9B87F5');
   }, []);
 
   return (

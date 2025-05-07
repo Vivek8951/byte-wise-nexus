@@ -3,7 +3,8 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   BookOpen, Book, ChevronRight, FileText,
-  Users, Plus, BarChart as BarChartIcon
+  Users, Plus, BarChart as BarChartIcon, 
+  Play, Award, Clock, Settings
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
