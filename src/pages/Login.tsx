@@ -20,8 +20,19 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Initialize page loading state
+  useEffect(() => {
+    // Short timeout to prevent flash of loading state
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Check for authentication status and redirect if already logged in
   useEffect(() => {
@@ -65,7 +76,7 @@ export default function Login() {
   };
   
   // Display a custom loading skeleton that's more visually appealing
-  if (isLoading) {
+  if (isLoading || pageLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <div className="h-16 border-b bg-background/95 backdrop-blur">

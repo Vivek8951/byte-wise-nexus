@@ -24,9 +24,20 @@ export default function Register() {
   const [role, setRole] = useState<UserRole>("student");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
   const { toast } = useToast();
   const { register, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Initialize page loading state
+  useEffect(() => {
+    // Short timeout to prevent flash of loading state
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Check for authentication status and redirect if already logged in
   useEffect(() => {
@@ -80,8 +91,8 @@ export default function Register() {
     }
   };
   
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading state while checking authentication or page is initializing
+  if (isLoading || pageLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <div className="h-16 border-b bg-background/95 backdrop-blur">

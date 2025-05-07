@@ -9,7 +9,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
-  avatar?: string | null; // Updated to allow null
+  avatar?: string | null;
 }
 
 interface AuthContextType {
@@ -32,115 +32,90 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     
-    async function initializeAuth() {
-      if (!mounted) return;
-      setIsLoading(true);
+    // Define outside the async function to avoid race conditions
+    const handleAuthChange = async (session: any) => {
+      if (!mounted || !session?.user) {
+        return;
+      }
       
       try {
-        // First, set up the auth state listener
+        // Get the user's profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (!mounted) return;
+        
+        if (profile) {
+          // Make sure to cast role as UserRole
+          const userRole = profile.role as UserRole;
+          
+          setUser({
+            id: session.user.id,
+            name: profile.name || session.user.email?.split('@')[0] || '',
+            email: profile.email || session.user.email || '',
+            role: userRole,
+            avatar: profile.avatar || null
+          });
+        } else {
+          console.log("No profile found for user", session.user.id);
+          // Use basic user data from auth if profile not found
+          const userRole = (session.user.user_metadata?.role as UserRole) || 'student';
+          
+          setUser({
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
+            email: session.user.email || '',
+            role: userRole,
+            avatar: null
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        if (mounted) {
+          setUser(null);
+        }
+      }
+    };
+    
+    async function initializeAuth() {
+      if (!mounted) return;
+      
+      try {
+        // First, get existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          await handleAuthChange(session);
+        } else {
+          setUser(null);
+        }
+        
+        // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
+          async (event, newSession) => {
             console.log("Auth state changed:", event);
             
-            if (session && session.user) {
-              try {
-                // Get the user's profile
-                const { data: profile } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', session.user.id)
-                  .maybeSingle();
-                
-                if (mounted) {
-                  if (profile) {
-                    // Make sure to cast role as UserRole
-                    const userRole = profile.role as UserRole;
-                    
-                    setUser({
-                      id: session.user.id,
-                      name: profile.name || session.user.email?.split('@')[0] || '',
-                      email: profile.email || session.user.email || '',
-                      role: userRole,
-                      avatar: profile.avatar || null // Updated to handle null
-                    });
-                  } else {
-                    console.log("No profile found for user", session.user.id);
-                    // Use basic user data from auth if profile not found
-                    const userRole = (session.user.user_metadata?.role as UserRole) || 'student';
-                    
-                    setUser({
-                      id: session.user.id,
-                      name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
-                      email: session.user.email || '',
-                      role: userRole,
-                      avatar: null // Set default avatar to null
-                    });
-                  }
-                  setIsLoading(false);
-                }
-              } catch (error) {
-                console.error("Error fetching user profile:", error);
-                if (mounted) {
-                  setUser(null);
-                  setIsLoading(false);
-                }
-              }
+            if (newSession) {
+              await handleAuthChange(newSession);
             } else {
               if (mounted) {
                 setUser(null);
-                setIsLoading(false);
               }
+            }
+            
+            // Always set loading to false after handling auth state change
+            if (mounted) {
+              setIsLoading(false);
             }
           }
         );
         
-        // Then check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session && session.user && mounted) {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .maybeSingle();
-            
-            if (mounted) {
-              if (profile) {
-                // Make sure to cast role as UserRole
-                const userRole = profile.role as UserRole;
-                
-                setUser({
-                  id: session.user.id,
-                  name: profile.name || session.user.email?.split('@')[0] || '',
-                  email: profile.email || session.user.email || '',
-                  role: userRole,
-                  avatar: profile.avatar || null // Updated to handle null
-                });
-              } else {
-                const userRole = (session.user.user_metadata?.role as UserRole) || 'student';
-                
-                setUser({
-                  id: session.user.id,
-                  name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
-                  email: session.user.email || '',
-                  role: userRole,
-                  avatar: null // Set default avatar to null
-                });
-              }
-              setIsLoading(false);
-            }
-          } catch (error) {
-            console.error("Error fetching user profile during initialization:", error);
-            if (mounted) {
-              setUser(null);
-              setIsLoading(false);
-            }
-          }
-        } else {
-          if (mounted) {
-            setIsLoading(false);
-          }
+        // Always set loading to false after initialization
+        if (mounted) {
+          setIsLoading(false);
         }
         
         return () => {
