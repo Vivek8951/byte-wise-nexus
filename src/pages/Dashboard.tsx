@@ -170,7 +170,11 @@ export default function Dashboard() {
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Button className="w-full justify-between" variant="outline">
+                  <Button 
+                    className="w-full justify-between" 
+                    variant="outline"
+                    onClick={() => navigate("/admin/courses")}
+                  >
                     Add New Course
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -192,7 +196,7 @@ export default function Dashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>All Courses</CardTitle>
-                  <Button>Add New Course</Button>
+                  <Button onClick={() => navigate("/admin/courses")}>Add New Course</Button>
                 </div>
               </CardHeader>
               <CardContent>
