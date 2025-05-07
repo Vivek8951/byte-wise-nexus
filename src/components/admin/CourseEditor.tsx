@@ -1,12 +1,12 @@
-
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
   Plus,
   Save,
   Trash2, 
   File,
-  Video
+  Video,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,10 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     course?.id ? [] : [{ title: '', description: '', fileUrl: '', fileType: 'pdf', order: 1 }]
   );
   
+  // File upload references
+  const videoFileRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const noteFileRefs = useRef<(HTMLInputElement | null)[]>([]);
+  
   const { toast } = useToast();
   
   const addVideo = () => {
@@ -59,6 +63,9 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       duration: '',
       order: videos.length + 1 
     }]);
+    
+    // Add null to the refs array for the new video
+    videoFileRefs.current = [...videoFileRefs.current, null];
   };
   
   const updateVideo = (index: number, field: string, value: string) => {
@@ -69,6 +76,11 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
   
   const removeVideo = (index: number) => {
     setVideos(videos.filter((_, i) => i !== index));
+    
+    // Remove the ref for the deleted video
+    const newRefs = [...videoFileRefs.current];
+    newRefs.splice(index, 1);
+    videoFileRefs.current = newRefs;
   };
   
   const addNote = () => {
@@ -79,6 +91,9 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       fileType: 'pdf',
       order: notes.length + 1 
     }]);
+    
+    // Add null to the refs array for the new note
+    noteFileRefs.current = [...noteFileRefs.current, null];
   };
   
   const updateNote = (index: number, field: string, value: string) => {
@@ -89,6 +104,63 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
   
   const removeNote = (index: number) => {
     setNotes(notes.filter((_, i) => i !== index));
+    
+    // Remove the ref for the deleted note
+    const newRefs = [...noteFileRefs.current];
+    newRefs.splice(index, 1);
+    noteFileRefs.current = newRefs;
+  };
+  
+  // Handle file uploads for videos
+  const handleVideoFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // For now, just store the file name in the URL field
+      // In a real app, you would upload this to storage and get a URL
+      updateVideo(index, 'url', `file: ${file.name}`);
+      
+      // If you have a file upload service, you would use it here
+      toast({
+        title: "File selected",
+        description: `Selected video: ${file.name}`,
+      });
+    }
+  };
+  
+  // Handle file uploads for notes/documents
+  const handleNoteFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // For now, just store the file name in the URL field
+      // In a real app, you would upload this to storage and get a URL
+      updateNote(index, 'fileUrl', `file: ${file.name}`);
+      
+      // Set the file type based on the file extension
+      const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+      let fileType = 'pdf';
+      
+      if (['doc', 'docx'].includes(fileExtension)) {
+        fileType = 'doc';
+      } else if (['txt'].includes(fileExtension)) {
+        fileType = 'txt';
+      }
+      
+      updateNote(index, 'fileType', fileType);
+      
+      toast({
+        title: "File selected",
+        description: `Selected document: ${file.name}`,
+      });
+    }
+  };
+  
+  // Trigger file input click
+  const triggerVideoFileInput = (index: number) => {
+    videoFileRefs.current[index]?.click();
+  };
+  
+  const triggerNoteFileInput = (index: number) => {
+    noteFileRefs.current[index]?.click();
   };
   
   const onSubmit = (data: any) => {
@@ -275,14 +347,32 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     </div>
                     
                     <div>
-                      <Label htmlFor={`video-url-${index}`}>Video URL<span className="text-red-500">*</span></Label>
-                      <Input
-                        id={`video-url-${index}`}
-                        value={video.url}
-                        onChange={(e) => updateVideo(index, 'url', e.target.value)}
-                        placeholder="https://example.com/video.mp4"
-                        required
-                      />
+                      <Label htmlFor={`video-url-${index}`}>Video File<span className="text-red-500">*</span></Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id={`video-url-${index}`}
+                          value={video.url}
+                          onChange={(e) => updateVideo(index, 'url', e.target.value)}
+                          placeholder="https://example.com/video.mp4 or upload"
+                          className="flex-1"
+                          required
+                        />
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          onClick={() => triggerVideoFileInput(index)}
+                          className="flex items-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" /> Upload
+                        </Button>
+                        <input
+                          type="file"
+                          ref={(el) => (videoFileRefs.current[index] = el)}
+                          className="hidden"
+                          accept="video/*"
+                          onChange={(e) => handleVideoFileChange(index, e)}
+                        />
+                      </div>
                     </div>
                     
                     <div>
@@ -356,14 +446,32 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     </div>
                     
                     <div>
-                      <Label htmlFor={`note-url-${index}`}>File URL<span className="text-red-500">*</span></Label>
-                      <Input
-                        id={`note-url-${index}`}
-                        value={note.fileUrl}
-                        onChange={(e) => updateNote(index, 'fileUrl', e.target.value)}
-                        placeholder="https://example.com/document.pdf"
-                        required
-                      />
+                      <Label htmlFor={`note-url-${index}`}>Document File<span className="text-red-500">*</span></Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id={`note-url-${index}`}
+                          value={note.fileUrl}
+                          onChange={(e) => updateNote(index, 'fileUrl', e.target.value)}
+                          placeholder="https://example.com/document.pdf or upload"
+                          className="flex-1"
+                          required
+                        />
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          onClick={() => triggerNoteFileInput(index)}
+                          className="flex items-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" /> Upload
+                        </Button>
+                        <input
+                          type="file"
+                          ref={(el) => (noteFileRefs.current[index] = el)}
+                          className="hidden"
+                          accept=".pdf,.doc,.docx,.txt"
+                          onChange={(e) => handleNoteFileChange(index, e)}
+                        />
+                      </div>
                     </div>
                     
                     <div>
