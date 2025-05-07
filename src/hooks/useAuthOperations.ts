@@ -21,11 +21,16 @@ export const useAuthOperations = () => {
       if (error) {
         console.error("Login error:", error.message);
         
-        // Handle specific error messages
         if (error.message.includes("Email not confirmed")) {
           toast({
             title: "Email not confirmed",
             description: "Please check your email for a confirmation link",
+            variant: "destructive",
+          });
+        } else if (error.message.includes("Invalid login credentials")) {
+          toast({
+            title: "Invalid credentials",
+            description: "Please check your email and password",
             variant: "destructive",
           });
         } else {
@@ -66,6 +71,23 @@ export const useAuthOperations = () => {
     try {
       console.log("Registering with role:", role);
       
+      // Check if email is already registered first
+      const { data: emailExists } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+        
+      if (emailExists) {
+        toast({
+          title: "Email already registered",
+          description: "Please use a different email or try logging in",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return false;
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -78,11 +100,11 @@ export const useAuthOperations = () => {
       });
       
       if (error) {
-        // Handle specific registration errors
+        // Handle rate limit errors specially
         if (error.message.includes("rate limit")) {
           toast({
             title: "Too many registration attempts",
-            description: "Please wait a moment before trying again",
+            description: "Please wait a few minutes before trying again",
             variant: "destructive",
           });
         } else {
@@ -123,13 +145,14 @@ export const useAuthOperations = () => {
             title: "Registration successful!",
             description: "Your account has been created and you are now logged in.",
           });
+          return true;
         } else {
           toast({
             title: "Registration successful!",
             description: "Please check your email to confirm your account.",
           });
+          return true;
         }
-        return true;
       }
       
       return false;

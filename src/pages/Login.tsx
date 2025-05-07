@@ -31,13 +31,20 @@ export default function Login() {
     setIsSubmitting(true);
     setError(null);
     
+    // Simple validation
+    if (!email.trim() || !password) {
+      setError("Please enter both email and password");
+      setIsSubmitting(false);
+      return;
+    }
+    
     try {
       console.log("Attempting login with:", email);
       const success = await login(email, password);
       
       if (success) {
-        console.log("Login successful, waiting for redirect...");
-        // Redirect will happen via useEffect when isAuthenticated changes
+        console.log("Login successful, redirecting...");
+        navigate("/dashboard", { replace: true });
       }
     } catch (err: any) {
       const errorMsg = err?.message || "An error occurred during login";
@@ -59,11 +66,6 @@ export default function Login() {
         <Footer />
       </>
     );
-  }
-  
-  // If already authenticated, don't render the login form
-  if (isAuthenticated) {
-    return null; // This will be replaced by the redirect in useEffect
   }
   
   return (

@@ -36,6 +36,22 @@ export default function Register() {
     e.preventDefault();
     setError(null);
     
+    // Form validation
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    
+    if (!email.trim()) {
+      setError("Email is required");
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError("Passwords don't match. Please make sure your passwords match.");
       return;
@@ -44,15 +60,10 @@ export default function Register() {
     setIsSubmitting(true);
     
     try {
-      // Log the role being sent to ensure it's correct
       console.log("Submitting registration with role:", role);
       const success = await register(name, email, password, role);
       if (success) {
-        toast({
-          title: "Registration successful!",
-          description: "You can now log in with your credentials.",
-        });
-        navigate("/login");
+        navigate("/dashboard");
       }
     } catch (err: any) {
       console.error("Registration error:", err);
@@ -62,6 +73,7 @@ export default function Register() {
     }
   };
   
+  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <>

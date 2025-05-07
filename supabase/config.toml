@@ -6,4 +6,6 @@ project_id = "weiagpwgfmyjdglfpbeu"
 site_url = "http://localhost:3000"
 # Explicitly disable email confirmation for development
 enable_confirmations = false
-
+disable_email_signup = false
+disable_phone_signup = true
+enable_phone_autoconfirm = false
