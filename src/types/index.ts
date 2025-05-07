@@ -1,4 +1,3 @@
-
 export type UserRole = 'admin' | 'student';
 
 export interface User {
@@ -35,6 +34,7 @@ export interface Video {
   duration: string;
   thumbnail?: string;
   order: number;
+  analyzedContent?: any[]; // Adding analyzedContent property to the Video interface
 }
 
 export interface Note {
