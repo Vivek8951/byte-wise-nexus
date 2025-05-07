@@ -63,44 +63,60 @@ export default function Login() {
     }
   };
   
-  // If still loading auth state, show loading indicator
+  // Display a custom loading skeleton that's more visually appealing
   if (isLoading) {
     return (
       <>
-        <Navbar />
-        <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <div className="w-full max-w-md space-y-8">
-            <div className="text-center">
-              <div className="mx-auto h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+        <div className="min-h-screen bg-background flex flex-col">
+          <div className="h-16 border-b bg-background/95 backdrop-blur">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <Skeleton className="h-6 w-24" />
+              </div>
+              <div className="flex items-center gap-4">
                 <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-20" />
               </div>
-              <Skeleton className="h-10 w-48 mt-6 mx-auto" />
-              <Skeleton className="h-4 w-64 mt-2 mx-auto" />
             </div>
-            
-            <div className="bg-card rounded-lg p-6 shadow-sm border">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-10 w-full" />
+          </div>
+          
+          <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md space-y-8">
+              <div className="text-center">
+                <div className="mx-auto h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Skeleton className="h-8 w-8 rounded-full" />
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-10 w-48 mt-6 mx-auto" />
+                <Skeleton className="h-4 w-64 mt-2 mx-auto" />
+              </div>
+              
+              <div className="bg-card rounded-lg p-6 shadow-sm border">
+                <div className="space-y-6">
+                  <div className="space-y-2">
                     <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-10 w-full" />
                   </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  
                   <Skeleton className="h-10 w-full" />
                 </div>
-                
-                <Skeleton className="h-10 w-full" />
               </div>
+              
+              <Skeleton className="h-5 w-64 mx-auto" />
             </div>
-            
-            <Skeleton className="h-5 w-64 mx-auto" />
+          </div>
+          <div className="border-t p-4 text-center">
+            <Skeleton className="h-4 w-48 mx-auto" />
           </div>
         </div>
-        <Footer />
       </>
     );
   }
@@ -143,6 +159,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  placeholder="your@email.com"
                 />
               </div>
               
@@ -166,6 +183,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  placeholder="••••••••"
                 />
               </div>
               

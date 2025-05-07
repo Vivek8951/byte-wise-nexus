@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       id: session.user.id,
                       name: profile.name || session.user.email?.split('@')[0] || '',
                       email: profile.email || session.user.email || '',
-                      role: userRole || 'student',
+                      role: userRole,
                       avatar: profile.avatar
                     });
                   } else {
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   id: session.user.id,
                   name: profile.name || session.user.email?.split('@')[0] || '',
                   email: profile.email || session.user.email || '',
-                  role: userRole || 'student',
+                  role: userRole,
                   avatar: profile.avatar
                 });
               } else {
