@@ -1,12 +1,16 @@
-import { useState, useRef } from 'react';
+
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
   Plus,
   Save,
   Trash2, 
   File,
-  Video,
-  Upload
+  Video as VideoIcon,
+  Upload,
+  Loader2,
+  Check,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Course, Video as VideoType, Note } from '@/types';
+import { Progress } from '@/components/ui/progress';
 
 interface CourseEditorProps {
   course?: Course;
@@ -41,6 +46,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     }
   });
   
+  // Main states
   const [level, setLevel] = useState<string>(course?.level || 'beginner');
   const [videos, setVideos] = useState<Partial<VideoType>[]>(
     course?.id ? [] : [{ title: '', description: '', url: '', duration: '', order: 1 }]
@@ -49,11 +55,70 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     course?.id ? [] : [{ title: '', description: '', fileUrl: '', fileType: 'pdf', order: 1 }]
   );
   
+  // Upload states
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
+  
   // File upload references
   const videoFileRefs = useRef<(HTMLInputElement | null)[]>([]);
   const noteFileRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const previewVideos = useRef<Record<string, string>>({});
   
   const { toast } = useToast();
+  
+  // Load course videos and notes if editing existing course
+  useEffect(() => {
+    if (course?.id) {
+      // In a real app, you would fetch videos and notes for this course
+      // For now, we'll just simulate this with the existing mock data
+      
+      // Simulated API call delay
+      const fetchCourseContent = async () => {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Mock data for the course videos
+        const fetchedVideos: Partial<VideoType>[] = [
+          { 
+            title: 'Introduction', 
+            description: 'Course overview and goals', 
+            url: course?.thumbnail || '', // Using thumbnail as placeholder
+            duration: '10:15', 
+            order: 1 
+          },
+          {
+            title: 'Getting Started',
+            description: 'Initial setup and configuration',
+            url: course?.thumbnail || '', // Using thumbnail as placeholder
+            duration: '15:30',
+            order: 2
+          }
+        ];
+        
+        // Mock data for the course notes/documents
+        const fetchedNotes: Partial<Note>[] = [
+          {
+            title: 'Course Syllabus',
+            description: 'Complete outline of course topics',
+            fileUrl: 'syllabus.pdf',
+            fileType: 'pdf',
+            order: 1
+          },
+          {
+            title: 'Reference Guide',
+            description: 'Quick reference for important concepts',
+            fileUrl: 'reference.pdf',
+            fileType: 'pdf',
+            order: 2
+          }
+        ];
+        
+        setVideos(fetchedVideos);
+        setNotes(fetchedNotes);
+      };
+      
+      fetchCourseContent();
+    }
+  }, [course?.id, course?.thumbnail]);
   
   const addVideo = () => {
     setVideos([...videos, { 
@@ -75,6 +140,14 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
   };
   
   const removeVideo = (index: number) => {
+    const videoToRemove = videos[index];
+    
+    // Clean up any previews
+    if (videoToRemove && videoToRemove.url && previewVideos.current[videoToRemove.url]) {
+      URL.revokeObjectURL(previewVideos.current[videoToRemove.url]);
+      delete previewVideos.current[videoToRemove.url];
+    }
+    
     setVideos(videos.filter((_, i) => i !== index));
     
     // Remove the ref for the deleted video
@@ -111,29 +184,104 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     noteFileRefs.current = newRefs;
   };
   
-  // Handle file uploads for videos
-  const handleVideoFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // For now, just store the file name in the URL field
-      // In a real app, you would upload this to storage and get a URL
-      updateVideo(index, 'url', `file: ${file.name}`);
+  // Simulated file upload function (in a real app, this would upload to a server)
+  const simulateFileUpload = (file: File, id: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      // Set initial status
+      setUploadStatus(prev => ({ ...prev, [id]: 'uploading' }));
+      setUploadProgress(prev => ({ ...prev, [id]: 0 }));
       
-      // If you have a file upload service, you would use it here
+      // Create a simulated progress interval
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          const currentProgress = prev[id] || 0;
+          const newProgress = Math.min(currentProgress + Math.random() * 20, 99);
+          return { ...prev, [id]: newProgress };
+        });
+      }, 300);
+      
+      // After a delay, complete the "upload"
+      setTimeout(() => {
+        clearInterval(interval);
+        setUploadProgress(prev => ({ ...prev, [id]: 100 }));
+        
+        // 10% chance of error for realistic simulation
+        if (Math.random() > 0.9) {
+          setUploadStatus(prev => ({ ...prev, [id]: 'error' }));
+          reject(new Error('Upload failed'));
+        } else {
+          setUploadStatus(prev => ({ ...prev, [id]: 'success' }));
+          
+          // Create a local URL for video previews
+          if (file.type.startsWith('video/')) {
+            const url = URL.createObjectURL(file);
+            previewVideos.current[file.name] = url;
+          }
+          
+          resolve(file.name);
+        }
+      }, 2000 + Math.random() * 2000);
+    });
+  };
+  
+  // Handle file uploads for videos
+  const handleVideoFileChange = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const fileId = `video_${index}_${Date.now()}`;
+    
+    try {
+      // In a real app, upload the file to storage and get a URL
+      const fileUrl = await simulateFileUpload(file, fileId);
+      
+      // After successful upload, get video duration if it's a video file
+      let duration = '';
+      if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        
+        await new Promise<void>((resolve) => {
+          video.onloadedmetadata = () => {
+            const minutes = Math.floor(video.duration / 60);
+            const seconds = Math.floor(video.duration % 60);
+            duration = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            resolve();
+          };
+          video.src = previewVideos.current[file.name] || '';
+        });
+      }
+      
+      updateVideo(index, 'url', fileUrl);
+      if (duration) {
+        updateVideo(index, 'duration', duration);
+      }
+      
       toast({
-        title: "File selected",
-        description: `Selected video: ${file.name}`,
+        title: "Video uploaded",
+        description: `${file.name} has been uploaded successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: `Failed to upload ${file.name}`,
+        variant: "destructive"
       });
     }
   };
   
   // Handle file uploads for notes/documents
-  const handleNoteFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNoteFileChange = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // For now, just store the file name in the URL field
-      // In a real app, you would upload this to storage and get a URL
-      updateNote(index, 'fileUrl', `file: ${file.name}`);
+    if (!file) return;
+    
+    const fileId = `note_${index}_${Date.now()}`;
+    
+    try {
+      // In a real app, upload the file to storage and get a URL
+      const fileUrl = await simulateFileUpload(file, fileId);
+      
+      updateNote(index, 'fileUrl', fileUrl);
       
       // Set the file type based on the file extension
       const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
@@ -148,8 +296,14 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       updateNote(index, 'fileType', fileType);
       
       toast({
-        title: "File selected",
-        description: `Selected document: ${file.name}`,
+        title: "Document uploaded",
+        description: `${file.name} has been uploaded successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: `Failed to upload ${file.name}`,
+        variant: "destructive"
       });
     }
   };
@@ -194,10 +348,42 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     );
   };
   
+  // Upload status indicator component
+  const UploadStatus = ({ id, fileName }: { id: string, fileName: string }) => {
+    const status = uploadStatus[id] || 'idle';
+    const progress = uploadProgress[id] || 0;
+    
+    if (status === 'idle') return null;
+    
+    return (
+      <div className="mt-1 mb-2">
+        <div className="flex items-center gap-2 text-xs mb-1">
+          {status === 'uploading' ? (
+            <Loader2 className="h-3 w-3 animate-spin text-tech-blue" />
+          ) : status === 'success' ? (
+            <Check className="h-3 w-3 text-green-500" />
+          ) : (
+            <AlertCircle className="h-3 w-3 text-red-500" />
+          )}
+          <span>
+            {status === 'uploading' 
+              ? `Uploading ${fileName}...` 
+              : status === 'success' 
+              ? `${fileName} uploaded successfully` 
+              : `Failed to upload ${fileName}`}
+          </span>
+        </div>
+        <Progress value={progress} className="h-1" />
+      </div>
+    );
+  };
+  
   return (
     <div className="space-y-6 p-6 bg-card rounded-lg border animate-fade-in">
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Basic course information form fields */}
         <div className="space-y-6">
+          {/* Title field */}
           <div className="space-y-2">
             <Label htmlFor="title">Course Title<span className="text-red-500">*</span></Label>
             <Input
@@ -210,6 +396,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             )}
           </div>
           
+          {/* Description field */}
           <div className="space-y-2">
             <Label htmlFor="description">Description<span className="text-red-500">*</span></Label>
             <Textarea
@@ -223,6 +410,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             )}
           </div>
           
+          {/* Category and instructor fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category<span className="text-red-500">*</span></Label>
@@ -249,6 +437,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             </div>
           </div>
           
+          {/* Duration and level fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="duration">Duration<span className="text-red-500">*</span></Label>
@@ -278,6 +467,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             </div>
           </div>
           
+          {/* Thumbnail URL field */}
           <div className="space-y-2">
             <Label htmlFor="thumbnail">Thumbnail URL<span className="text-red-500">*</span></Label>
             <Input
@@ -291,6 +481,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             )}
           </div>
           
+          {/* Videos section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Videos</h3>
@@ -313,7 +504,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <Video className="h-5 w-5 mr-2 text-tech-blue" />
+                      <VideoIcon className="h-5 w-5 mr-2 text-tech-blue" />
                       <h4 className="font-medium">Video {index + 1}</h4>
                     </div>
                     <Button
@@ -325,6 +516,17 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
+                  
+                  {/* Video preview if available */}
+                  {video.url && previewVideos.current[video.url] && (
+                    <div className="mt-2 mb-3">
+                      <video 
+                        src={previewVideos.current[video.url]} 
+                        className="w-full max-h-40 object-cover rounded-md" 
+                        controls
+                      />
+                    </div>
+                  )}
                   
                   <div className="grid gap-3">
                     <div>
@@ -347,23 +549,25 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     </div>
                     
                     <div>
-                      <Label htmlFor={`video-url-${index}`}>Video File<span className="text-red-500">*</span></Label>
+                      <Label htmlFor={`video-file-${index}`}>Video File<span className="text-red-500">*</span></Label>
                       <div className="flex gap-2">
                         <Input
                           id={`video-url-${index}`}
                           value={video.url}
                           onChange={(e) => updateVideo(index, 'url', e.target.value)}
-                          placeholder="https://example.com/video.mp4 or upload"
+                          placeholder="Upload a video file"
                           className="flex-1"
                           required
+                          disabled={uploadStatus[`video_${index}_${Date.now()}`] === 'uploading'}
                         />
                         <Button 
                           type="button"
                           variant="outline"
                           onClick={() => triggerVideoFileInput(index)}
+                          disabled={uploadStatus[`video_${index}_${Date.now()}`] === 'uploading'}
                           className="flex items-center gap-2"
                         >
-                          <Upload className="h-4 w-4" /> Upload
+                          <Upload className="h-4 w-4" /> {video.url ? 'Change' : 'Upload'}
                         </Button>
                         <input
                           type="file"
@@ -373,6 +577,18 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                           onChange={(e) => handleVideoFileChange(index, e)}
                         />
                       </div>
+                      
+                      {/* Show upload progress if uploading */}
+                      {Object.keys(uploadStatus)
+                        .filter(key => key.startsWith(`video_${index}_`) && uploadStatus[key] !== 'idle')
+                        .map(key => (
+                          <UploadStatus 
+                            key={key} 
+                            id={key} 
+                            fileName={video.url || 'video'} 
+                          />
+                        ))
+                      }
                     </div>
                     
                     <div>
@@ -390,6 +606,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             </div>
           </div>
           
+          {/* Notes & Documents section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Notes & Documents</h3>
@@ -446,23 +663,25 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     </div>
                     
                     <div>
-                      <Label htmlFor={`note-url-${index}`}>Document File<span className="text-red-500">*</span></Label>
+                      <Label htmlFor={`note-file-${index}`}>Document File<span className="text-red-500">*</span></Label>
                       <div className="flex gap-2">
                         <Input
                           id={`note-url-${index}`}
                           value={note.fileUrl}
                           onChange={(e) => updateNote(index, 'fileUrl', e.target.value)}
-                          placeholder="https://example.com/document.pdf or upload"
+                          placeholder="Upload a document file"
                           className="flex-1"
                           required
+                          disabled={uploadStatus[`note_${index}_${Date.now()}`] === 'uploading'}
                         />
                         <Button 
                           type="button"
                           variant="outline"
                           onClick={() => triggerNoteFileInput(index)}
+                          disabled={uploadStatus[`note_${index}_${Date.now()}`] === 'uploading'}
                           className="flex items-center gap-2"
                         >
-                          <Upload className="h-4 w-4" /> Upload
+                          <Upload className="h-4 w-4" /> {note.fileUrl ? 'Change' : 'Upload'}
                         </Button>
                         <input
                           type="file"
@@ -472,6 +691,18 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                           onChange={(e) => handleNoteFileChange(index, e)}
                         />
                       </div>
+                      
+                      {/* Show upload progress if uploading */}
+                      {Object.keys(uploadStatus)
+                        .filter(key => key.startsWith(`note_${index}_`) && uploadStatus[key] !== 'idle')
+                        .map(key => (
+                          <UploadStatus 
+                            key={key} 
+                            id={key} 
+                            fileName={note.fileUrl || 'document'} 
+                          />
+                        ))
+                      }
                     </div>
                     
                     <div>
@@ -496,6 +727,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             </div>
           </div>
           
+          {/* Submit and cancel buttons */}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
