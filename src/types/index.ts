@@ -35,6 +35,7 @@ export interface Video {
   thumbnail?: string;
   order: number;
   analyzedContent?: any[]; // Adding analyzedContent property to the Video interface
+  download_info?: any; // Adding download_info property
 }
 
 export interface Note {

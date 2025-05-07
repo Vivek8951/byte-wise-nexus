@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
+import { installDbFunctions } from "./install-db-function.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -729,6 +730,9 @@ serve(async (req) => {
   }
   
   try {
+    // Install db functions on first run
+    await installDbFunctions();
+    
     const { videoId, courseId } = await req.json();
     
     if (!videoId || !courseId) {

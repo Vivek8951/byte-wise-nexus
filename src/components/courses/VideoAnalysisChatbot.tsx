@@ -74,7 +74,7 @@ export function VideoAIChat({ videoId, transcript, summary }: VideoAIChatProps) 
       const aiResponse: ChatMessage = {
         id: `ai-${Date.now()}`,
         role: "assistant",
-        content: data.response || "I'm sorry, I couldn't process your question at this time.",
+        content: data?.response || "I'm sorry, I couldn't process your question at this time.",
         timestamp: new Date(),
       };
 

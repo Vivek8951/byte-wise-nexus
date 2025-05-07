@@ -9,7 +9,6 @@ import { Loader2, AlertTriangle, Play, Download } from 'lucide-react';
 import { VideoAnalysis } from './VideoAnalysis';
 import { processVideo, getVideoForCourse } from '@/utils/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
-import { Json } from '@/integrations/supabase/types';
 
 interface VideoPlayerWithAnalysisProps {
   video: Video;
@@ -26,7 +25,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
   const { toast } = useToast();
 
   // Helper function to safely convert Json to any[]
-  const safeJsonToArray = (json: Json | null): any[] => {
+  const safeJsonToArray = (json: any | null): any[] => {
     if (!json) return [];
     if (Array.isArray(json)) return json as any[];
     return [];
@@ -80,18 +79,23 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             const result = await getVideoForCourse(video.id, courseId);
             
             if (result.success && result.videoUrl) {
-              setVideoData(prev => ({
+              const videoUpdate: Partial<Video> = {
                 ...prev,
                 url: result.videoUrl,
                 title: result.title || prev.title,
                 description: result.description || prev.description,
-                thumbnail: result.thumbnail || prev.thumbnail,
-                download_info: result.downloadInfo || prev.download_info
-              }));
+              };
+              
+              if (result.thumbnail) {
+                videoUpdate.thumbnail = result.thumbnail;
+              }
               
               if (result.downloadInfo) {
+                videoUpdate.download_info = result.downloadInfo;
                 setDownloadInfo(result.downloadInfo);
               }
+              
+              setVideoData(prev => ({...prev, ...videoUpdate}));
             }
           }
         } else {
@@ -99,18 +103,22 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           const result = await getVideoForCourse(video.id, courseId);
           
           if (result.success && result.videoUrl) {
-            setVideoData(prev => ({
-              ...prev,
+            const videoUpdate: Partial<Video> = {
               url: result.videoUrl,
-              title: result.title || prev.title,
-              description: result.description || prev.description,
-              thumbnail: result.thumbnail || prev.thumbnail,
-              download_info: result.downloadInfo || prev.download_info
-            }));
+              title: result.title || video.title,
+              description: result.description || video.description,
+            };
+            
+            if (result.thumbnail) {
+              videoUpdate.thumbnail = result.thumbnail;
+            }
             
             if (result.downloadInfo) {
+              videoUpdate.download_info = result.downloadInfo;
               setDownloadInfo(result.downloadInfo);
             }
+            
+            setVideoData(prev => ({...prev, ...videoUpdate}));
           }
         }
       } catch (error) {
@@ -209,7 +217,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     
     try {
       toast({
-        title: "Processing video",
+        title: "Generating content...",
         description: "This may take a minute as we search for relevant content...",
       });
       
