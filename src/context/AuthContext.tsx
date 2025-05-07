@@ -14,24 +14,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { login, logout, register, isLoading: operationLoading } = useAuthOperations();
   
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event);
         
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
         if (session?.user) {
           try {
-            // When we have a session and user, get their profile
-            const profile = await fetchUserProfile(session.user.id);
-            setUser(profile);
+            // Use setTimeout to avoid Supabase auth deadlocks
+            setTimeout(async () => {
+              const profile = await fetchUserProfile(session.user.id);
+              setUser(profile);
+              setIsLoading(false);
+            }, 0);
           } catch (error) {
             console.error("Error fetching user profile:", error);
             setUser(null);
+            setIsLoading(false);
           }
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
     

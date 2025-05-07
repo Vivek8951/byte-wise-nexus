@@ -72,13 +72,13 @@ export const useAuthOperations = () => {
       console.log("Registering with role:", role);
       
       // Check if email is already registered first
-      const { data: emailExists } = await supabase
+      const { data: emailCheck } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', email)
         .maybeSingle();
         
-      if (emailExists) {
+      if (emailCheck) {
         toast({
           title: "Email already registered",
           description: "Please use a different email or try logging in",

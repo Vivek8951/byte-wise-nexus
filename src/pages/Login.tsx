@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -61,7 +62,34 @@ export default function Login() {
       <>
         <Navbar />
         <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tech-blue"></div>
+          <div className="w-full max-w-md space-y-8">
+            <div className="text-center">
+              <Skeleton className="h-12 w-12 rounded-full mx-auto" />
+              <Skeleton className="h-10 w-48 mt-6 mx-auto" />
+              <Skeleton className="h-4 w-64 mt-2 mx-auto" />
+            </div>
+            
+            <div className="bg-card rounded-lg p-6 shadow-sm border">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-32" />
+                  </div>
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+            
+            <Skeleton className="h-5 w-64 mx-auto" />
+          </div>
         </div>
         <Footer />
       </>
