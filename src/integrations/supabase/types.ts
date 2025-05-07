@@ -308,6 +308,7 @@ export type Database = {
           course_id: string
           created_at: string | null
           description: string
+          download_info: Json | null
           duration: string
           id: string
           order_num: number
@@ -321,6 +322,7 @@ export type Database = {
           course_id: string
           created_at?: string | null
           description: string
+          download_info?: Json | null
           duration: string
           id?: string
           order_num: number
@@ -334,6 +336,7 @@ export type Database = {
           course_id?: string
           created_at?: string | null
           description?: string
+          download_info?: Json | null
           duration?: string
           id?: string
           order_num?: number

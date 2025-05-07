@@ -80,10 +80,10 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             
             if (result.success && result.videoUrl) {
               const videoUpdate: Partial<Video> = {
-                ...prev,
+                ...videoData,
                 url: result.videoUrl,
-                title: result.title || prev.title,
-                description: result.description || prev.description,
+                title: result.title || videoData.title,
+                description: result.description || videoData.description,
               };
               
               if (result.thumbnail) {

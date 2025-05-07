@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -265,78 +264,47 @@ export async function processVideo(videoId: string, courseId: string): Promise<{
  * @param courseId ID of the course the video belongs to
  * @returns Video URL and basic details
  */
-export async function getVideoForCourse(videoId: string, courseId: string): Promise<{ success: boolean; videoUrl: string; title?: string; description?: string }> {
+export async function getVideoForCourse(videoId: string, courseId: string) {
   try {
-    // First try to get the video details from the videos table
-    const { data: videoData, error: videoError } = await supabase
+    // First check if we already have a valid video URL
+    const { data: existingVideo, error: videoError } = await supabase
       .from('videos')
-      .select('title, description, url')
+      .select('url, title, description, thumbnail, download_info')
       .eq('id', videoId)
       .maybeSingle();
       
     if (videoError) {
-      throw videoError;
+      console.error('Error fetching video:', videoError);
+      return { success: false, message: 'Error fetching video' };
     }
     
-    // If the video already has a URL, return it
-    if (videoData && videoData.url) {
-      return {
-        success: true,
-        videoUrl: videoData.url,
-        title: videoData.title,
-        description: videoData.description
+    if (existingVideo?.url) {
+      return { 
+        success: true, 
+        videoUrl: existingVideo.url,
+        title: existingVideo.title,
+        description: existingVideo.description,
+        thumbnail: existingVideo.thumbnail,
+        downloadInfo: existingVideo.download_info
       };
     }
     
-    // Get course data to determine video topic
-    const { data: courseData, error: courseError } = await supabase
-      .from('courses')
-      .select('title, category')
-      .eq('id', courseId)
-      .maybeSingle();
-      
-    if (courseError) {
-      throw courseError;
+    // If no URL exists, process the video through the Edge Function
+    const result = await processVideo(videoId, courseId);
+    if (result.success && result.data && result.data.videoUrl) {
+      return {
+        success: true,
+        videoUrl: result.data.videoUrl,
+        title: result.data.title,
+        description: result.data.description,
+        thumbnail: result.data.thumbnail,
+        downloadInfo: result.data.downloadInfo
+      };
+    } else {
+      return { success: false, message: result.message || 'Failed to get video' };
     }
-    
-    if (!courseData) {
-      throw new Error("Course not found");
-    }
-    
-    // Get information about this specific video to better match content
-    const { data: videoInfo, error: videoInfoError } = await supabase
-      .from('videos')
-      .select('title, description')
-      .eq('id', videoId)
-      .maybeSingle();
-
-    // Get a YouTube video URL based on course and video title
-    const videoUrl = getYouTubeVideoUrl(
-      courseData.title, 
-      videoInfo?.title || ''
-    );
-    
-    // Update the video record with the YouTube URL
-    await supabase
-      .from('videos')
-      .update({ 
-        url: videoUrl,
-      })
-      .eq('id', videoId);
-    
-    return {
-      success: true,
-      videoUrl: videoUrl,
-      title: videoInfo?.title || videoData?.title,
-      description: videoInfo?.description || videoData?.description
-    };
   } catch (error) {
-    console.error("Error getting video for course:", error);
-    
-    // Fallback to a default video URL
-    return {
-      success: false,
-      videoUrl: "https://www.youtube-nocookie.com/embed/PkZNo7MFNFg" // JavaScript tutorial as fallback
-    };
+    console.error('Error in getVideoForCourse:', error);
+    return { success: false, message: 'An unexpected error occurred' };
   }
 }
