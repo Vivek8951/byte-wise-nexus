@@ -1,70 +1,120 @@
 
 import { Link } from "react-router-dom";
-import { Star, Clock } from "lucide-react";
 import { Course } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CourseCardProps {
   course: Course;
 }
 
 export function CourseCard({ course }: CourseCardProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleEnrollClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (user?.role === 'admin') {
+      toast({
+        title: "Admin cannot enroll",
+        description: "As an admin, you cannot enroll in courses. You can only manage them.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Enrollment logic would go here
+    toast({
+      title: "Enrollment successful",
+      description: `You've been enrolled in ${course.title}.`,
+    });
+  };
+
   const getLevelColor = (level: string) => {
     switch (level) {
-      case 'beginner':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'intermediate':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'advanced':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+      case 'beginner': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'intermediate': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'advanced': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
-  
+
   return (
-    <Link to={`/courses/${course.id}`}>
-      <Card className="course-card h-full overflow-hidden flex flex-col">
+    <Link to={`/courses/${course.id}`} className="group">
+      <div className="bg-card border rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/30">
         <div className="relative">
           <img 
-            src={course.thumbnail} 
-            alt={course.title} 
-            className="w-full h-48 object-cover"
+            src={course.thumbnail || '/placeholder.svg'} 
+            alt={course.title}
+            className="w-full aspect-video object-cover object-center"
           />
-          {course.featured && (
-            <div className="absolute top-2 right-2">
-              <Badge variant="secondary" className="bg-tech-pink text-white dark:bg-tech-pink dark:text-white">
-                Featured
-              </Badge>
-            </div>
-          )}
-        </div>
-        <CardHeader className="p-4 pb-2">
-          <div className="flex justify-between items-center mb-2">
-            <Badge className={`text-xs ${getLevelColor(course.level)}`}>
+          <div className="absolute top-2 right-2">
+            <Badge variant="outline" className={`${getLevelColor(course.level)}`}>
               {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
             </Badge>
-            <div className="flex items-center">
-              <Star className="w-4 h-4 fill-yellow-400 stroke-yellow-400" />
-              <span className="ml-1 text-sm">{course.rating}</span>
-            </div>
           </div>
-          <h3 className="font-bold text-lg tracking-tight line-clamp-2">{course.title}</h3>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 flex-grow">
-          <p className="text-muted-foreground text-sm line-clamp-2">
+        </div>
+        
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <Badge variant="outline" className="bg-card">
+              {course.category}
+            </Badge>
+            {course.rating && (
+              <div className="flex items-center text-amber-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-4 h-4 mr-1"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {course.rating.toFixed(1)}
+              </div>
+            )}
+          </div>
+          
+          <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+            {course.title}
+          </h3>
+          
+          <p className="text-muted-foreground line-clamp-2 mb-4 text-sm">
             {course.description}
           </p>
-        </CardContent>
-        <CardFooter className="p-4 pt-0 flex justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            <span>{course.duration}</span>
+          
+          <div className="flex items-center justify-between text-sm">
+            <div className="font-medium">
+              {course.instructor}
+            </div>
+            <div className="text-muted-foreground">
+              {course.duration}
+            </div>
           </div>
-          <div>{course.enrolledCount?.toLocaleString() || 0} students</div>
-        </CardFooter>
-      </Card>
+          
+          <div className="mt-4 flex justify-between items-center">
+            <div className="text-sm text-muted-foreground">
+              {course.enrolledCount || 0} students enrolled
+            </div>
+            <Button 
+              size="sm" 
+              onClick={handleEnrollClick}
+              className="transition-all"
+              disabled={user?.role === 'admin'}
+            >
+              {user?.role === 'admin' ? 'Cannot Enroll' : 'Enroll Now'}
+            </Button>
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }

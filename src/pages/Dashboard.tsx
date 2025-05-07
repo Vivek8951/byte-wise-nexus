@@ -1,16 +1,20 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Book, Users, Play, FileText, Settings, Clock, ChevronRight, BarChart } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { useCourses } from "@/context/CourseContext";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { 
+  BookOpen, Clock, Calendar, LineChart, 
+  GraduationCap, Trophy, TrendingUp
+} from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Chatbot } from "@/components/chatbot/Chatbot";
-import { CourseCard } from "@/components/courses/CourseCard";
+import { useAuth } from "@/context/AuthContext";
+import { useCourses } from "@/context/CourseContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AreaChart, LineChart as RechartsLineChart } from "@/components/ui/chart";
+import { mockProgressData } from "@/data/mockProgressData";
+import { BackButton } from "@/components/ui/back-button";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -56,17 +60,20 @@ export default function Dashboard() {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <header className="mb-8">
-            <h1 className="text-3xl font-bold heading-gradient">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage courses, users, and platform analytics</p>
-          </header>
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center mb-6">
+            <BackButton href="/" className="mr-4" />
+            <div>
+              <h1 className="text-3xl font-bold heading-gradient">Admin Dashboard</h1>
+              <p className="text-muted-foreground">Manage courses, users, and platform analytics</p>
+            </div>
+          </div>
           
           <div className="grid gap-6 md:grid-cols-1">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-                <Book className="h-4 w-4 text-muted-foreground" />
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalCourses}</div>
@@ -84,7 +91,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-                  <BarChart className="h-16 w-16 text-muted-foreground/50" />
+                  <AreaChart className="h-16 w-16 text-muted-foreground/50" />
                   <p className="ml-4 text-muted-foreground">Analytics chart will appear here</p>
                 </div>
               </CardContent>
@@ -180,7 +187,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
-        </div>
+        </main>
         <Footer />
         <Chatbot />
       </>
@@ -195,11 +202,14 @@ export default function Dashboard() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold heading-gradient">Student Dashboard</h1>
-          <p className="text-muted-foreground">Track your learning progress and manage your courses</p>
-        </header>
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-6">
+          <BackButton href="/" className="mr-4" />
+          <div>
+            <h1 className="text-3xl font-bold heading-gradient">Student Dashboard</h1>
+            <p className="text-muted-foreground">Track your learning progress and manage your courses</p>
+          </div>
+        </div>
         
         <Tabs defaultValue="courses" className="mb-8">
           <TabsList>
@@ -216,7 +226,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <Book className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">No courses yet</h3>
                 <p className="text-muted-foreground mb-4">
                   You haven't enrolled in any courses yet. Start by exploring our course catalog.
@@ -375,7 +385,7 @@ export default function Dashboard() {
               ))}
           </div>
         </div>
-      </div>
+      </main>
       <Footer />
       <Chatbot />
     </>

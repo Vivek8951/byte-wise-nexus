@@ -1,18 +1,16 @@
 
-import { useState, FormEvent, useEffect } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserPlus } from "lucide-react";
+import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { useAuth } from "@/context/AuthContext";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { UserRole } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BackButton } from "@/components/ui/back-button";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -132,12 +130,15 @@ export default function Register() {
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 bg-primary rounded-full flex items-center justify-center">
-              <UserPlus className="h-6 w-6 text-white" />
+            <div className="absolute top-20 left-4 md:left-8">
+              <BackButton />
+            </div>
+            <div className="mx-auto h-12 w-12 bg-primary rounded-full flex items-center justify-center animate-fade-in">
+              <User className="h-6 w-6 text-white" />
             </div>
             <h2 className="mt-6 text-3xl font-bold text-primary">Create an account</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Join TechLearn to access comprehensive computer science courses
+            <p className="mt-2 text-sm text-muted-foreground animate-fade-in">
+              Sign up to start your learning journey
             </p>
           </div>
           

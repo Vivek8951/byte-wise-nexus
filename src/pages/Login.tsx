@@ -10,6 +10,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BackButton } from "@/components/ui/back-button";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -102,6 +103,9 @@ export default function Login() {
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
+            <div className="absolute top-20 left-4 md:left-8">
+              <BackButton />
+            </div>
             <div className="mx-auto h-12 w-12 bg-primary rounded-full flex items-center justify-center animate-fade-in">
               <User className="h-6 w-6 text-white" />
             </div>

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Filter, Search, SlidersHorizontal } from "lucide-react";
@@ -7,15 +6,18 @@ import { Footer } from "@/components/layout/Footer";
 import { Chatbot } from "@/components/chatbot/Chatbot";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { useCourses } from "@/context/CourseContext";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { BackButton } from "@/components/ui/back-button";
 
 export default function Courses() {
   const { courses, isLoading } = useCourses();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCourses, setFilteredCourses] = useState(courses);
@@ -174,30 +176,13 @@ export default function Courses() {
     <>
       <Navbar />
       <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center mb-8">
+          <BackButton href="/" className="mr-4" />
           <div>
             <h1 className="text-3xl font-bold heading-gradient">Browse Courses</h1>
             <p className="text-muted-foreground">
               Explore our comprehensive library of computer science courses
             </p>
-          </div>
-          <div>
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="gap-2 md:hidden">
-                  <Filter className="h-4 w-4" />
-                  Filter
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Filter Courses</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">
-                  {renderFilters()}
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
         
