@@ -45,14 +45,15 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           .from('videos')
           .select('analyzed_content, url')
           .eq('id', video.id)
-          .single();
+          .maybeSingle();
           
         if (error) throw error;
         
         if (data && data.analyzed_content) {
           setVideoData({
             ...video,
-            analyzedContent: safeJsonToArray(data.analyzed_content)
+            analyzedContent: safeJsonToArray(data.analyzed_content),
+            url: data.url || video.url
           });
           setHasAnalysis(true);
         } else {
@@ -84,12 +85,15 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           description: "The video has been analyzed and content has been generated"
         });
         
-        // Update the video data with the new analysis
-        if (result.data?.analyzedContent) {
-          setVideoData({
+        // Update the video data with the new analysis and URL
+        if (result.data) {
+          const updatedVideo = {
             ...video,
-            analyzedContent: safeJsonToArray(result.data.analyzedContent)
-          });
+            analyzedContent: safeJsonToArray(result.data.analyzedContent),
+            url: result.data.videoUrl || video.url
+          };
+          
+          setVideoData(updatedVideo);
           setHasAnalysis(true);
           
           // Notify parent component if needed
@@ -120,12 +124,12 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     <div className="space-y-4">
       <Card className="overflow-hidden">
         <AspectRatio ratio={16/9}>
-          {video.url ? (
+          {videoData.url ? (
             <iframe
-              src={video.url}
+              src={videoData.url}
               className="w-full h-full object-cover"
               allowFullScreen
-              title={video.title}
+              title={videoData.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           ) : (
@@ -139,8 +143,8 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         </AspectRatio>
         
         <div className="p-4 space-y-2">
-          <h3 className="text-lg font-medium">{video.title}</h3>
-          <p className="text-muted-foreground text-sm">{video.description}</p>
+          <h3 className="text-lg font-medium">{videoData.title}</h3>
+          <p className="text-muted-foreground text-sm">{videoData.description}</p>
         </div>
       </Card>
       

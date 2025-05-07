@@ -218,7 +218,7 @@ async function generateContentAnalysis(transcript: string, courseId: string, vid
   }
 }
 
-// Get relevant YouTube video URL based on course category
+// Get relevant YouTube video URL based on course category and title
 function getRelevantVideoUrl(category: string, title: string): string {
   // Normalize category and title by converting to lowercase 
   const normalizedCategory = category.toLowerCase();
@@ -361,7 +361,8 @@ async function processVideo(videoId: string, courseId: string) {
     return {
       status: "success",
       videoId: videoId,
-      analyzedContent: analyzedContent
+      analyzedContent: analyzedContent,
+      videoUrl: videoUrl
     };
   } catch (error) {
     console.error("Error processing video:", error);
