@@ -185,7 +185,7 @@ export default function CourseDetail() {
         <div className="mb-6">
           <BackButton href="/courses" className="mb-6" />
           
-          {/* Course header section with improved alignment */}
+          {/* Course header section with consistent alignment */}
           <div className="md:flex md:items-start gap-8">
             <div className="md:w-2/3">
               <h1 className="text-3xl font-bold heading-gradient mb-4 text-left">{course?.title}</h1>
@@ -242,7 +242,7 @@ export default function CourseDetail() {
             </div>
           </div>
           
-          {/* Enrollment button section */}
+          {/* Enrollment button section - centered */}
           {!isEnrolled && (
             <div className="my-6 flex justify-center">
               <Button 
@@ -258,7 +258,7 @@ export default function CourseDetail() {
             </div>
           )}
           
-          {/* Tabs section with consistent text alignment - only shown when enrolled */}
+          {/* Tabs section only shown when enrolled */}
           {isEnrolled && (
             <Tabs defaultValue="overview" className="w-full mt-8">
               <TabsList>
@@ -268,21 +268,21 @@ export default function CourseDetail() {
                 <TabsTrigger value="quiz">Quiz</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="overview" className="space-y-4 py-4 text-left">
-                <h2 className="text-2xl font-bold">Course Overview</h2>
-                <p>
+              <TabsContent value="overview" className="space-y-4 py-4">
+                <h2 className="text-2xl font-bold text-left">Course Overview</h2>
+                <p className="text-left">
                   Welcome to the {course?.title} course! In this course, you will learn...
                 </p>
                 
-                <h3 className="text-xl font-semibold mt-4">What you'll learn</h3>
-                <ul className="list-disc list-inside">
+                <h3 className="text-xl font-semibold mt-4 text-left">What you'll learn</h3>
+                <ul className="list-disc list-inside text-left">
                   <li>Understand the basic principles of...</li>
                   <li>Apply these principles to real-world scenarios</li>
                   <li>Build your own...</li>
                 </ul>
                 
-                <h3 className="text-xl font-semibold mt-4">Prerequisites</h3>
-                <p>
+                <h3 className="text-xl font-semibold mt-4 text-left">Prerequisites</h3>
+                <p className="text-left">
                   Basic knowledge of...
                 </p>
               </TabsContent>
@@ -329,7 +329,7 @@ export default function CourseDetail() {
                     </div>
                     
                     {activeVideo && (
-                      <div className="mt-6 text-left">
+                      <div className="mt-6">
                         <VideoAnalysis video={activeVideo} />
                       </div>
                     )}
@@ -392,13 +392,14 @@ export default function CourseDetail() {
             </Tabs>
           )}
           
+          {/* Course preview section - center content but left-align text */}
           {!isEnrolled && (
-            <div className="my-10 p-6 border rounded-lg bg-muted/10 text-center space-y-4">
-              <h2 className="text-2xl font-bold">Course Preview</h2>
-              <p className="text-muted-foreground">Enroll in this course to access all lectures, resources, and quizzes.</p>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">What you'll learn</h3>
-                <ul className="list-disc list-inside text-left max-w-lg mx-auto">
+            <div className="my-10 p-6 border rounded-lg bg-muted/10">
+              <h2 className="text-2xl font-bold text-center">Course Preview</h2>
+              <p className="text-center text-muted-foreground">Enroll in this course to access all lectures, resources, and quizzes.</p>
+              <div className="mt-6 max-w-lg mx-auto">
+                <h3 className="text-xl font-semibold mb-2 text-left">What you'll learn</h3>
+                <ul className="list-disc list-inside text-left">
                   <li>Understand the basic principles of...</li>
                   <li>Apply these principles to real-world scenarios</li>
                   <li>Build your own...</li>
