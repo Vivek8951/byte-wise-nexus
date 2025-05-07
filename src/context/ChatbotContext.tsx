@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +18,7 @@ interface ChatbotContextType {
 const ChatbotContext = createContext<ChatbotContextType | undefined>(undefined);
 
 // Default Gemini API key provided by user
-const DEFAULT_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
+const DEFAULT_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
 
 export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([

@@ -13,7 +13,7 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Default API keys from user
-const DEFAULT_GEMINI_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
+const DEFAULT_GEMINI_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
 const DEFAULT_HUGGING_FACE_API_KEY = "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";
 
 // Extract audio from video using ffmpeg

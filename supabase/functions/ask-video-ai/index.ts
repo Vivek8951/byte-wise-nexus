@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const corsHeaders = {
@@ -7,7 +6,7 @@ const corsHeaders = {
 };
 
 // Default Gemini API key from user
-const DEFAULT_GEMINI_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
+const DEFAULT_GEMINI_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
 
 serve(async (req) => {
   // Handle CORS preflight requests

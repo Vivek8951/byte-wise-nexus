@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,38 +173,43 @@ export const useAuthOperations = () => {
       setIsLoading(true);
       console.log("Attempting to log out...");
 
-      // Check if there's a current session first
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      if (!sessionData.session) {
-        console.log("No active session found, considering user as already logged out");
-        toast({
-          title: "Already logged out",
-          description: "You don't have an active session",
+      try {
+        // Force sign out without checking for session first
+        const { error } = await supabase.auth.signOut({
+          scope: 'global' // Sign out from all tabs/devices
         });
-        return;
-      }
-      
-      // Proceed with logout if we have a session
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Error signing out:", error);
+        
+        if (error) {
+          throw error;
+        }
+        
         toast({
-          title: "Error",
-          description: "Failed to log out: " + error.message,
+          title: "Logged out",
+          description: "You have been successfully logged out",
+        });
+      } catch (signOutError: any) {
+        console.error("Error in signOut:", signOutError);
+        
+        // Check if this is a session missing error
+        if (signOutError.message && signOutError.message.includes("session")) {
+          toast({
+            title: "Session expired",
+            description: "Your session has expired. You've been logged out.",
+          });
+          
+          // Clear any local session data
+          await supabase.auth.signOut({ scope: 'local' });
+          return;
+        }
+        
+        toast({
+          title: "Logout error",
+          description: signOutError.message || "An error occurred during logout",
           variant: "destructive",
         });
-        return;
       }
-      
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
-      });
-      
     } catch (error: any) {
-      console.error("Error in logout:", error);
+      console.error("Unexpected error in logout:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred during logout",
@@ -216,5 +220,5 @@ export const useAuthOperations = () => {
     }
   };
 
-  return { login, logout, register, isLoading };
+  return { login, register, logout, isLoading };
 };

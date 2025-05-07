@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, Send, Image, Mic, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 // Working Gemini API key
-const DEFAULT_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
+const DEFAULT_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
 
 export function Chatbot() {
   const { messages, sendMessage, isLoading, isOpen, toggleChatbot, clearChat, apiKey, setApiKey } = useChatbot();
