@@ -99,13 +99,13 @@ export default function Login() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 bg-tech-purple rounded-full flex items-center justify-center animate-fade-in">
+            <div className="mx-auto h-12 w-12 bg-primary rounded-full flex items-center justify-center animate-fade-in">
               <User className="h-6 w-6 text-white" />
             </div>
-            <h2 className="mt-6 text-3xl font-bold heading-gradient animate-fade-in">Welcome back</h2>
+            <h2 className="mt-6 text-3xl font-bold text-primary">Welcome back</h2>
             <p className="mt-2 text-sm text-muted-foreground animate-fade-in">
               Sign in to your account to continue learning
             </p>
@@ -129,7 +129,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
@@ -138,7 +138,7 @@ export default function Login() {
                   <Label htmlFor="password">Password</Label>
                   <Link
                     to="/forgot-password"
-                    className="text-sm font-medium text-tech-purple hover:text-tech-blue transition-colors"
+                    className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
                   >
                     Forgot password?
                   </Link>
@@ -151,13 +151,13 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full bg-tech-blue hover:bg-tech-darkblue transition-all duration-300 transform hover:scale-[1.02]"
+                className="w-full bg-primary hover:bg-primary/90 transition-all duration-300"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Signing in..." : "Sign in"}
@@ -167,7 +167,7 @@ export default function Login() {
           
           <p className="text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link to="/register" className="font-medium text-tech-purple hover:text-tech-blue transition-colors">
+            <Link to="/register" className="font-medium text-primary hover:text-primary/80 transition-colors">
               Sign up
             </Link>
           </p>

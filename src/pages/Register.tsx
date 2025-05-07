@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UserRole } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -79,7 +80,41 @@ export default function Register() {
       <>
         <Navbar />
         <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tech-blue"></div>
+          <div className="w-full max-w-md space-y-8">
+            <div className="text-center">
+              <Skeleton className="h-12 w-12 rounded-full mx-auto" />
+              <Skeleton className="h-10 w-48 mt-6 mx-auto" />
+              <Skeleton className="h-4 w-64 mt-2 mx-auto" />
+            </div>
+            
+            <div className="bg-card rounded-lg p-6 shadow-sm border">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+            
+            <Skeleton className="h-5 w-64 mx-auto" />
+          </div>
         </div>
         <Footer />
       </>
@@ -94,13 +129,13 @@ export default function Register() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 bg-tech-purple rounded-full flex items-center justify-center">
+            <div className="mx-auto h-12 w-12 bg-primary rounded-full flex items-center justify-center">
               <UserPlus className="h-6 w-6 text-white" />
             </div>
-            <h2 className="mt-6 text-3xl font-bold heading-gradient">Create an account</h2>
+            <h2 className="mt-6 text-3xl font-bold text-primary">Create an account</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Join TechLearn to access comprehensive computer science courses
             </p>
@@ -123,7 +158,7 @@ export default function Register() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
@@ -137,7 +172,7 @@ export default function Register() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
@@ -151,7 +186,7 @@ export default function Register() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
@@ -165,7 +200,7 @@ export default function Register() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-tech-purple"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
@@ -190,7 +225,7 @@ export default function Register() {
               
               <Button 
                 type="submit" 
-                className="w-full bg-tech-blue hover:bg-tech-darkblue transition-all duration-300 transform hover:scale-[1.02]"
+                className="w-full bg-primary hover:bg-primary/90 transition-all duration-300"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Creating account..." : "Create account"}
@@ -200,7 +235,7 @@ export default function Register() {
           
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="font-medium text-tech-purple hover:text-tech-blue transition-colors">
+            <Link to="/login" className="font-medium text-primary hover:text-primary/80 transition-colors">
               Sign in
             </Link>
           </p>

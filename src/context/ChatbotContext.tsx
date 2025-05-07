@@ -12,9 +12,14 @@ interface ChatbotContextType {
   clearChat: () => void;
   apiKey: string;
   setApiKey: (key: string) => void;
+  generateCourseDescription: (topic: string) => Promise<string>;
+  getVideoTranscription: (videoUrl: string) => Promise<string>;
 }
 
 const ChatbotContext = createContext<ChatbotContextType | undefined>(undefined);
+
+// Default Gemini API key provided by user
+const DEFAULT_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
 
 export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -28,10 +33,17 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState<string>(() => {
-    // Try to load from localStorage if available
-    return localStorage.getItem('gemini_api_key') || '';
+    // Use the default API key or any saved one
+    return localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
   });
   const { toast } = useToast();
+
+  // Save the API key to localStorage whenever it changes
+  React.useEffect(() => {
+    if (apiKey) {
+      localStorage.setItem('gemini_api_key', apiKey);
+    }
+  }, [apiKey]);
 
   const toggleChatbot = () => {
     setIsOpen(prev => !prev);
@@ -50,6 +62,93 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       title: "Chat cleared",
       description: "Your chat history has been cleared",
     });
+  };
+
+  // Generate course description based on topic
+  const generateCourseDescription = async (topic: string): Promise<string> => {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ 
+                text: `Create a comprehensive course description for a computer science course about ${topic}. 
+                Include learning objectives, key topics covered, and target audience.
+                Keep it concise but informative, maximum 150 words.` 
+              }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 500,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate course description");
+      }
+
+      const data = await response.json();
+      return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      console.error("Error generating course description:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate course description",
+        variant: "destructive"
+      });
+      return "";
+    }
+  };
+
+  // Get video transcription
+  const getVideoTranscription = async (videoUrl: string): Promise<string> => {
+    try {
+      // This is a placeholder - in a real implementation, you would send the video
+      // to a transcription service. For now, we'll use Gemini to generate a placeholder
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ 
+                text: `Create a short summary of what might be in a computer science educational video 
+                with this URL: ${videoUrl}. Pretend you are transcribing key points from the video.` 
+              }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to analyze video content");
+      }
+
+      const data = await response.json();
+      return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      console.error("Error analyzing video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to analyze video content",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
 
   const sendMessage = async (content: string) => {
@@ -78,7 +177,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       
       if (isImageRequest) {
         // Image generation with Gemini API
-        const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`, {
+        const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -135,7 +234,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
                   }
                 ]
               },
-              ...messages.map(msg => ({
+              ...messages.slice(-5).map(msg => ({
                 role: msg.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: msg.content }]
               })),
@@ -200,7 +299,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       toggleChatbot, 
       clearChat,
       apiKey,
-      setApiKey
+      setApiKey,
+      generateCourseDescription,
+      getVideoTranscription
     }}>
       {children}
     </ChatbotContext.Provider>
