@@ -39,17 +39,30 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>(video.url || '');
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
   
   // Automatically analyze when a video URL is available
   useEffect(() => {
-    if (videoUrl && videoRef.current) {
-      videoRef.current.onloadedmetadata = () => {
-        if (!videoParts.length) {
-          analyzeVideo(true);
-        }
-      };
+    if (videoUrl) {
+      // Create a video element if not already created
+      if (!videoRef.current) {
+        const videoElement = document.createElement('video');
+        videoElement.src = videoUrl;
+        videoElement.preload = 'metadata';
+        videoRef.current = videoElement;
+        
+        // Load metadata before analyzing
+        videoElement.onloadedmetadata = () => {
+          if (!videoParts.length && !isAnalyzing) {
+            analyzeVideo(true);
+          }
+        };
+        
+        // Load the video to ensure metadata is available
+        videoElement.load();
+      }
     }
   }, [videoUrl, videoParts.length]);
   
@@ -85,7 +98,7 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
       
       // Wait a moment to ensure duration is available
       if (isNaN(duration) || duration === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
       
       // Generate video parts based on the video content
@@ -99,8 +112,11 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
         .join(' ');
       
       // Create timestamps based on video duration
-      const totalDuration = duration > 0 ? duration : 45 * 60; // Default to 45 min if duration unknown
-      const partDuration = totalDuration / 5;
+      const totalDuration = videoRef.current.duration > 0 ? videoRef.current.duration : 45 * 60; // Default to 45 min if duration unknown
+      
+      // Create at least 5 parts, even for short videos
+      const numParts = 5;
+      const partDuration = totalDuration / numParts;
       
       const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -108,7 +124,7 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
       };
       
-      // Generate appropriate sections based on the video title
+      // Generate appropriate sections based on the video context
       const keyTopics = [
         "Introduction",
         "Key Concepts",
@@ -143,6 +159,9 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
         title: "Video Analysis Complete",
         description: "Your video has been analyzed and broken down into sections.",
       });
+      
+      // Save analysis to localStorage
+      localStorage.setItem(`video_analysis_${video.id}`, JSON.stringify(parts));
     } catch (error) {
       console.error("Error analyzing video:", error);
       toast({
@@ -175,75 +194,74 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
   
   // Jump to specific part of the video when clicked
   const jumpToSection = (startTime: string) => {
-    if (videoRef.current) {
+    if (videoElementRef.current) {
       const [minutes, seconds] = startTime.split(':').map(Number);
       const timeInSeconds = minutes * 60 + seconds;
-      videoRef.current.currentTime = timeInSeconds;
-      videoRef.current.play().catch(err => console.error("Error playing video:", err));
-      setIsVideoPlaying(true);
+      videoElementRef.current.currentTime = timeInSeconds;
+      
+      // Attempt to play the video
+      videoElementRef.current.play()
+        .then(() => {
+          setIsVideoPlaying(true);
+          toast({
+            title: "Playback Started",
+            description: "Video playback started at the selected section.",
+          });
+        })
+        .catch(err => {
+          console.error("Error playing video:", err);
+          toast({
+            title: "Playback Error",
+            description: "There was an error playing the video. Please try again.",
+            variant: "destructive"
+          });
+        });
     }
   };
   
   // Toggle video playback
   const togglePlayPause = () => {
-    if (videoRef.current) {
+    if (videoElementRef.current) {
       if (isVideoPlaying) {
-        videoRef.current.pause();
+        videoElementRef.current.pause();
+        setIsVideoPlaying(false);
       } else {
-        videoRef.current.play().catch(err => console.error("Error playing video:", err));
+        videoElementRef.current.play()
+          .then(() => {
+            setIsVideoPlaying(true);
+          })
+          .catch(err => {
+            console.error("Error playing video:", err);
+          });
       }
-      setIsVideoPlaying(!isVideoPlaying);
     }
   };
   
   // Update playing state when video events occur
   const handleVideoEvents = () => {
-    if (videoRef.current) {
-      videoRef.current.onplay = () => setIsVideoPlaying(true);
-      videoRef.current.onpause = () => setIsVideoPlaying(false);
-      videoRef.current.onended = () => setIsVideoPlaying(false);
+    if (videoElementRef.current) {
+      videoElementRef.current.onplay = () => setIsVideoPlaying(true);
+      videoElementRef.current.onpause = () => setIsVideoPlaying(false);
+      videoElementRef.current.onended = () => setIsVideoPlaying(false);
     }
   };
   
-  // Setup the video element when the component mounts or URL changes
+  // Check if we already have analysis stored for this video on mount
   useEffect(() => {
-    if (videoUrl) {
-      if (!videoRef.current) {
-        const videoElement = document.createElement('video');
-        videoElement.src = videoUrl;
-        videoElement.preload = 'metadata';
-        videoRef.current = videoElement;
-        
-        // Setup event handlers
-        handleVideoEvents();
-      } else {
-        videoRef.current.src = videoUrl;
-      }
-    }
-    
-    // Check if we already have analysis stored for this video
     const storedAnalysis = localStorage.getItem(`video_analysis_${video.id}`);
     if (storedAnalysis) {
-      setVideoParts(JSON.parse(storedAnalysis));
+      const parsedAnalysis = JSON.parse(storedAnalysis);
+      setVideoParts(parsedAnalysis);
+      setIsExpanded(true);
     }
     
+    // Cleanup on unmount
     return () => {
-      // Clean up video element and revoke object URL
-      if (videoRef.current) {
-        videoRef.current = null;
-      }
       if (videoUrl && videoUrl.startsWith('blob:')) {
         URL.revokeObjectURL(videoUrl);
       }
     };
-  }, [video.id, videoUrl]);
-  
-  // Save analysis to localStorage when it changes
-  useEffect(() => {
-    if (videoParts.length > 0) {
-      localStorage.setItem(`video_analysis_${video.id}`, JSON.stringify(videoParts));
-    }
-  }, [videoParts, video.id]);
+  }, [video.id]);
   
   return (
     <div className="mt-6 border rounded-md p-4 bg-card animate-fade-in">
@@ -283,22 +301,17 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
         <div className="mb-6">
           <video 
             src={videoUrl} 
-            ref={el => {
-              videoRef.current = el;
-              if (el) {
-                handleVideoEvents();
-                // Ensure metadata is loaded for analysis
-                el.onloadedmetadata = () => {
-                  if (!videoParts.length && !isAnalyzing) {
-                    analyzeVideo(true);
-                  }
-                };
-              }
-            }}
+            ref={videoElementRef}
             className="w-full h-auto rounded-md shadow-sm max-h-[400px]" 
             controls
             preload="metadata"
             poster={video.thumbnail}
+            onLoadedMetadata={() => {
+              if (!videoParts.length && !isAnalyzing) {
+                analyzeVideo(true);
+              }
+              handleVideoEvents();
+            }}
           />
         </div>
       )}

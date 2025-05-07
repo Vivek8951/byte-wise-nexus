@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Book, Calendar, BarChart, Clock, Download, Play, Star, Users, FileText } from "lucide-react";
@@ -14,15 +15,19 @@ import { Avatar } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { CourseCard } from "@/components/courses/CourseCard";
+import { VideoAnalysis } from "@/components/courses/VideoAnalysis";
+import { Video } from "@/types";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
-  const { courses, getCourse, getCourseVideos, getCourseNotes } = useCourses();
+  const { courses, getCourse, getCourseVideos, getCourseNotes, updateVideo } = useCourses();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [activeVideo, setActiveVideo] = useState<Video | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   
   const course = id ? getCourse(id) : undefined;
   const videos = id ? getCourseVideos(id) : [];
@@ -85,7 +90,7 @@ export default function CourseDetail() {
   };
   
   // Function to play a video
-  const playVideo = (videoId: string) => {
+  const playVideo = (video: Video) => {
     if (!isEnrolled) {
       toast({
         title: "Enrollment Required",
@@ -94,12 +99,22 @@ export default function CourseDetail() {
       return;
     }
     
-    // In a real app, this would navigate to a video player page
-    // For now, we'll just show a toast
+    setActiveVideo(video);
     toast({
       title: "Video Playback",
       description: "Video playback started",
     });
+  };
+  
+  // Handle video analysis completion
+  const handleVideoAnalysisComplete = (videoId: string, analysis: { title?: string, description?: string, parts: any[] }) => {
+    if (analysis && analysis.parts && analysis.parts.length > 0) {
+      // Update the video with analysis data
+      updateVideo(videoId, {
+        analyzedContent: analysis.parts,
+        description: analysis.description || ""
+      });
+    }
   };
   
   return (
@@ -236,58 +251,68 @@ export default function CourseDetail() {
                 {videos.length > 0 && (
                   <div>
                     <h2 className="text-2xl font-bold mb-4">Video Lectures</h2>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {videos.map((video, index) => (
-                        <Card key={video.id} className="overflow-hidden">
-                          <CardContent className="p-0">
-                            <div className="flex flex-col md:flex-row">
-                              <div className="relative w-full md:w-48 h-32">
-                                <img 
-                                  src={video.thumbnail || '/placeholder.svg'} 
-                                  alt={video.title} 
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                  <Button 
-                                    variant="outline" 
-                                    className="bg-white/20 backdrop-blur-sm" 
-                                    size="icon"
-                                    onClick={() => playVideo(video.id)}
-                                    disabled={!isEnrolled}
-                                  >
-                                    <Play className="h-5 w-5" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="p-4 flex-1">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div>
-                                    <h4 className="font-medium">{video.title}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {video.description}
-                                    </p>
+                        <div key={video.id}>
+                          <Card className="overflow-hidden">
+                            <CardContent className="p-0">
+                              <div className="flex flex-col md:flex-row">
+                                <div className="relative w-full md:w-48 h-32">
+                                  <img 
+                                    src={video.thumbnail || '/placeholder.svg'} 
+                                    alt={video.title} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                    <Button 
+                                      variant="outline" 
+                                      className="bg-white/20 backdrop-blur-sm" 
+                                      size="icon"
+                                      onClick={() => playVideo(video)}
+                                      disabled={!isEnrolled}
+                                    >
+                                      <Play className="h-5 w-5" />
+                                    </Button>
                                   </div>
-                                  <Badge variant="outline">{video.duration}</Badge>
                                 </div>
-                                <div className="mt-4 flex justify-between items-center">
-                                  <span className="text-sm text-muted-foreground">
-                                    Lecture {index + 1}
-                                  </span>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="gap-1"
-                                    disabled={!isEnrolled}
-                                    onClick={() => playVideo(video.id)}
-                                  >
-                                    <Play className="h-3 w-3" />
-                                    Watch
-                                  </Button>
+                                <div className="p-4 flex-1">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <h4 className="font-medium">{video.title}</h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        {video.description}
+                                      </p>
+                                    </div>
+                                    <Badge variant="outline">{video.duration}</Badge>
+                                  </div>
+                                  <div className="mt-4 flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">
+                                      Lecture {index + 1}
+                                    </span>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      className="gap-1"
+                                      disabled={!isEnrolled}
+                                      onClick={() => playVideo(video)}
+                                    >
+                                      <Play className="h-3 w-3" />
+                                      Watch
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                          
+                          {/* Display VideoAnalysis component when a video is active */}
+                          {isEnrolled && activeVideo && activeVideo.id === video.id && (
+                            <VideoAnalysis 
+                              video={video} 
+                              onAnalysisComplete={(analysis) => handleVideoAnalysisComplete(video.id, analysis)}
+                            />
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
