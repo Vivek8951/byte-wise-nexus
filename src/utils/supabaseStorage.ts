@@ -101,8 +101,11 @@ export async function deleteFile(bucketName: string, filePath: string): Promise<
  */
 export async function populateCourses(numberOfCourses: number = 1): Promise<{ success: boolean; message: string }> {
   try {
+    // Validate input
+    const coursesToGenerate = Math.min(Math.max(1, numberOfCourses), 30);
+    
     const { data, error } = await supabase.functions.invoke("populate-courses", {
-      body: { numberOfCourses }
+      body: { numberOfCourses: coursesToGenerate }
     });
     
     if (error) {

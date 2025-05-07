@@ -9,6 +9,7 @@ import { Loader2, AlertTriangle, Play } from 'lucide-react';
 import { VideoAnalysis } from './VideoAnalysis';
 import { processVideo } from '@/utils/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 interface VideoPlayerWithAnalysisProps {
   video: Video;
@@ -22,10 +23,17 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
   const [hasAnalysis, setHasAnalysis] = useState(false);
   const { toast } = useToast();
 
+  // Helper function to safely convert Json to any[]
+  const safeJsonToArray = (json: Json | null): any[] => {
+    if (!json) return [];
+    if (Array.isArray(json)) return json as any[];
+    return [];
+  };
+
   // Check if video has analysis data
   useEffect(() => {
     const checkAnalysis = async () => {
-      // First check if the video passed as prop has analyzed_content
+      // First check if the video passed as prop has analyzedContent
       if (video.analyzedContent) {
         setHasAnalysis(true);
         return;
@@ -44,7 +52,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         if (data && data.analyzed_content) {
           setVideoData({
             ...video,
-            analyzedContent: data.analyzed_content
+            analyzedContent: safeJsonToArray(data.analyzed_content)
           });
           setHasAnalysis(true);
         } else {
@@ -80,7 +88,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         if (result.data?.analyzedContent) {
           setVideoData({
             ...video,
-            analyzedContent: result.data.analyzedContent
+            analyzedContent: safeJsonToArray(result.data.analyzedContent)
           });
           setHasAnalysis(true);
           
