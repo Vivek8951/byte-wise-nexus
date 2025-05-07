@@ -154,7 +154,7 @@ export default function Register() {
             
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="name" className="block text-sm font-medium">Full Name</Label>
+                <Label htmlFor="name" className="block text-sm font-medium text-left">Full Name</Label>
                 <Input
                   id="name"
                   name="name"
@@ -167,7 +167,7 @@ export default function Register() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email" className="block text-sm font-medium">Email address</Label>
+                <Label htmlFor="email" className="block text-sm font-medium text-left">Email address</Label>
                 <Input
                   id="email"
                   name="email"
@@ -181,7 +181,7 @@ export default function Register() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="block text-sm font-medium">Password</Label>
+                <Label htmlFor="password" className="block text-sm font-medium text-left">Password</Label>
                 <Input
                   id="password"
                   name="password"
@@ -195,7 +195,7 @@ export default function Register() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="block text-sm font-medium">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="block text-sm font-medium text-left">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -209,7 +209,7 @@ export default function Register() {
               </div>
               
               <div className="space-y-3">
-                <Label className="block text-sm font-medium">Account Type</Label>
+                <Label className="block text-sm font-medium text-left">Account Type</Label>
                 <RadioGroup 
                   defaultValue="student" 
                   value={role} 
