@@ -6,7 +6,7 @@ import {
   Edit, 
   Trash2, 
   Book, 
-  Video, 
+  Video as VideoIcon, 
   File,
   EyeOff,
   Eye,
