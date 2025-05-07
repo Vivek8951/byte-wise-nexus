@@ -1,6 +1,17 @@
+
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts"
 import { cn } from "@/lib/utils"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
@@ -64,6 +75,101 @@ const ChartContainer = React.forwardRef<
   )
 })
 ChartContainer.displayName = "Chart"
+
+// Create LineChart component
+export const LineChart = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof ChartContainer>
+>(({ className, config, ...props }, ref) => {
+  return (
+    <ChartContainer
+      ref={ref}
+      className={cn(className)}
+      config={config || {}}
+      {...props}
+    >
+      <ComposedChart>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="name" tickLine={false} axisLine={false} />
+        <YAxis tickLine={false} axisLine={false} />
+        <Tooltip content={<ChartTooltipContent />} />
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke="var(--primary)"
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 6, strokeWidth: 0 }}
+        />
+      </ComposedChart>
+    </ChartContainer>
+  );
+});
+LineChart.displayName = "LineChart";
+
+// Create AreaChart component
+export const AreaChart = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof ChartContainer>
+>(({ className, config, ...props }, ref) => {
+  return (
+    <ChartContainer
+      ref={ref}
+      className={cn(className)}
+      config={config || {}}
+      {...props}
+    >
+      <ComposedChart>
+        <defs>
+          <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8}/>
+            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="name" tickLine={false} axisLine={false} />
+        <YAxis tickLine={false} axisLine={false} />
+        <Tooltip content={<ChartTooltipContent />} />
+        <Area 
+          type="monotone" 
+          dataKey="value" 
+          stroke="var(--primary)" 
+          fillOpacity={1} 
+          fill="url(#colorPrimary)" 
+        />
+      </ComposedChart>
+    </ChartContainer>
+  );
+});
+AreaChart.displayName = "AreaChart";
+
+// Create BarChart component
+export const BarChart = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof ChartContainer>
+>(({ className, config, ...props }, ref) => {
+  return (
+    <ChartContainer
+      ref={ref}
+      className={cn(className)}
+      config={config || {}}
+      {...props}
+    >
+      <ComposedChart>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="name" tickLine={false} axisLine={false} />
+        <YAxis tickLine={false} axisLine={false} />
+        <Tooltip content={<ChartTooltipContent />} />
+        <Bar 
+          dataKey="value" 
+          fill="var(--primary)" 
+          radius={[4, 4, 0, 0]} 
+        />
+      </ComposedChart>
+    </ChartContainer>
+  );
+});
+BarChart.displayName = "BarChart";
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(

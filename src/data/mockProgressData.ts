@@ -1,4 +1,3 @@
-
 import { CourseProgress, CourseEnrollment } from '../types';
 import { toast } from "@/components/ui/sonner";
 
@@ -66,6 +65,38 @@ export const mockEnrollments: CourseEnrollment[] = [
     enrollmentDate: '2023-06-10',
     isCompleted: false,
     certificateIssued: false,
+  },
+];
+
+// Mock progress data for the dashboard charts
+export const mockProgressData = [
+  {
+    name: "Week 1",
+    value: 40,
+  },
+  {
+    name: "Week 2",
+    value: 30,
+  },
+  {
+    name: "Week 3",
+    value: 45,
+  },
+  {
+    name: "Week 4",
+    value: 50,
+  },
+  {
+    name: "Week 5",
+    value: 60,
+  },
+  {
+    name: "Week 6",
+    value: 70,
+  },
+  {
+    name: "Week 7",
+    value: 80,
   },
 ];
 

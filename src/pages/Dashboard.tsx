@@ -1,8 +1,10 @@
+
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
-  BookOpen, Clock, Calendar, LineChart, 
-  GraduationCap, Trophy, TrendingUp
+  BookOpen, Clock, Calendar, LineChart as LineChartIcon, 
+  GraduationCap, Trophy, TrendingUp, Users, Book, FileText,
+  ChevronRight, BarChart as BarChartIcon, Play
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -12,9 +14,11 @@ import { useCourses } from "@/context/CourseContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AreaChart, LineChart as RechartsLineChart } from "@/components/ui/chart";
+import { AreaChart, LineChart as RechartsLineChart, BarChart } from "@/components/ui/chart";
 import { mockProgressData } from "@/data/mockProgressData";
 import { BackButton } from "@/components/ui/back-button";
+import { Progress } from "@/components/ui/progress";
+import { CourseCard } from "@/components/courses/CourseCard";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
