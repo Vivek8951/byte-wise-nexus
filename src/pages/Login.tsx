@@ -8,11 +8,16 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showResendDialog, setShowResendDialog] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
@@ -26,15 +31,56 @@ export default function Login() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     
     try {
       const success = await login(email, password);
       if (success) {
         navigate("/dashboard");
       }
+    } catch (err: any) {
+      const errorMsg = err?.message || "An error occurred during login";
+      console.error("Login error:", errorMsg);
+      
+      if (errorMsg.includes("Email not confirmed")) {
+        setError("Your email has not been confirmed yet. Please check your inbox for a confirmation link or request a new one.");
+        setShowResendDialog(true);
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  const handleResendConfirmation = async () => {
+    setIsSubmitting(true);
+    setResendSuccess(false);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        setResendSuccess(true);
+        setTimeout(() => {
+          setShowResendDialog(false);
+        }, 5000); // Close dialog after 5 seconds
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to resend confirmation email");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const closeDialog = () => {
+    setShowResendDialog(false);
+    setResendSuccess(false);
   };
   
   return (
@@ -53,6 +99,12 @@ export default function Login() {
           </div>
           
           <div className="bg-card rounded-lg p-6 shadow-sm border animate-fade-in">
+            {error && (
+              <div className="mb-4 p-3 bg-destructive/15 border border-destructive/30 text-destructive rounded-md text-sm">
+                {error}
+              </div>
+            )}
+            
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email address</Label>
@@ -108,6 +160,41 @@ export default function Login() {
           </p>
         </div>
       </div>
+      
+      <Dialog open={showResendDialog} onOpenChange={closeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Verification Required</DialogTitle>
+            <DialogDescription>
+              Your email address needs to be verified before you can log in.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {resendSuccess ? (
+              <div className="p-3 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm">
+                Confirmation email sent! Please check your inbox and spam folder.
+              </div>
+            ) : (
+              <>
+                <p>
+                  We've sent a confirmation link to <strong>{email}</strong>. Please check your inbox and spam folder.
+                </p>
+                <p>
+                  If you didn't receive the email or it expired, you can request a new confirmation link.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={closeDialog}>Close</Button>
+                  <Button onClick={handleResendConfirmation} disabled={isSubmitting}>
+                    {isSubmitting ? "Sending..." : "Resend Confirmation"}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <Footer />
     </>
   );

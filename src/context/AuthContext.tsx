@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, UserRole } from '../types';
@@ -105,13 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return false;
+        // Important: Let the error bubble up to the component for handling
+        throw error;
       }
       
       if (data.user) {
@@ -128,13 +122,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return false;
     } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-      return false;
+      // Let the error propagate up to the component
+      throw error;
     } finally {
       setIsLoading(false);
     }
