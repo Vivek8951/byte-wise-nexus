@@ -114,11 +114,16 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
         <AspectRatio ratio={16/9}>
           {video.url ? (
             <video
-              src={video.url}
-              controls
-              poster={video.thumbnail}
+              src={video.url} 
+              ref={(el) => { // Using a simple ref callback instead of useRef
+                if (el) el.addEventListener('loadedmetadata', () => {
+                  handleVideoEvents(el);
+                });
+              }}
               className="w-full h-full object-cover"
+              controls
               preload="metadata"
+              poster={video.thumbnail}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
@@ -161,4 +166,11 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
       <VideoAnalysis video={videoData} />
     </div>
   );
+}
+
+// Helper function to handle video events
+function handleVideoEvents(videoElement: HTMLVideoElement) {
+  videoElement.onplay = () => {}; // Handle play event
+  videoElement.onpause = () => {}; // Handle pause event
+  videoElement.onended = () => {}; // Handle ended event
 }

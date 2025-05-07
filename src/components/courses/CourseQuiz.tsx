@@ -70,28 +70,52 @@ export function CourseQuiz({
         const quizQuestions: Question[] = [];
         
         videos.forEach((video, videoIndex) => {
-          if (video.analyzed_content && video.analyzed_content.questions) {
-            const analysisQuestions = Array.isArray(video.analyzed_content.questions) 
-              ? video.analyzed_content.questions 
-              : [video.analyzed_content.questions];
+          if (video.analyzed_content) {
+            const analyzedContent = video.analyzed_content;
             
-            analysisQuestions.forEach((q: any, qIndex: number) => {
-              if (q.question && q.options) {
-                const options = Array.isArray(q.options) ? q.options : [];
-                const correctAnswer = typeof q.correctAnswer === 'number' 
-                  ? q.correctAnswer 
-                  : (typeof q.correctOption === 'number' 
-                    ? q.correctOption
-                    : 0);
-                
-                quizQuestions.push({
-                  id: `video_${videoIndex}_q_${qIndex}`,
-                  text: q.question,
-                  options: options,
-                  correctAnswer: correctAnswer
+            // Check if analyzedContent is an object with a questions property
+            if (typeof analyzedContent === 'object' && analyzedContent !== null && 'questions' in analyzedContent) {
+              const contentQuestions = analyzedContent.questions;
+              
+              if (Array.isArray(contentQuestions)) {
+                // Handle array of questions
+                contentQuestions.forEach((q: any, qIndex: number) => {
+                  if (q.question && q.options) {
+                    const options = Array.isArray(q.options) ? q.options : [];
+                    const correctAnswer = typeof q.correctAnswer === 'number' 
+                      ? q.correctAnswer 
+                      : (typeof q.correctOption === 'number' 
+                        ? q.correctOption
+                        : 0);
+                    
+                    quizQuestions.push({
+                      id: `video_${videoIndex}_q_${qIndex}`,
+                      text: q.question,
+                      options: options,
+                      correctAnswer: correctAnswer
+                    });
+                  }
                 });
+              } else if (typeof contentQuestions === 'object' && contentQuestions !== null) {
+                // Handle single question object
+                const q = contentQuestions;
+                if (q.question && q.options) {
+                  const options = Array.isArray(q.options) ? q.options : [];
+                  const correctAnswer = typeof q.correctAnswer === 'number' 
+                    ? q.correctAnswer 
+                    : (typeof q.correctOption === 'number' 
+                      ? q.correctOption
+                      : 0);
+                  
+                  quizQuestions.push({
+                    id: `video_${videoIndex}_q_single`,
+                    text: q.question,
+                    options: options,
+                    correctAnswer: correctAnswer
+                  });
+                }
               }
-            });
+            }
           }
         });
         
@@ -213,7 +237,9 @@ export function CourseQuiz({
 
   const handleSubmit = async () => {
     if (!user) {
-      toast("Please log in to submit your quiz");
+      toast({
+        title: "Please log in to submit your quiz"
+      });
       return;
     }
 
@@ -247,7 +273,11 @@ export function CourseQuiz({
           
           if (progressData) {
             // Update existing progress
-            const completedQuizzes = progressData.completed_quizzes || [];
+            const completedQuizzes = typeof progressData.completed_quizzes === 'object' && 
+                                     progressData.completed_quizzes !== null && 
+                                     Array.isArray(progressData.completed_quizzes) 
+                                     ? progressData.completed_quizzes : [];
+            
             if (!completedQuizzes.includes(quizId)) {
               completedQuizzes.push(quizId);
             }
@@ -283,14 +313,17 @@ export function CourseQuiz({
           await markQuizAsCompleted(user.id, courseId, quizId, result.percentage);
         }
         
-        toast(`Quiz completed! Your score: ${result.percentage}%`);
+        toast({
+          title: `Quiz completed! Your score: ${result.percentage}%`
+        });
         
         if (onComplete) {
           onComplete(result.percentage);
         }
       } catch (error) {
         console.error("Error saving quiz progress:", error);
-        toast("Failed to save your quiz results", {
+        toast({
+          title: "Failed to save your quiz results",
           description: "Please try again later"
         });
       }

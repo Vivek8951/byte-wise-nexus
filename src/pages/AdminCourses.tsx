@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -34,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 import { CourseEditor } from "@/components/admin/CourseEditor";
 import { Course, Video, Note } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -61,6 +63,7 @@ export default function AdminCourses() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isPopulating, setIsPopulating] = useState(false);
+  const [courseCount, setCourseCount] = useState(5);
   
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -227,7 +230,7 @@ export default function AdminCourses() {
   const handlePopulateCourses = async () => {
     setIsPopulating(true);
     try {
-      const result = await populateCourses();
+      const result = await populateCourses(courseCount);
       
       if (result.success) {
         toast({
@@ -264,19 +267,30 @@ export default function AdminCourses() {
             <p className="text-muted-foreground">Manage and update course content</p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              onClick={handlePopulateCourses}
-              variant="outline"
-              disabled={isPopulating}
-              className="flex items-center gap-2"
-            >
-              {isPopulating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              {isPopulating ? "Populating..." : "Populate Demo Courses"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={courseCount}
+                onChange={(e) => setCourseCount(parseInt(e.target.value) || 1)}
+                min={1}
+                max={30}
+                className="w-20"
+                placeholder="Count"
+              />
+              <Button 
+                onClick={handlePopulateCourses}
+                variant="outline"
+                disabled={isPopulating}
+                className="flex items-center gap-2"
+              >
+                {isPopulating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isPopulating ? "Generating..." : "Generate AI Courses"}
+              </Button>
+            </div>
             <Button 
               onClick={handleAddCourse}
               className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in"
