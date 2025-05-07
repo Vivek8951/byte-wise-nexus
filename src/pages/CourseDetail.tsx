@@ -16,7 +16,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { VideoAnalysis } from "@/components/courses/VideoAnalysis";
 import { Video } from "@/types";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();

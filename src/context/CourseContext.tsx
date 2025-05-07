@@ -1,9 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Course, Video, Note } from '../types';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from './AuthContext';
+import { Json } from '@/integrations/supabase/types';
 
 interface CourseContextType {
   courses: Course[];
@@ -34,6 +34,13 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Helper function to safely convert Json to any[]
+  const safeJsonToArray = (json: Json | null): any[] => {
+    if (!json) return [];
+    if (Array.isArray(json)) return json as any[];
+    return [];
+  };
   
   // Fetch data from Supabase
   useEffect(() => {
@@ -97,7 +104,7 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
           duration: video.duration,
           thumbnail: video.thumbnail,
           order: video.order_num,
-          analyzedContent: video.analyzed_content
+          analyzedContent: safeJsonToArray(video.analyzed_content)
         }));
         
         const mappedNotes: Note[] = notesData.map(note => ({
@@ -336,7 +343,7 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
         duration: data.duration,
         thumbnail: data.thumbnail,
         order: data.order_num,
-        analyzedContent: data.analyzed_content
+        analyzedContent: safeJsonToArray(data.analyzed_content)
       };
       
       // Update local state
