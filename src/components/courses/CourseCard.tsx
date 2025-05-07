@@ -1,5 +1,4 @@
-
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Course } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,12 +10,24 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course }: CourseCardProps) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleEnrollClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Redirect to login page if user is not authenticated
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to enroll in this course",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
     
     if (user?.role === 'admin') {
       toast({
@@ -108,9 +119,9 @@ export function CourseCard({ course }: CourseCardProps) {
               size="sm" 
               onClick={handleEnrollClick}
               className="transition-all"
-              disabled={user?.role === 'admin'}
+              disabled={isAuthenticated && user?.role === 'admin'}
             >
-              {user?.role === 'admin' ? 'Cannot Enroll' : 'Enroll Now'}
+              {isAuthenticated && user?.role === 'admin' ? 'Cannot Enroll' : 'Enroll Now'}
             </Button>
           </div>
         </div>

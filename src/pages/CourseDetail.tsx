@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
   BookOpen, Clock, BarChart3, Calendar, Info, 
   FileText, CheckCircle, AlertTriangle, Video
@@ -30,8 +29,9 @@ export default function CourseDetail() {
   const [notes, setNotes] = useState([]);
   const [activeVideo, setActiveVideo] = useState(null);
   const [videoIndex, setVideoIndex] = useState(0);
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (id) {
@@ -76,6 +76,17 @@ export default function CourseDetail() {
   };
   
   const handleEnrollClick = () => {
+    // Redirect to login page if user is not authenticated
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to enroll in this course",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+    
     if (user?.role === 'admin') {
       toast({
         title: "Admin cannot enroll",
@@ -162,9 +173,9 @@ export default function CourseDetail() {
               size="lg" 
               className="px-8 py-6 text-lg" 
               onClick={handleEnrollClick}
-              disabled={user?.role === 'admin'}
+              disabled={isAuthenticated && user?.role === 'admin'}
             >
-              {user?.role === 'admin' 
+              {isAuthenticated && user?.role === 'admin' 
                 ? 'Admin cannot enroll in courses' 
                 : 'Enroll in this Course'}
             </Button>
