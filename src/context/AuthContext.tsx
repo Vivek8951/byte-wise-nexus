@@ -9,7 +9,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
-  avatar?: string;
+  avatar?: string | null; // Updated to allow null
 }
 
 interface AuthContextType {
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       name: profile.name || session.user.email?.split('@')[0] || '',
                       email: profile.email || session.user.email || '',
                       role: userRole,
-                      avatar: profile.avatar
+                      avatar: profile.avatar || null // Updated to handle null
                     });
                   } else {
                     console.log("No profile found for user", session.user.id);
@@ -72,7 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       id: session.user.id,
                       name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
                       email: session.user.email || '',
-                      role: userRole
+                      role: userRole,
+                      avatar: null // Set default avatar to null
                     });
                   }
                   setIsLoading(false);
@@ -114,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   name: profile.name || session.user.email?.split('@')[0] || '',
                   email: profile.email || session.user.email || '',
                   role: userRole,
-                  avatar: profile.avatar
+                  avatar: profile.avatar || null // Updated to handle null
                 });
               } else {
                 const userRole = (session.user.user_metadata?.role as UserRole) || 'student';
@@ -123,21 +124,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   id: session.user.id,
                   name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || '',
                   email: session.user.email || '',
-                  role: userRole
+                  role: userRole,
+                  avatar: null // Set default avatar to null
                 });
               }
+              setIsLoading(false);
             }
           } catch (error) {
             console.error("Error fetching user profile during initialization:", error);
             if (mounted) {
               setUser(null);
+              setIsLoading(false);
             }
           }
-        }
-        
-        // Set loading to false at the end regardless of outcome
-        if (mounted) {
-          setIsLoading(false);
+        } else {
+          if (mounted) {
+            setIsLoading(false);
+          }
         }
         
         return () => {

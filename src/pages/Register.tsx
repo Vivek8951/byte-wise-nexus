@@ -14,6 +14,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UserRole } from "@/types";
+import { Chatbot } from "@/components/chatbot/Chatbot";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -65,6 +66,10 @@ export default function Register() {
       console.log("Submitting registration with role:", role);
       const success = await register(name, email, password, role);
       if (success) {
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created successfully."
+        });
         navigate("/dashboard");
       }
     } catch (err: any) {
@@ -78,37 +83,38 @@ export default function Register() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="h-16 border-b bg-background/95 backdrop-blur">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-8 w-20" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center">
-              <Skeleton className="h-12 w-12 rounded-full mx-auto" />
+              <div className="mx-auto h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
               <Skeleton className="h-10 w-48 mt-6 mx-auto" />
               <Skeleton className="h-4 w-64 mt-2 mx-auto" />
             </div>
             
             <div className="bg-card rounded-lg p-6 shadow-sm border">
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ))}
                 
                 <Skeleton className="h-10 w-full" />
               </div>
@@ -117,8 +123,10 @@ export default function Register() {
             <Skeleton className="h-5 w-64 mx-auto" />
           </div>
         </div>
-        <Footer />
-      </>
+        <div className="border-t p-4 text-center">
+          <Skeleton className="h-4 w-48 mx-auto" />
+        </div>
+      </div>
     );
   }
   
@@ -130,7 +138,7 @@ export default function Register() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <div className="absolute top-20 left-4 md:left-8">
@@ -162,6 +170,7 @@ export default function Register() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -176,6 +185,7 @@ export default function Register() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -190,6 +200,7 @@ export default function Register() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -204,6 +215,7 @@ export default function Register() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isSubmitting}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -232,7 +244,16 @@ export default function Register() {
                 className="w-full bg-primary hover:bg-primary/90 transition-all duration-300"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Creating account..." : "Create account"}
+                {isSubmitting ? 
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating account...
+                  </span> : 
+                  "Create account"
+                }
               </Button>
             </form>
           </div>
@@ -246,6 +267,7 @@ export default function Register() {
         </div>
       </div>
       <Footer />
+      <Chatbot />
     </>
   );
 }

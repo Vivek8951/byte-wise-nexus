@@ -66,7 +66,10 @@ export function VideoAIChat({ videoId, transcript, summary }: VideoAIChatProps) 
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error from edge function:", error);
+        throw new Error(error.message || "Failed to get AI response");
+      }
 
       const aiResponse: ChatMessage = {
         id: `ai-${Date.now()}`,

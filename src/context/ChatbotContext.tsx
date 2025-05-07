@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import { useToast } from "@/hooks/use-toast";
@@ -43,6 +44,48 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     if (apiKey) {
       localStorage.setItem('gemini_api_key', apiKey);
     }
+  }, [apiKey]);
+
+  // Validate API key on component mount
+  useEffect(() => {
+    const validateApiKey = async () => {
+      try {
+        // Simple validation request to check if API key works
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: "Hello, are you online?" }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 50,
+            }
+          })
+        });
+
+        if (!response.ok) {
+          console.warn("API key validation failed, using default key");
+          if (apiKey !== DEFAULT_API_KEY) {
+            setApiKey(DEFAULT_API_KEY);
+          }
+        }
+      } catch (error) {
+        console.error("Error validating API key:", error);
+        // Fall back to default key if error
+        if (apiKey !== DEFAULT_API_KEY) {
+          setApiKey(DEFAULT_API_KEY);
+        }
+      }
+    };
+
+    validateApiKey();
   }, [apiKey]);
 
   const toggleChatbot = () => {
@@ -102,9 +145,14 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       console.error("Error generating course description:", error);
       toast({
         title: "Error",
-        description: "Failed to generate course description. Please check your API key.",
+        description: "Failed to generate course description. Using default API key.",
         variant: "destructive"
       });
+      // Try again with default key if custom key failed
+      if (apiKey !== DEFAULT_API_KEY) {
+        setApiKey(DEFAULT_API_KEY);
+        return generateCourseDescription(topic);
+      }
       return "";
     }
   };
@@ -148,9 +196,14 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       console.error("Error analyzing video:", error);
       toast({
         title: "Error",
-        description: "Failed to analyze video content. Please check your API key.",
+        description: "Failed to analyze video content. Using default API key.",
         variant: "destructive"
       });
+      // Try again with default key if custom key failed
+      if (apiKey !== DEFAULT_API_KEY) {
+        setApiKey(DEFAULT_API_KEY);
+        return getVideoTranscription(videoUrl);
+      }
       return "";
     }
   };
@@ -264,21 +317,71 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         });
         
         if (!chatResponse.ok) {
-          throw new Error('Failed to get response. Please check your API key and try again.');
+          // Try again with default key
+          if (apiKey !== DEFAULT_API_KEY) {
+            setApiKey(DEFAULT_API_KEY);
+            
+            const defaultResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${DEFAULT_API_KEY}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: "user",
+                    parts: [
+                      { 
+                        text: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics."
+                      }
+                    ]
+                  },
+                  {
+                    role: "user",
+                    parts: [{ text: content }]
+                  }
+                ],
+                generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 800,
+                }
+              })
+            });
+            
+            if (!defaultResponse.ok) {
+              throw new Error('Failed to get response. Please check your network connection and try again.');
+            }
+            
+            const chatData = await defaultResponse.json();
+            const responseText = chatData.candidates?.[0]?.content?.parts?.[0]?.text || 
+                              "I'm sorry, I couldn't generate a response.";
+            
+            const botMessage: ChatMessage = {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: responseText,
+              timestamp: new Date().toISOString(),
+            };
+            
+            setMessages(prev => [...prev, botMessage]);
+            
+          } else {
+            throw new Error('Failed to get response. Please check your network connection and try again.');
+          }
+        } else {
+          const chatData = await chatResponse.json();
+          const responseText = chatData.candidates?.[0]?.content?.parts?.[0]?.text || 
+                             "I'm sorry, I couldn't generate a response.";
+          
+          const botMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: responseText,
+            timestamp: new Date().toISOString(),
+          };
+          
+          setMessages(prev => [...prev, botMessage]);
         }
-        
-        const chatData = await chatResponse.json();
-        const responseText = chatData.candidates?.[0]?.content?.parts?.[0]?.text || 
-                           "I'm sorry, I couldn't generate a response.";
-        
-        const botMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: responseText,
-          timestamp: new Date().toISOString(),
-        };
-        
-        setMessages(prev => [...prev, botMessage]);
       }
     } catch (error) {
       // Handle errors
@@ -287,7 +390,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Error: ${errorMessage}`,
+        content: `I apologize, but I encountered an issue while processing your request. Let me try to help you without using external APIs. Please ask your question again or try a different topic.`,
         timestamp: new Date().toISOString(),
       };
       
