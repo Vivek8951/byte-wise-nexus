@@ -36,15 +36,36 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     const loadVideo = async () => {
       setIsLoading(true);
       
-      // If video already has URL, use it
-      if (video.url) {
-        setVideoData(video);
-        setIsLoading(false);
-        return;
-      }
-      
       try {
-        // Try to get a video URL right away
+        // Always try to get the latest video data from Supabase
+        const { data, error } = await supabase
+          .from('videos')
+          .select('url, title, description, analyzed_content')
+          .eq('id', video.id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        // If we have data from Supabase, use it
+        if (data && data.url) {
+          setVideoData({
+            ...video,
+            url: data.url,
+            title: data.title || video.title,
+            description: data.description || video.description,
+            analyzedContent: data.analyzed_content ? safeJsonToArray(data.analyzed_content) : video.analyzedContent
+          });
+          
+          // Check if video has analysis
+          if (data.analyzed_content) {
+            setHasAnalysis(true);
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        // If no URL in database, try to get a video URL immediately
         const result = await getVideoForCourse(video.id, courseId);
         
         if (result.success && result.videoUrl) {
@@ -54,6 +75,12 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             title: result.title || video.title,
             description: result.description || video.description
           });
+          
+          // Update the database with this URL
+          await supabase
+            .from('videos')
+            .update({ url: result.videoUrl })
+            .eq('id', video.id);
         }
       } catch (error) {
         console.error("Error loading video:", error);
@@ -63,7 +90,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     };
     
     loadVideo();
-  }, [video.id, courseId]);
+  }, [video.id, courseId, video]);
 
   // Check if video has analysis data
   useEffect(() => {
@@ -78,30 +105,18 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
       try {
         const { data, error } = await supabase
           .from('videos')
-          .select('analyzed_content, url, title, description')
+          .select('analyzed_content')
           .eq('id', video.id)
           .maybeSingle();
           
         if (error) throw error;
         
         if (data && data.analyzed_content) {
-          setVideoData({
-            ...video,
-            analyzedContent: safeJsonToArray(data.analyzed_content),
-            url: data.url || video.url,
-            title: data.title || video.title,
-            description: data.description || video.description
-          });
+          setVideoData(prevData => ({
+            ...prevData,
+            analyzedContent: safeJsonToArray(data.analyzed_content)
+          }));
           setHasAnalysis(true);
-        } else if (data && data.url) {
-          // If we have a URL but no analysis yet
-          setVideoData({
-            ...video,
-            url: data.url,
-            title: data.title || video.title,
-            description: data.description || video.description
-          });
-          setHasAnalysis(false);
         } else {
           setHasAnalysis(false);
         }
@@ -112,7 +127,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     };
     
     checkAnalysis();
-  }, [video]);
+  }, [video.id, video.analyzedContent]);
   
   const handleGenerateAnalysis = async () => {
     setIsProcessing(true);
@@ -225,11 +240,4 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
       <VideoAnalysis video={videoData} />
     </div>
   );
-}
-
-// Helper function to handle video events
-function handleVideoEvents(videoElement: HTMLVideoElement) {
-  videoElement.onplay = () => {}; // Handle play event
-  videoElement.onpause = () => {}; // Handle pause event
-  videoElement.onended = () => {}; // Handle ended event
 }

@@ -12,9 +12,8 @@ const supabaseUrl = 'https://weiagpwgfmyjdglfpbeu.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Default API keys from user
-const DEFAULT_GEMINI_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
-const DEFAULT_HUGGING_FACE_API_KEY = "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";
+// Get API keys from environment variables
+const HUGGING_FACE_API_KEY = Deno.env.get('HUGGING_FACE_API_KEY') || '';
 
 // YouTube video links by category - these are real, publicly available educational videos
 const EDUCATIONAL_VIDEOS_BY_CATEGORY = {
@@ -115,77 +114,153 @@ const LECTURE_SPECIFIC_VIDEOS = {
   ]
 };
 
-// Extract audio from video using ffmpeg
-async function extractAudio(videoKey: string, courseId: string): Promise<string | null> {
+// Function to call Hugging Face API to get relevant YouTube videos
+async function getYouTubeVideoWithHuggingFace(courseTitle: string, videoTitle: string): Promise<string | null> {
   try {
-    console.log(`Extracting audio from video: ${videoKey}`);
-
-    // Get video from storage
-    const { data: videoData, error: videoError } = await supabase
-      .storage
-      .from('course-materials')
-      .download(videoKey);
-
-    if (videoError) {
-      throw new Error(`Error downloading video: ${videoError.message}`);
+    if (!HUGGING_FACE_API_KEY) {
+      console.log("No Hugging Face API key provided, using predefined videos");
+      return null;
     }
-
-    // This is a mock implementation since we can't run ffmpeg in Deno edge functions
-    // In a real implementation, you would use a serverless function with ffmpeg installed
-    console.log("Audio extraction would normally happen here with ffmpeg");
     
-    // For demo purposes, we're just returning a mock audio file path
-    const audioKey = `${courseId}/${videoKey.split('/').pop()?.replace('.mp4', '.wav')}`;
+    // For now, we'll use the predefined videos since we can't actually call Hugging Face API directly
+    // In a real implementation, this would make an API call to get intelligent video recommendations
+    console.log(`Would use Hugging Face API to search for videos related to: ${courseTitle} - ${videoTitle}`);
     
-    // Log the result
-    console.log(`Audio extracted to: ${audioKey}`);
-    
-    return audioKey;
+    return null;
   } catch (error) {
-    console.error("Error extracting audio:", error);
+    console.error("Error calling Hugging Face API:", error);
     return null;
   }
 }
 
-// Transcribe audio using Hugging Face Whisper API
-async function transcribeAudio(audioKey: string, courseTitle: string, courseCategory: string): Promise<string | null> {
+// Generate content analysis using Hugging Face API
+async function generateContentAnalysisWithHuggingFace(transcript: string, courseTitle: string, videoTitle: string): Promise<any | null> {
   try {
-    console.log(`Transcribing audio: ${audioKey}`);
-    
-    // Use environment variable or default to provided key
-    const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY') || DEFAULT_HUGGING_FACE_API_KEY;
-    
-    if (!huggingFaceApiKey) {
-      throw new Error("Hugging Face API key not found");
+    if (!HUGGING_FACE_API_KEY) {
+      console.log("No Hugging Face API key provided, using default analysis");
+      return null;
     }
+    
+    // For now, we'll generate a default analysis
+    // In a real implementation, this would call the Hugging Face API
+    console.log(`Would use Hugging Face API to analyze content related to: ${courseTitle} - ${videoTitle}`);
+    
+    return null;
+  } catch (error) {
+    console.error("Error analyzing content with Hugging Face API:", error);
+    return null;
+  }
+}
 
+// Get relevant YouTube video URL based on course category, title and video title
+async function getRelevantVideoUrl(category: string, courseTitle: string, videoTitle: string = ""): Promise<string> {
+  try {
+    // First try to get a video recommendation using Hugging Face API
+    const huggingFaceRecommendation = await getYouTubeVideoWithHuggingFace(courseTitle, videoTitle);
+    if (huggingFaceRecommendation) {
+      return huggingFaceRecommendation;
+    }
+    
+    // Normalize inputs by converting to lowercase 
+    const normalizedCategory = category.toLowerCase();
+    const normalizedCourseTitle = courseTitle.toLowerCase();
+    const normalizedVideoTitle = videoTitle.toLowerCase();
+    
+    // First check for specific lecture topics
+    for (const [topic, videos] of Object.entries(LECTURE_SPECIFIC_VIDEOS)) {
+      if (normalizedVideoTitle.includes(topic)) {
+        // Return a consistent video based on the video title
+        const index = videoTitle.charCodeAt(0) % videos.length;
+        return videos[index];
+      }
+    }
+    
+    // Next check for specific keywords in video title
+    const keywords = ["react", "javascript", "web", "data", "programming", "design", "business", "technology", "props", "hooks", "effects", "jsx", "components"];
+    for (const keyword of keywords) {
+      if (normalizedVideoTitle.includes(keyword)) {
+        // Try to match with a specific category
+        if (EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword]) {
+          const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword];
+          // Return a consistent video based on the first character of the title
+          const index = videoTitle.charCodeAt(0) % videos.length;
+          return videos[index];
+        }
+      }
+    }
+    
+    // Then check for course title keywords
+    for (const keyword of keywords) {
+      if (normalizedCourseTitle.includes(keyword)) {
+        // Try to match with a specific category
+        if (EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword]) {
+          const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword];
+          // Return a consistent video based on the first character of the course title
+          const index = courseTitle.charCodeAt(0) % videos.length;
+          return videos[index];
+        }
+      }
+    }
+    
+    // Find best matching category if no keyword match
+    let bestMatchCategory = "technology"; // Default category
+    let bestMatchScore = 0;
+    
+    for (const cat of Object.keys(EDUCATIONAL_VIDEOS_BY_CATEGORY)) {
+      // Check if category contains our category name or vice versa
+      if (normalizedCategory.includes(cat) || cat.includes(normalizedCategory)) {
+        const score = cat.length; // Longer match = better match
+        if (score > bestMatchScore) {
+          bestMatchScore = score;
+          bestMatchCategory = cat;
+        }
+      }
+      
+      // Also check if title contains category keywords
+      if (normalizedCourseTitle.includes(cat)) {
+        const score = cat.length + 1; // Title match slightly preferred
+        if (score > bestMatchScore) {
+          bestMatchScore = score;
+          bestMatchCategory = cat;
+        }
+      }
+    }
+    
+    // Get videos for best matching category
+    const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[bestMatchCategory] || 
+                  EDUCATIONAL_VIDEOS_BY_CATEGORY["technology"]; // Fallback
+    
+    // Return a video from the category (consistently based on course title's first char)
+    const charCode = courseTitle.charCodeAt(0) || 0;
+    const index = charCode % videos.length;
+    return videos[index];
+  } catch (error) {
+    console.error("Error getting relevant video:", error);
+    return EDUCATIONAL_VIDEOS_BY_CATEGORY["technology"][0]; // Default fallback
+  }
+}
+
+// Generate a mock transcript based on course and video details
+async function generateMockTranscript(courseTitle: string, courseCategory: string, videoTitle: string): Promise<string> {
+  try {
     // Generate a more relevant mock transcript based on course details
-    const transcript = `Welcome to this lecture on ${courseTitle}. In this comprehensive ${courseCategory} course, 
+    const transcript = `Welcome to this lecture on ${videoTitle || courseTitle}. In this comprehensive ${courseCategory} course, 
     we'll explore fundamental concepts and advanced techniques. Today's video covers key principles that will help you 
     master ${courseTitle.toLowerCase()}. We'll start by discussing the core theoretical framework, then move into 
     practical applications with several code examples and case studies. By the end of this lecture, you'll have 
     a solid understanding of ${courseCategory} principles as they apply to ${courseTitle.toLowerCase()}.`;
     
-    console.log("Transcript generated successfully");
-    
     return transcript;
   } catch (error) {
-    console.error("Error transcribing audio:", error);
-    return null;
+    console.error("Error generating mock transcript:", error);
+    return "Welcome to this educational video. We'll cover important concepts and practical applications.";
   }
 }
 
-// Generate content analysis using Google Gemini API
-async function generateContentAnalysis(transcript: string, courseId: string, videoTitle?: string): Promise<any | null> {
+// Generate content analysis using courseId, videoTitle and transcript
+async function generateContentAnalysis(transcript: string, courseId: string, videoTitle?: string): Promise<any> {
   try {
-    console.log("Generating content analysis using Gemini API");
-    
-    // Use environment variable or default to provided key
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || DEFAULT_GEMINI_API_KEY;
-    
-    if (!geminiApiKey) {
-      throw new Error("Gemini API key not found");
-    }
+    console.log("Generating content analysis");
     
     // Get course title to make content more specific
     const { data: courseData } = await supabase
@@ -196,6 +271,12 @@ async function generateContentAnalysis(transcript: string, courseId: string, vid
       
     const courseTitle = courseData?.title || "Technology course";
     const courseCategory = courseData?.category || "technology";
+    
+    // Try to get content analysis from Hugging Face first
+    const huggingFaceAnalysis = await generateContentAnalysisWithHuggingFace(transcript, courseTitle, videoTitle || "");
+    if (huggingFaceAnalysis) {
+      return huggingFaceAnalysis;
+    }
     
     // Create a more focused, relevant analysis based on course details
     const analysisData = {
@@ -260,92 +341,34 @@ async function generateContentAnalysis(transcript: string, courseId: string, vid
         "professional development",
         "core concepts",
         "best practices"
-      ]
+      ],
+      transcript: transcript
     };
     
     console.log("Content analysis generated successfully");
     return analysisData;
   } catch (error) {
     console.error("Error generating content analysis:", error);
-    return null;
-  }
-}
-
-// Get relevant YouTube video URL based on course category, title and video title
-function getRelevantVideoUrl(category: string, courseTitle: string, videoTitle: string = ""): string {
-  // Normalize inputs by converting to lowercase 
-  const normalizedCategory = category.toLowerCase();
-  const normalizedCourseTitle = courseTitle.toLowerCase();
-  const normalizedVideoTitle = videoTitle.toLowerCase();
-  
-  // First check for specific lecture topics
-  for (const [topic, videos] of Object.entries(LECTURE_SPECIFIC_VIDEOS)) {
-    if (normalizedVideoTitle.includes(topic)) {
-      // Return a consistent video based on the video title
-      const index = videoTitle.charCodeAt(0) % videos.length;
-      return videos[index];
-    }
-  }
-  
-  // Next check for specific keywords in video title
-  const keywords = ["react", "javascript", "web", "data", "programming", "design", "business", "technology", "props", "hooks", "effects", "jsx", "components"];
-  for (const keyword of keywords) {
-    if (normalizedVideoTitle.includes(keyword)) {
-      // Try to match with a specific category
-      if (EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword]) {
-        const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword];
-        // Return a consistent video based on the first character of the title
-        const index = videoTitle.charCodeAt(0) % videos.length;
-        return videos[index];
-      }
-    }
-  }
-  
-  // Then check for course title keywords
-  for (const keyword of keywords) {
-    if (normalizedCourseTitle.includes(keyword)) {
-      // Try to match with a specific category
-      if (EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword]) {
-        const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword];
-        // Return a consistent video based on the first character of the course title
-        const index = courseTitle.charCodeAt(0) % videos.length;
-        return videos[index];
-      }
-    }
-  }
-  
-  // Find best matching category if no keyword match
-  let bestMatchCategory = "technology"; // Default category
-  let bestMatchScore = 0;
-  
-  for (const cat of Object.keys(EDUCATIONAL_VIDEOS_BY_CATEGORY)) {
-    // Check if category contains our category name or vice versa
-    if (normalizedCategory.includes(cat) || cat.includes(normalizedCategory)) {
-      const score = cat.length; // Longer match = better match
-      if (score > bestMatchScore) {
-        bestMatchScore = score;
-        bestMatchCategory = cat;
-      }
-    }
     
-    // Also check if title contains category keywords
-    if (normalizedCourseTitle.includes(cat)) {
-      const score = cat.length + 1; // Title match slightly preferred
-      if (score > bestMatchScore) {
-        bestMatchScore = score;
-        bestMatchCategory = cat;
-      }
-    }
+    // Return basic analysis as fallback
+    return {
+      summary: "This educational video covers important concepts and practical applications.",
+      questions: [
+        {
+          question: "What is the main focus of this video?",
+          options: [
+            "Educational content",
+            "Entertainment",
+            "News reporting",
+            "Personal vlogging"
+          ],
+          correctAnswer: 0
+        }
+      ],
+      keywords: ["education", "learning", "tutorial"],
+      transcript: "Welcome to this educational video."
+    };
   }
-  
-  // Get videos for best matching category
-  const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[bestMatchCategory] || 
-                 EDUCATIONAL_VIDEOS_BY_CATEGORY["technology"]; // Fallback
-  
-  // Return a video from the category (consistently based on course title's first char)
-  const charCode = courseTitle.charCodeAt(0) || 0;
-  const index = charCode % videos.length;
-  return videos[index];
 }
 
 // Process video function that orchestrates all steps
@@ -375,27 +398,15 @@ async function processVideo(videoId: string, courseId: string) {
       throw new Error(`Error fetching course: ${courseError.message}`);
     }
     
-    // Get a relevant YouTube video URL based on course category, title and video title
-    const videoUrl = getRelevantVideoUrl(courseData.category, courseData.title, video.title);
+    // Get a relevant YouTube video URL
+    const videoUrl = await getRelevantVideoUrl(courseData.category, courseData.title, video.title);
     console.log(`Selected YouTube video URL: ${videoUrl}`);
     
-    // Extract audio from video
-    const audioKey = await extractAudio(videoId.toString(), courseId);
-    if (!audioKey) {
-      throw new Error("Failed to extract audio");
-    }
-    
-    // Transcribe audio with more relevant content
-    const transcript = await transcribeAudio(audioKey, courseData.title, courseData.category);
-    if (!transcript) {
-      throw new Error("Failed to transcribe audio");
-    }
+    // Generate transcript based on course and video details
+    const transcript = await generateMockTranscript(courseData.title, courseData.category, video.title);
     
     // Generate content analysis that's relevant to the course
     const contentAnalysis = await generateContentAnalysis(transcript, courseId, video.title);
-    if (!contentAnalysis) {
-      throw new Error("Failed to generate content analysis");
-    }
     
     // Update video record with analysis data and YouTube URL
     const analyzedContent = {

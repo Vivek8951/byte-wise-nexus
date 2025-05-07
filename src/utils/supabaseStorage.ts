@@ -303,8 +303,18 @@ export async function getVideoForCourse(videoId: string, courseId: string): Prom
       throw new Error("Course not found");
     }
     
-    // Get a YouTube video URL based on course title
-    const videoUrl = getYouTubeVideoUrl(courseData.title);
+    // Get information about this specific video to better match content
+    const { data: videoInfo, error: videoInfoError } = await supabase
+      .from('videos')
+      .select('title, description')
+      .eq('id', videoId)
+      .maybeSingle();
+
+    // Get a YouTube video URL based on course and video title
+    const videoUrl = getYouTubeVideoUrl(
+      courseData.title, 
+      videoInfo?.title || ''
+    );
     
     // Update the video record with the YouTube URL
     await supabase
@@ -317,8 +327,8 @@ export async function getVideoForCourse(videoId: string, courseId: string): Prom
     return {
       success: true,
       videoUrl: videoUrl,
-      title: videoData?.title,
-      description: videoData?.description
+      title: videoInfo?.title || videoData?.title,
+      description: videoInfo?.description || videoData?.description
     };
   } catch (error) {
     console.error("Error getting video for course:", error);
