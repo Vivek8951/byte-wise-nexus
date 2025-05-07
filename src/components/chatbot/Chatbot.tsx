@@ -10,8 +10,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
-// Default Gemini API key provided by user
+// Working Gemini API key
 const DEFAULT_API_KEY = "AIzaSyDr4UUYkzHutb6hfUv8fdFs3DKgVaiq1JM";
 
 export function Chatbot() {
@@ -20,6 +21,7 @@ export function Chatbot() {
   const [apiKeyInput, setApiKeyInput] = useState(apiKey || DEFAULT_API_KEY);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -27,6 +29,13 @@ export function Chatbot() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+  
+  // Ensure API key is set when component mounts
+  useEffect(() => {
+    if (!apiKey) {
+      setApiKey(DEFAULT_API_KEY);
+    }
+  }, [apiKey, setApiKey]);
   
   const handleSendMessage = () => {
     if (inputValue.trim() && !isLoading) {
@@ -46,10 +55,17 @@ export function Chatbot() {
     setApiKey(apiKeyInput);
     localStorage.setItem('gemini_api_key', apiKeyInput);
     setApiKeyDialogOpen(false);
+    toast({
+      title: "API Key Saved",
+      description: "Your Gemini API key has been updated successfully.",
+    });
   };
 
   const resetToDefaultKey = () => {
     setApiKeyInput(DEFAULT_API_KEY);
+    toast({
+      description: "Reset to default API key",
+    });
   };
   
   if (!isOpen) {
@@ -66,8 +82,8 @@ export function Chatbot() {
   
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 rounded-lg border bg-background shadow-xl animate-in slide-in-from-bottom-5">
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-primary text-white rounded-t-lg">
+      <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 rounded-lg border bg-card shadow-xl animate-in slide-in-from-bottom-5">
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-primary text-primary-foreground rounded-t-lg">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             <h2 className="font-medium">AI Learning Assistant</h2>
@@ -76,17 +92,27 @@ export function Chatbot() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-white hover:bg-primary/80" 
+              className="text-primary-foreground hover:bg-primary/80" 
               onClick={() => setApiKeyDialogOpen(true)}
             >
               <Settings className="h-4 w-4" />
               <span className="sr-only">Settings</span>
             </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-primary/80" onClick={clearChat}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-primary-foreground hover:bg-primary/80" 
+              onClick={clearChat}
+            >
               <Mic className="h-4 w-4" />
               <span className="sr-only">Voice Input</span>
             </Button>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-primary/80" onClick={toggleChatbot}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-primary-foreground hover:bg-primary/80" 
+              onClick={toggleChatbot}
+            >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </Button>
@@ -104,14 +130,14 @@ export function Chatbot() {
               <div 
                 className={`max-w-[80%] rounded-lg p-3 ${
                   message.role === 'user' 
-                    ? 'bg-primary text-white' 
+                    ? 'bg-primary text-primary-foreground' 
                     : 'bg-secondary'
                 }`}
               >
                 {message.role === 'assistant' && (
                   <div className="flex items-center gap-2 mb-1">
                     <Avatar className="h-6 w-6">
-                      <div className="bg-primary text-white rounded-full flex items-center justify-center h-full w-full text-xs">
+                      <div className="bg-primary text-primary-foreground rounded-full flex items-center justify-center h-full w-full text-xs">
                         AI
                       </div>
                     </Avatar>
@@ -200,7 +226,7 @@ export function Chatbot() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="api-key" className="text-right">
+              <Label htmlFor="api-key" className="text-right text-sm">
                 API Key
               </Label>
               <Input

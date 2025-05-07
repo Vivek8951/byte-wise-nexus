@@ -1,7 +1,7 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ChatMessage } from '../types';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatbotContextType {
   messages: ChatMessage[];
@@ -34,12 +34,13 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState<string>(() => {
     // Use the default API key or any saved one
-    return localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
+    const savedKey = localStorage.getItem('gemini_api_key');
+    return savedKey || DEFAULT_API_KEY;
   });
   const { toast } = useToast();
 
   // Save the API key to localStorage whenever it changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (apiKey) {
       localStorage.setItem('gemini_api_key', apiKey);
     }
@@ -67,7 +68,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   // Generate course description based on topic
   const generateCourseDescription = async (topic: string): Promise<string> => {
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const keyToUse = apiKey || DEFAULT_API_KEY;
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +103,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       console.error("Error generating course description:", error);
       toast({
         title: "Error",
-        description: "Failed to generate course description",
+        description: "Failed to generate course description. Please check your API key.",
         variant: "destructive"
       });
       return "";
@@ -110,9 +113,11 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   // Get video transcription
   const getVideoTranscription = async (videoUrl: string): Promise<string> => {
     try {
+      const keyToUse = apiKey || DEFAULT_API_KEY;
+      
       // This is a placeholder - in a real implementation, you would send the video
       // to a transcription service. For now, we'll use Gemini to generate a placeholder
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +149,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       console.error("Error analyzing video:", error);
       toast({
         title: "Error",
-        description: "Failed to analyze video content",
+        description: "Failed to analyze video content. Please check your API key.",
         variant: "destructive"
       });
       return "";
@@ -165,7 +170,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      if (!apiKey) {
+      const keyToUse = apiKey || DEFAULT_API_KEY;
+      
+      if (!keyToUse) {
         throw new Error('Please set your Gemini API key in the settings');
       }
       
@@ -177,49 +184,56 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       
       if (isImageRequest) {
         // Image generation with Gemini API
-        const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  {
-                    text: `Generate an image based on this description: ${content}`
-                  }
-                ]
+        try {
+          // Gemini doesn't directly generate images, so let's create a descriptive response
+          const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    {
+                      text: `Generate a detailed description for an image based on: ${content}`
+                    }
+                  ]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.9,
+                maxOutputTokens: 500,
               }
-            ],
-            generationConfig: {
-              temperature: 0.9,
-              maxOutputTokens: 2048,
-            }
-          })
-        });
-        
-        if (!imageResponse.ok) {
-          throw new Error('Failed to generate image. Please check your API key and try again.');
+            })
+          });
+          
+          if (!imageResponse.ok) {
+            throw new Error('Failed to generate image description');
+          }
+          
+          const responseData = await imageResponse.json();
+          const imageDesc = responseData.candidates?.[0]?.content?.parts?.[0]?.text || 
+                            "I've prepared a visual representation based on your request.";
+          
+          // Since Gemini doesn't directly generate images, use Unsplash for a relevant image
+          const botMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: imageDesc,
+            timestamp: new Date().toISOString(),
+            imageUrl: `https://source.unsplash.com/random/800x600/?${encodeURIComponent(content)}`,
+          };
+          
+          setMessages(prev => [...prev, botMessage]);
+        } catch (error) {
+          console.error("Image generation error:", error);
+          throw new Error('Failed to generate image response');
         }
-        
-        const imageData = await imageResponse.json();
-        
-        // Since Gemini doesn't directly generate images like DALL-E,
-        // we'll provide a descriptive response with a relevant placeholder image
-        const botMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: "I can't directly generate images, but here's a description of what you're looking for.",
-          timestamp: new Date().toISOString(),
-          imageUrl: "https://source.unsplash.com/random/800x600/?"+encodeURIComponent(content),
-        };
-        
-        setMessages(prev => [...prev, botMessage]);
       } else {
         // Text completion with Gemini API
-        const chatResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        const chatResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${keyToUse}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

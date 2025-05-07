@@ -154,7 +154,7 @@ export default function Register() {
             
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name" className="block text-sm font-medium">Full Name</Label>
                 <Input
                   id="name"
                   name="name"
@@ -162,12 +162,12 @@ export default function Register() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email" className="block text-sm font-medium">Email address</Label>
                 <Input
                   id="email"
                   name="email"
@@ -176,12 +176,12 @@ export default function Register() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="block text-sm font-medium">Password</Label>
                 <Input
                   id="password"
                   name="password"
@@ -190,12 +190,12 @@ export default function Register() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="block text-sm font-medium">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -204,25 +204,25 @@ export default function Register() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label>Account Type</Label>
+              <div className="space-y-3">
+                <Label className="block text-sm font-medium">Account Type</Label>
                 <RadioGroup 
                   defaultValue="student" 
                   value={role} 
                   onValueChange={(value) => setRole(value as UserRole)} 
-                  className="flex gap-4"
+                  className="flex gap-6"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="student" id="student" />
-                    <Label htmlFor="student" className="cursor-pointer">Student</Label>
+                    <Label htmlFor="student" className="cursor-pointer text-sm">Student</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="admin" id="admin" />
-                    <Label htmlFor="admin" className="cursor-pointer">Administrator</Label>
+                    <Label htmlFor="admin" className="cursor-pointer text-sm">Administrator</Label>
                   </div>
                 </RadioGroup>
               </div>

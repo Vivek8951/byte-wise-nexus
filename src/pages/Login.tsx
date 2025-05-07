@@ -124,7 +124,7 @@ export default function Login() {
             
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email" className="block text-sm font-medium">Email address</Label>
                 <Input
                   id="email"
                   name="email"
@@ -133,13 +133,13 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="block text-sm font-medium">Password</Label>
                   <Link
                     to="/forgot-password"
                     className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
@@ -155,7 +155,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
+                  className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
               

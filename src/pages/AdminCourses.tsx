@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -34,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CourseEditor } from "@/components/admin/CourseEditor";
 import { Course, Video, Note } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCourses() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -70,14 +71,14 @@ export default function AdminCourses() {
     } else if (!authLoading && !isAuthenticated) {
       navigate("/login");
     }
-  }, [authLoading, isAuthenticated, user, navigate]);
+  }, [authLoading, isAuthenticated, user, navigate, toast]);
   
   if (authLoading || coursesLoading) {
     return (
       <>
         <Navbar />
         <div className="min-h-[50vh] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tech-blue"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
         <Footer />
       </>
@@ -231,7 +232,7 @@ export default function AdminCourses() {
           </div>
           <Button 
             onClick={handleAddCourse}
-            className="bg-tech-blue hover:bg-tech-darkblue flex items-center gap-2 animate-fade-in"
+            className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in"
           >
             <Plus className="h-4 w-4" /> New Course
           </Button>
@@ -294,20 +295,20 @@ export default function AdminCourses() {
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Category:</span>
-                        <p>{course.category}</p>
+                        <span className="text-muted-foreground text-xs block">Category:</span>
+                        <p className="font-medium">{course.category}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Instructor:</span>
-                        <p>{course.instructor}</p>
+                        <span className="text-muted-foreground text-xs block">Instructor:</span>
+                        <p className="font-medium">{course.instructor}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Level:</span>
-                        <p className="capitalize">{course.level}</p>
+                        <span className="text-muted-foreground text-xs block">Level:</span>
+                        <p className="capitalize font-medium">{course.level}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Duration:</span>
-                        <p>{course.duration}</p>
+                        <span className="text-muted-foreground text-xs block">Duration:</span>
+                        <p className="font-medium">{course.duration}</p>
                       </div>
                     </div>
                     
@@ -338,7 +339,7 @@ export default function AdminCourses() {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Get started by creating your first course. Add videos, documents and organize content for your students.
               </p>
-              <Button onClick={handleAddCourse} className="bg-tech-blue hover:bg-tech-darkblue">
+              <Button onClick={handleAddCourse} className="bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" /> Create First Course
               </Button>
             </div>
