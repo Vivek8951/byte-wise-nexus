@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { 
@@ -19,7 +20,7 @@ import { CourseQuiz } from "@/components/courses/CourseQuiz";
 import { VideoAnalysis } from "@/components/courses/VideoAnalysis";
 import { useToast } from "@/hooks/use-toast";
 import { BackButton } from "@/components/ui/back-button";
-import { mockQuizData } from "@/data/mockQuizData";
+import { getQuiz } from "@/data/mockQuizData";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -295,7 +296,7 @@ export default function CourseDetail() {
                   quizId="quiz-1"
                   title="Module Assessment Quiz"
                   description="Test your knowledge of the concepts covered in this course"
-                  questions={mockQuizData}
+                  questions={getQuiz("quiz-1")?.questions || []}
                 />
               )}
             </TabsContent>
