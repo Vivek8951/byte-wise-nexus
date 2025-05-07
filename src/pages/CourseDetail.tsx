@@ -84,6 +84,24 @@ export default function CourseDetail() {
     }
   };
   
+  // Function to play a video
+  const playVideo = (videoId: string) => {
+    if (!isEnrolled) {
+      toast({
+        title: "Enrollment Required",
+        description: "Please enroll in this course to watch the videos.",
+      });
+      return;
+    }
+    
+    // In a real app, this would navigate to a video player page
+    // For now, we'll just show a toast
+    toast({
+      title: "Video Playback",
+      description: "Video playback started",
+    });
+  };
+  
   return (
     <>
       <Navbar />
@@ -230,7 +248,13 @@ export default function CourseDetail() {
                                   className="w-full h-full object-cover"
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                  <Button variant="outline" className="bg-white/20 backdrop-blur-sm" size="icon">
+                                  <Button 
+                                    variant="outline" 
+                                    className="bg-white/20 backdrop-blur-sm" 
+                                    size="icon"
+                                    onClick={() => playVideo(video.id)}
+                                    disabled={!isEnrolled}
+                                  >
                                     <Play className="h-5 w-5" />
                                   </Button>
                                 </div>
@@ -254,6 +278,7 @@ export default function CourseDetail() {
                                     size="sm"
                                     className="gap-1"
                                     disabled={!isEnrolled}
+                                    onClick={() => playVideo(video.id)}
                                   >
                                     <Play className="h-3 w-3" />
                                     Watch

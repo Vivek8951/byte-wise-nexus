@@ -42,13 +42,17 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
   
-  // Automatically analyze when a video file is loaded
+  // Automatically analyze when a video URL is available
   useEffect(() => {
-    if (videoFile && videoRef.current) {
-      analyzeVideo(true);
+    if (videoUrl && videoRef.current) {
+      videoRef.current.onloadedmetadata = () => {
+        if (!videoParts.length) {
+          analyzeVideo(true);
+        }
+      };
     }
-  }, [videoFile]);
-
+  }, [videoUrl, videoParts.length]);
+  
   // Handle file upload for direct video analysis
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -69,7 +73,7 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
     fileInputRef.current?.click();
   };
   
-  // Function to analyze video content using AI
+  // Function to analyze video content
   const analyzeVideo = async (autoAnalyze = false) => {
     if (!videoRef.current) return;
     
@@ -79,11 +83,13 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
       // Get video duration
       const duration = videoRef.current.duration;
       
-      // Simulate AI analysis with a delay (in a real app this would use an AI service)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait a moment to ensure duration is available
+      if (isNaN(duration) || duration === 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       
       // Generate video parts based on the video content
-      const videoFileName = videoFile?.name || 'Video';
+      const videoFileName = videoFile?.name || video.title || 'Video';
       const fileNameWithoutExtension = videoFileName.split('.').slice(0, -1).join('.');
       
       // Generate an appropriate title from the filename
@@ -279,7 +285,15 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
             src={videoUrl} 
             ref={el => {
               videoRef.current = el;
-              if (el) handleVideoEvents();
+              if (el) {
+                handleVideoEvents();
+                // Ensure metadata is loaded for analysis
+                el.onloadedmetadata = () => {
+                  if (!videoParts.length && !isAnalyzing) {
+                    analyzeVideo(true);
+                  }
+                };
+              }
             }}
             className="w-full h-auto rounded-md shadow-sm max-h-[400px]" 
             controls
@@ -314,12 +328,12 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
       )}
       
       {/* Analysis results */}
-      {videoParts.length > 0 && (
+      {videoParts.length > 0 && isExpanded && (
         <Accordion 
           type="single" 
           collapsible 
           className="w-full"
-          defaultValue={isExpanded ? videoParts[0].id : undefined}
+          defaultValue={videoParts[0].id}
         >
           {videoParts.map((part) => (
             <AccordionItem key={part.id} value={part.id}>
@@ -347,12 +361,14 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
         </Accordion>
       )}
       
+      {/* Empty state message */}
       {videoParts.length === 0 && !isAnalyzing && !videoUrl && (
         <p className="text-sm text-muted-foreground">
           Upload and analyze a video to break it down into navigable sections and key points.
         </p>
       )}
       
+      {/* Loading state */}
       {isAnalyzing && (
         <div className="flex flex-col items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-tech-blue mb-4" />

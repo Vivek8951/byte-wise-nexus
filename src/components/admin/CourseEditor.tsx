@@ -269,13 +269,13 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       // Create a Video object for analysis
       const videoForAnalysis: VideoType = {
         id: `temp_${index}`,
-        title: videos[index].title || 'Untitled Video', // Provide a default title
-        description: videos[index].description || 'Video content', // Ensure description is always provided
+        title: videos[index].title || 'Untitled Video', 
+        description: videos[index].description || 'Video content', 
         url: objectUrl,
         courseId: course?.id || '',
-        order: index + 1, // Ensure order is always provided
+        order: index + 1, 
         thumbnail: '',
-        duration: videos[index].duration || '0:00', // Ensure duration is always provided
+        duration: videos[index].duration || '0:00',
       };
       
       // Set current video for auto-analysis
@@ -663,17 +663,17 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     
                     {/* Video analysis component for auto-generating content */}
                     {video.url && previewVideos.current[video.url] && (
-                      <div className="hidden">
+                      <div className="mt-4 border-t pt-4">
                         <VideoAnalysis 
                           video={{
                             ...video,
                             id: `temp_${index}`,
                             url: previewVideos.current[video.url],
                             courseId: course?.id || '',
-                            title: video.title || 'Untitled Video', // Ensure title is always provided
-                            description: video.description || 'Video content', // Ensure description is always provided
-                            duration: video.duration || '0:00', // Ensure duration is always provided
-                            order: index + 1, // Ensure order is always provided
+                            title: video.title || 'Untitled Video',
+                            description: video.description || 'Video content',
+                            duration: video.duration || '0:00',
+                            order: index + 1,
                           }}
                           onAnalysisComplete={(analysis) => handleAnalysisComplete(index, analysis)}
                         />
