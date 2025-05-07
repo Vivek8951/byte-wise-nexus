@@ -32,6 +32,15 @@ export function Navbar() {
       });
     }
   };
+
+  // Function to navigate to appropriate dashboard based on user role
+  const goToDashboard = () => {
+    if (user?.role === 'admin') {
+      navigate('/admin/courses');
+    } else {
+      navigate('/dashboard');
+    }
+  };
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -47,23 +56,17 @@ export function Navbar() {
             <span className="sr-only">Toggle menu</span>
           </Button>
           
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-tech-blue hover-scale">
+          <Link 
+            to={user ? (user.role === 'admin' ? "/admin/courses" : "/dashboard") : "/"}
+            className="flex items-center gap-2 font-bold text-xl text-tech-blue hover-scale"
+          >
             <Book className="h-6 w-6" />
             <span>TechLearn</span>
           </Link>
         </div>
         
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <Link to="/" className="font-medium transition-colors hover:text-tech-blue animated-link">Home</Link>
-          <Link to="/courses" className="font-medium transition-colors hover:text-tech-blue animated-link">Courses</Link>
-          {user && <Link to="/dashboard" className="font-medium transition-colors hover:text-tech-blue animated-link">Dashboard</Link>}
-          {user?.role === 'admin' && (
-            <>
-              <Link to="/admin/courses" className="font-medium transition-colors hover:text-tech-blue animated-link">Manage Courses</Link>
-            </>
-          )}
-        </nav>
+        {/* Empty middle section - no navigation links */}
+        <div className="flex-1 md:flex"></div>
         
         <div className="flex items-center gap-4">
           {!isSearchOpen ? (
@@ -85,11 +88,14 @@ export function Navbar() {
                     <Bell className="h-5 w-5" />
                     <span className="sr-only">Notifications</span>
                   </Button>
-                  <Link to="/dashboard">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tech-purple text-white hover-scale">
-                      {user.name.charAt(0)}
-                    </div>
-                  </Link>
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-tech-purple text-white hover-scale"
+                    onClick={goToDashboard}
+                  >
+                    {user.name.charAt(0)}
+                  </Button>
                   <Button 
                     variant="ghost" 
                     onClick={handleLogout}
@@ -126,43 +132,18 @@ export function Navbar() {
         </div>
       </div>
       
-      {/* Mobile Menu */}
+      {/* Mobile Menu - with simplified navigation */}
       {isMenuOpen && (
         <div className="fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row auto-rows-max overflow-auto bg-background p-6 pb-32 shadow-md animate-in slide-in-from-top md:hidden">
           <nav className="flex flex-col gap-6 text-lg">
-            <Link 
-              to="/" 
-              className="flex items-center gap-2 font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link 
-              to="/courses" 
-              className="flex items-center gap-2 font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Courses
-            </Link>
-            {user && (
+            {user?.role === 'admin' && (
               <Link 
-                to="/dashboard" 
+                to="/admin/courses" 
                 className="flex items-center gap-2 font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Dashboard
+                Manage Courses
               </Link>
-            )}
-            {user?.role === 'admin' && (
-              <>
-                <Link 
-                  to="/admin/courses" 
-                  className="flex items-center gap-2 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Manage Courses
-                </Link>
-              </>
             )}
             {user ? (
               <Button 
