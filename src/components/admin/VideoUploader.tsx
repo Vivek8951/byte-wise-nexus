@@ -91,7 +91,7 @@ export function VideoUploader({ courseId, onUploadComplete }: VideoUploaderProps
         title: title,
         description: description,
         url: videoUrl,
-        duration: estimatedDuration, // Using estimated duration
+        duration: String(estimatedDuration), // Convert number to string to match the Video interface
         thumbnail: thumbnailUrl,
         order: videos.filter(v => v.courseId === courseId).length + 1,
         analyzedContent: null
