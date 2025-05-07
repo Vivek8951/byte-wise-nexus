@@ -7,7 +7,8 @@ import {
   ChevronUp,
   Loader2,
   FileVideo,
-  Upload
+  Upload,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Video } from '@/types';
@@ -18,6 +19,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useToast } from "@/components/ui/use-toast";
+import { VideoAIChat } from './VideoAnalysisChatbot';
 
 interface VideoAnalysisProps {
   video: Video;
@@ -36,12 +38,53 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>(video.url || '');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
+  
+  // Extract analyzed content if available from the video object
+  useEffect(() => {
+    if (video.analyzedContent && Array.isArray(video.analyzedContent)) {
+      // Direct array format
+      setVideoParts(video.analyzedContent);
+      setIsExpanded(true);
+    } else if (video.analyzedContent && typeof video.analyzedContent === 'object') {
+      // Object format with transcript, summary, keywords
+      const analyzedContent = video.analyzedContent as any;
+      
+      if (analyzedContent.transcript) {
+        // Generate video parts based on keywords if available
+        if (analyzedContent.keywords && Array.isArray(analyzedContent.keywords)) {
+          const generatedParts: VideoPart[] = [];
+          const videoDuration = parseInt(video.duration) || 600; // Default to 10 minutes if not available
+          
+          // Create sections based on keywords, distributing them evenly across the video
+          const sectionDuration = videoDuration / (analyzedContent.keywords.length + 1);
+          
+          analyzedContent.keywords.forEach((keyword: string, index: number) => {
+            const startTime = Math.floor(sectionDuration * index);
+            const minutes = Math.floor(startTime / 60);
+            const seconds = Math.floor(startTime % 60);
+            const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            generatedParts.push({
+              id: `${video.id}_part${index+1}`,
+              title: `${keyword.charAt(0).toUpperCase() + keyword.slice(1)}`,
+              startTime: formattedTime,
+              description: `Discussion about ${keyword} and related concepts in ${video.title}`,
+            });
+          });
+          
+          setVideoParts(generatedParts);
+          setIsExpanded(true);
+        }
+      }
+    }
+  }, [video]);
   
   // Automatically analyze when a video URL is available
   useEffect(() => {
@@ -263,6 +306,15 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
     };
   }, [video.id]);
   
+  // Extract transcript and summary from analyzedContent if available
+  const transcript = video.analyzedContent && typeof video.analyzedContent === 'object' && !Array.isArray(video.analyzedContent)
+    ? (video.analyzedContent as any).transcript || ''
+    : '';
+    
+  const summary = video.analyzedContent && typeof video.analyzedContent === 'object' && !Array.isArray(video.analyzedContent)
+    ? (video.analyzedContent as any).summary || ''
+    : '';
+  
   return (
     <div className="mt-6 border rounded-md p-4 bg-card animate-fade-in">
       <div className="flex justify-between items-center mb-4">
@@ -276,6 +328,18 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
               <Play className="h-4 w-4" /> Analyze Video
             </Button>
           )}
+
+          {/* AI Chat button */}
+          {(transcript || summary) && (
+            <Button 
+              variant="outline"
+              onClick={() => setShowAIChat(!showAIChat)}
+              className="flex items-center gap-1"
+            >
+              <MessageSquare className="h-4 w-4" /> {showAIChat ? "Hide AI Chat" : "Ask AI about video"}
+            </Button>
+          )}
+          
           {videoParts.length > 0 && (
             <Button 
               variant="ghost"
@@ -338,6 +402,11 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
             onChange={handleVideoUpload}
           />
         </div>
+      )}
+      
+      {/* AI Chat section */}
+      {showAIChat && transcript && (
+        <VideoAIChat videoId={video.id} transcript={transcript} summary={summary} />
       )}
       
       {/* Analysis results */}

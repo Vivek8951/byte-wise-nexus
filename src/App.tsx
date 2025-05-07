@@ -1,5 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { CourseProvider } from "./context/CourseContext";
@@ -66,8 +67,5 @@ function App() {
     </>
   );
 }
-
-// Import useEffect for favicon update
-import { useEffect } from "react";
 
 export default App;
