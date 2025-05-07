@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, UserRole } from '../types';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast"; // Updated import path
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
         setIsLoading(true);
         
         if (session?.user) {
@@ -79,10 +80,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // THEN check for existing session
     const initializeAuth = async () => {
       const { data } = await supabase.auth.getSession();
+      console.log("Initial session check:", data.session?.user?.id);
       
       if (data.session?.user) {
-        const profile = await fetchUserProfile(data.session.user.id);
-        setUser(profile);
+        try {
+          const profile = await fetchUserProfile(data.session.user.id);
+          setUser(profile);
+        } catch (error) {
+          console.error("Error setting up initial auth:", error);
+        }
       }
       
       setIsLoading(false);
@@ -182,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       toast({
         title: "Registration successful!",
-        description: "Please check your email for a verification link",
+        description: "Your account has been created.",
       });
       
       return true;

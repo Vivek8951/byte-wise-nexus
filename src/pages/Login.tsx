@@ -10,6 +10,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ export default function Login() {
   // Only redirect if authenticated and not loading
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
+      console.log("User is authenticated, redirecting to dashboard");
       navigate("/dashboard");
     }
   }, [isAuthenticated, isLoading, navigate]);
@@ -34,8 +36,10 @@ export default function Login() {
     setError(null);
     
     try {
+      console.log("Attempting login with:", email);
       const success = await login(email, password);
       if (success) {
+        console.log("Login successful, navigating to dashboard");
         navigate("/dashboard");
       }
     } catch (err: any) {
@@ -113,9 +117,9 @@ export default function Login() {
           
           <div className="bg-card rounded-lg p-6 shadow-sm border animate-fade-in">
             {error && (
-              <div className="mb-4 p-3 bg-destructive/15 border border-destructive/30 text-destructive rounded-md text-sm">
-                {error}
-              </div>
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
             
             <form className="space-y-6" onSubmit={handleSubmit}>
