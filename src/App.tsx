@@ -22,7 +22,7 @@ import "./App.css";
 function App() {
   return (
     <>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="dark" attribute="class">
         <Router>
           <AuthProvider>
             <CourseProvider>

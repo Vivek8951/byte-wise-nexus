@@ -21,7 +21,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { X, User as UserIcon, Book, FileText, CheckCircle } from 'lucide-react';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 import { format } from 'date-fns';
 
 interface UserDetailsProps {
@@ -74,8 +74,12 @@ export function UserDetails({ userId, onClose }: UserDetailsProps) {
 
         if (progressError) throw progressError;
         
+        // Convert role string to UserRole type
+        const userRole = profile.role as UserRole;
+        
         setUser({
           ...profile,
+          role: userRole,
           enrolledCourses: userEnrollments.map(e => e.course_id)
         });
         setEnrollments(userEnrollments);
