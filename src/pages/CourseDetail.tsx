@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { 
-  BookOpen, Clock, BarChart3, Calendar, Info, 
-  FileText, CheckCircle, AlertTriangle, Video,
-  Star, Users, Play, Download
+  BookOpen, Clock, BarChart3, Calendar, 
+  Star, Users, Play, Download, Loader2
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -13,25 +13,29 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { CourseQuiz } from "@/components/courses/CourseQuiz";
 import { VideoAnalysis } from "@/components/courses/VideoAnalysis";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "@/components/ui/back-button";
 import { getQuiz } from "@/data/mockQuizData";
 import { supabase } from "@/integrations/supabase/client";
+import { VideoPlayerWithAnalysis } from "@/components/courses/VideoPlayerWithAnalysis";
+import { processVideo } from "@/utils/supabaseStorage";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const { getCourse, getCourseVideos, getCourseNotes } = useCourses();
   const [course, setCourse] = useState(undefined);
   const [videos, setVideos] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [notes, setNotes] = useState([]);
   const [activeVideo, setActiveVideo] = useState(null);
   const [videoIndex, setVideoIndex] = useState(0);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
+  const [isProcessingVideo, setIsProcessingVideo] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -65,9 +69,58 @@ export default function CourseDetail() {
       // Check if user is enrolled in this course
       if (isAuthenticated && user) {
         checkEnrollmentStatus(id, user.id);
+        // Fetch quizzes for this course
+        fetchCourseQuizzes(id);
       }
     }
   }, [id, getCourse, getCourseVideos, getCourseNotes, isAuthenticated, user]);
+  
+  const fetchCourseQuizzes = async (courseId) => {
+    setIsLoadingQuizzes(true);
+    try {
+      // First try to get quizzes from Supabase
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('order_num', { ascending: true });
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setQuizzes(data);
+      } else {
+        // Fall back to mock data if no quizzes in db
+        const mockQuiz = getQuiz("quiz-1");
+        if (mockQuiz) {
+          setQuizzes([{
+            id: "quiz-1",
+            courseId: courseId,
+            title: "Module Assessment Quiz",
+            description: "Test your knowledge of the concepts covered in this course",
+            questions: mockQuiz.questions,
+            order_num: 1
+          }]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+      // Use mock data as fallback
+      const mockQuiz = getQuiz("quiz-1");
+      if (mockQuiz) {
+        setQuizzes([{
+          id: "quiz-1",
+          courseId: courseId,
+          title: "Module Assessment Quiz",
+          description: "Test your knowledge of the concepts covered in this course",
+          questions: mockQuiz.questions,
+          order_num: 1
+        }]);
+      }
+    } finally {
+      setIsLoadingQuizzes(false);
+    }
+  };
   
   const checkEnrollmentStatus = async (courseId, userId) => {
     try {
@@ -76,9 +129,9 @@ export default function CourseDetail() {
         .select('*')
         .eq('course_id', courseId)
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error("Error checking enrollment status:", error);
         setIsEnrolled(false);
       } else {
@@ -110,8 +163,9 @@ export default function CourseDetail() {
   };
   
   const formatDuration = (duration) => {
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
+    if (!duration) return "00:00";
+    const minutes = Math.floor(parseFloat(duration) / 60);
+    const seconds = Math.floor(parseFloat(duration) % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
   
@@ -178,6 +232,74 @@ export default function CourseDetail() {
     }
   };
   
+  const handleProcessAllVideos = async () => {
+    if (!videos || videos.length === 0) return;
+    
+    setIsProcessingVideo(true);
+    toast({
+      title: "Processing videos",
+      description: `Processing ${videos.length} videos. This may take a few minutes...`
+    });
+    
+    try {
+      // Process each video one by one
+      for (let i = 0; i < videos.length; i++) {
+        const video = videos[i];
+        await processVideo(video.id, id);
+        
+        // Update progress
+        toast({
+          title: "Processing videos",
+          description: `Processed ${i + 1} of ${videos.length} videos`
+        });
+      }
+      
+      // Refresh the videos data
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('course_id', id)
+        .order('order_num', { ascending: true });
+        
+      if (!error && data) {
+        // Map the fields to match our Video interface
+        const updatedVideos = data.map(v => ({
+          id: v.id,
+          courseId: v.course_id,
+          title: v.title,
+          description: v.description,
+          url: v.url,
+          duration: v.duration,
+          thumbnail: v.thumbnail,
+          order: v.order_num,
+          analyzedContent: v.analyzed_content
+        }));
+        
+        setVideos(updatedVideos);
+        if (updatedVideos.length > 0) {
+          setActiveVideo(updatedVideos[videoIndex < updatedVideos.length ? videoIndex : 0]);
+        }
+      }
+      
+      // Also refresh quizzes as they might have been created during processing
+      fetchCourseQuizzes(id);
+      
+      toast({
+        title: "All videos processed",
+        description: "Video analysis complete and quizzes generated"
+      });
+    } catch (error) {
+      console.error("Error processing videos:", error);
+      toast({
+        title: "Processing error",
+        description: "An error occurred while processing videos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingVideo(false);
+    }
+  };
+  
   return (
     <>
       <Navbar />
@@ -185,15 +307,21 @@ export default function CourseDetail() {
         <div className="mb-6">
           <BackButton href="/courses" className="mb-6" />
           
-          {/* New Course Header Design - Styled like the image */}
+          {/* Course Header */}
           <div className="bg-[#0F1729] rounded-lg overflow-hidden">
             <div className="flex flex-col md:flex-row">
               {/* Left side content */}
               <div className="md:w-2/3 p-8 text-left">
                 <div className="mb-6">
-                  <Badge className="bg-green-600 hover:bg-green-700 text-white mb-3">Beginner</Badge>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{course?.title || "Modern Web Development"}</h1>
-                  <p className="text-gray-300 mb-6">{course?.description || "Build responsive and dynamic web applications using modern frameworks and best practices. Based on The Odin Project, a free open source coding curriculum."}</p>
+                  <Badge className="bg-green-600 hover:bg-green-700 text-white mb-3">
+                    {course?.level || "Beginner"}
+                  </Badge>
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    {course?.title || "Modern Web Development"}
+                  </h1>
+                  <p className="text-gray-300 mb-6">
+                    {course?.description || "Build responsive and dynamic web applications using modern frameworks and best practices."}
+                  </p>
                   
                   <div className="flex flex-wrap items-center gap-4 mb-6">
                     <div className="flex items-center">
@@ -203,20 +331,22 @@ export default function CourseDetail() {
                     </div>
                     <div className="flex items-center">
                       <Clock className="h-5 w-5 text-gray-400 mr-1" />
-                      <span className="text-gray-300">11 weeks</span>
+                      <span className="text-gray-300">{course?.duration || "11 weeks"}</span>
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-5 w-5 text-gray-400 mr-1" />
-                      <span className="text-gray-300">Updated 11/10/2023</span>
+                      <span className="text-gray-300">
+                        Updated {new Date(course?.updatedAt || Date.now()).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                   
                   <div className="flex items-center mb-6">
                     <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
-                      A
+                      {course?.instructor?.charAt(0) || "A"}
                     </div>
                     <div>
-                      <p className="text-white font-medium">Alex Thompson</p>
+                      <p className="text-white font-medium">{course?.instructor || "Alex Thompson"}</p>
                       <p className="text-gray-400 text-sm">Instructor</p>
                     </div>
                   </div>
@@ -242,18 +372,18 @@ export default function CourseDetail() {
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center justify-between text-white">
                       <div className="flex items-center">
-                        <FileText className="h-5 w-5 mr-2" />
+                        <BookOpen className="h-5 w-5 mr-2" />
                         <span>Course Content</span>
                       </div>
-                      <span>6 items</span>
+                      <span>{videos.length + notes.length} items</span>
                     </div>
                     
                     <div className="flex items-center justify-between text-white">
                       <div className="flex items-center">
-                        <Video className="h-5 w-5 mr-2" />
+                        <Play className="h-5 w-5 mr-2" />
                         <span>Video Lectures</span>
                       </div>
-                      <span>3 videos</span>
+                      <span>{videos.length} videos</span>
                     </div>
                     
                     <div className="flex items-center justify-between text-white">
@@ -261,13 +391,15 @@ export default function CourseDetail() {
                         <Download className="h-5 w-5 mr-2" />
                         <span>Downloadable Notes</span>
                       </div>
-                      <span>3 files</span>
+                      <span>{notes.length} files</span>
                     </div>
                   </div>
                   
                   <Separator className="bg-gray-700 my-4" />
                   
-                  <p className="text-gray-300 text-center mb-4">Enroll to get full access to course content</p>
+                  <p className="text-gray-300 text-center mb-4">
+                    {isEnrolled ? 'You are enrolled in this course' : 'Enroll to get full access to course content'}
+                  </p>
                   
                   <Button 
                     className="w-full py-6" 
@@ -281,8 +413,32 @@ export default function CourseDetail() {
             </div>
           </div>
           
+          {/* Process all videos button for admins */}
+          {isAuthenticated && user?.role === 'admin' && videos.length > 0 && (
+            <div className="mt-4">
+              <Button
+                onClick={handleProcessAllVideos}
+                variant="outline"
+                disabled={isProcessingVideo}
+                className="flex items-center gap-2"
+              >
+                {isProcessingVideo ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing Videos...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4" />
+                    Process All Videos
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+          
           {/* Tabs section only shown when enrolled */}
-          {isEnrolled && (
+          {(isEnrolled || (isAuthenticated && user?.role === 'admin')) && (
             <Tabs defaultValue="overview" className="w-full mt-8">
               <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -299,14 +455,16 @@ export default function CourseDetail() {
                 
                 <h3 className="text-xl font-semibold mt-4 text-left">What you'll learn</h3>
                 <ul className="list-disc list-inside text-left">
-                  <li>Understand the basic principles of...</li>
+                  <li>Understand the basic principles of {course?.category || "technology"}</li>
                   <li>Apply these principles to real-world scenarios</li>
-                  <li>Build your own...</li>
+                  <li>Build your own projects with the knowledge gained</li>
+                  <li>Master advanced techniques through hands-on practice</li>
                 </ul>
                 
                 <h3 className="text-xl font-semibold mt-4 text-left">Prerequisites</h3>
                 <p className="text-left">
-                  Basic knowledge of...
+                  Basic knowledge of programming concepts is recommended but not required.
+                  This course is designed to accommodate learners of all levels.
                 </p>
               </TabsContent>
               
@@ -317,55 +475,33 @@ export default function CourseDetail() {
                   {/* Video Section */}
                   <div className="md:col-span-2">
                     {activeVideo ? (
-                      <Card className="mb-6">
-                        <AspectRatio ratio={16 / 9}>
-                          <video
-                            src={activeVideo.url}
-                            controls
-                            className="w-full h-full object-cover rounded-md"
-                          />
-                        </AspectRatio>
-                        <div className="p-4 text-left">
-                          <h3 className="text-lg font-semibold">{activeVideo.title}</h3>
-                          <p className="text-muted-foreground text-sm">{activeVideo.description}</p>
-                        </div>
-                      </Card>
+                      <VideoPlayerWithAnalysis 
+                        video={activeVideo} 
+                        courseId={id}
+                        onAnalysisComplete={() => fetchCourseQuizzes(id)}
+                      />
                     ) : (
-                      <p className="text-left">No video selected.</p>
+                      <div className="flex items-center justify-center h-48 bg-gray-100 dark:bg-gray-800 rounded-md">
+                        <p className="text-center">No video selected</p>
+                      </div>
                     )}
                     
-                    <div className="flex justify-between">
+                    <div className="flex justify-between mt-4">
                       <Button 
                         variant="outline" 
-                        onClick={() => {
-                          if (videoIndex > 0) {
-                            setActiveVideo(videos[videoIndex - 1]);
-                            setVideoIndex(videoIndex - 1);
-                          }
-                        }} 
+                        onClick={handlePrevVideo} 
                         disabled={videoIndex === 0}
                       >
                         Previous
                       </Button>
                       <Button 
                         variant="outline" 
-                        onClick={() => {
-                          if (videoIndex < videos.length - 1) {
-                            setActiveVideo(videos[videoIndex + 1]);
-                            setVideoIndex(videoIndex + 1);
-                          }
-                        }} 
+                        onClick={handleNextVideo} 
                         disabled={videoIndex === videos.length - 1}
                       >
                         Next
                       </Button>
                     </div>
-                    
-                    {activeVideo && (
-                      <div className="mt-6">
-                        <VideoAnalysis video={activeVideo} />
-                      </div>
-                    )}
                   </div>
                   
                   {/* Video List - Redesigned to match the image */}
@@ -376,10 +512,7 @@ export default function CourseDetail() {
                         <div 
                           key={video.id}
                           className={`flex bg-[#0F1729] border border-gray-800 rounded-lg overflow-hidden cursor-pointer hover:border-gray-600 transition-colors ${activeVideo?.id === video.id ? 'border-blue-500' : ''}`}
-                          onClick={() => {
-                            setActiveVideo(video);
-                            setVideoIndex(index);
-                          }}
+                          onClick={() => handleVideoClick(video, index)}
                         >
                           <div className="w-32 h-24 relative flex-shrink-0">
                             <img 
@@ -391,7 +524,7 @@ export default function CourseDetail() {
                               <Play className="h-6 w-6 text-white" />
                             </div>
                             <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
-                              {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                              {formatDuration(video.duration)}
                             </div>
                           </div>
                           <div className="p-3 text-left flex-1">
@@ -400,23 +533,23 @@ export default function CourseDetail() {
                           </div>
                         </div>
                       )) : (
-                        <Card className="p-6 text-center">
+                        <div className="p-6 text-center bg-card rounded-lg border">
                           <p>No videos available for this course.</p>
-                        </Card>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
               </TabsContent>
               
-              {/* Keep the existing TabsContent for resources and quiz */}
+              {/* Resources tab */}
               <TabsContent value="resources" className="space-y-4 py-4">
                 <h2 className="text-2xl font-bold text-left">Course Resources</h2>
                 
                 {notes.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {notes.map(note => (
-                      <Card key={note.id} className="bg-card border rounded-lg overflow-hidden">
+                      <div key={note.id} className="bg-card border rounded-lg overflow-hidden">
                         <div className="p-4 text-left">
                           <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
                           <p className="text-muted-foreground line-clamp-2 mb-4 text-sm">{note.description}</p>
@@ -424,31 +557,44 @@ export default function CourseDetail() {
                             Download Resource
                           </a>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-left">No resources available for this course.</p>
+                  <div className="p-6 text-center bg-card rounded-lg border">
+                    <p>No resources available for this course.</p>
+                  </div>
                 )}
               </TabsContent>
               
+              {/* Quiz tab */}
               <TabsContent value="quiz" className="space-y-4 py-4">
                 <h2 className="text-2xl font-bold text-left">Course Quiz</h2>
-                {id && (
+                
+                {isLoadingQuizzes ? (
+                  <div className="flex justify-center items-center p-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                    <span>Loading quiz...</span>
+                  </div>
+                ) : quizzes.length > 0 ? (
                   <CourseQuiz 
                     courseId={id}
-                    quizId="quiz-1"
-                    title="Module Assessment Quiz"
-                    description="Test your knowledge of the concepts covered in this course"
-                    questions={getQuiz("quiz-1")?.questions || []}
+                    quizId={quizzes[0].id}
+                    title={quizzes[0].title}
+                    description={quizzes[0].description}
+                    questions={quizzes[0].questions}
                   />
+                ) : (
+                  <div className="p-6 text-center bg-card rounded-lg border">
+                    <p>No quizzes available for this course yet.</p>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
           )}
           
-          {/* Course preview section - center content but left-align text */}
-          {!isEnrolled && (
+          {/* Course preview section when not enrolled */}
+          {!isEnrolled && !(isAuthenticated && user?.role === 'admin') && (
             <div className="mt-8">
               <Tabs defaultValue="content" className="w-full">
                 <TabsList className="mb-4">
@@ -458,77 +604,52 @@ export default function CourseDetail() {
                 
                 <TabsContent value="content" className="space-y-4 py-4">
                   <div className="space-y-4">
-                    <div className="bg-[#0F1729] rounded-lg overflow-hidden border border-gray-800">
-                      <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                        <h3 className="font-semibold">Web Development Basics</h3>
-                        <span className="text-sm text-gray-400">32:45</span>
-                      </div>
-                      <div className="p-4 text-gray-300 text-sm">
-                        <p>Introduction to HTML, CSS, and JavaScript fundamentals</p>
-                        <div className="mt-2 flex justify-between items-center">
-                          <span>Lecture 1</span>
-                          <Button variant="outline" size="sm" className="flex items-center gap-1">
-                            <Play className="h-3 w-3" />
-                            <span>Watch</span>
-                          </Button>
+                    {videos.length > 0 ? (
+                      videos.slice(0, 3).map((video, index) => (
+                        <div key={video.id} className="bg-[#0F1729] rounded-lg overflow-hidden border border-gray-800">
+                          <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                            <h3 className="font-semibold">{video.title}</h3>
+                            <span className="text-sm text-gray-400">{formatDuration(video.duration)}</span>
+                          </div>
+                          <div className="p-4 text-gray-300 text-sm">
+                            <p>{video.description}</p>
+                            <div className="mt-2 flex justify-between items-center">
+                              <span>Lecture {index + 1}</span>
+                              <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                <Play className="h-3 w-3" />
+                                <span>Preview</span>
+                              </Button>
+                            </div>
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="p-6 text-center bg-card rounded-lg border">
+                        <p>No preview content available for this course.</p>
                       </div>
-                    </div>
-                    
-                    <div className="bg-[#0F1729] rounded-lg overflow-hidden border border-gray-800">
-                      <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                        <h3 className="font-semibold">Responsive Web Design</h3>
-                        <span className="text-sm text-gray-400">38:10</span>
-                      </div>
-                      <div className="p-4 text-gray-300 text-sm">
-                        <p>Creating websites that work across devices and screen sizes</p>
-                        <div className="mt-2 flex justify-between items-center">
-                          <span>Lecture 2</span>
-                          <Button variant="outline" size="sm" className="flex items-center gap-1">
-                            <Play className="h-3 w-3" />
-                            <span>Watch</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-[#0F1729] rounded-lg overflow-hidden border border-gray-800">
-                      <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                        <h3 className="font-semibold">JavaScript and DOM Manipulation</h3>
-                        <span className="text-sm text-gray-400">41:25</span>
-                      </div>
-                      <div className="p-4 text-gray-300 text-sm">
-                        <p>Working with the Document Object Model using JavaScript</p>
-                        <div className="mt-2 flex justify-between items-center">
-                          <span>Lecture 3</span>
-                          <Button variant="outline" size="sm" className="flex items-center gap-1">
-                            <Play className="h-3 w-3" />
-                            <span>Watch</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="overview" className="space-y-4 py-4">
                   <h2 className="text-2xl font-bold text-left">Course Overview</h2>
                   <p className="text-left">
-                    This course provides a comprehensive introduction to modern web development practices. You'll learn HTML, CSS, JavaScript and more advanced concepts to build responsive web applications.
+                    This course provides a comprehensive introduction to {course?.category || "technology"}. 
+                    You'll learn fundamental concepts and advanced techniques to master this subject.
                   </p>
                   
                   <h3 className="text-xl font-semibold mt-4 text-left">What you'll learn</h3>
                   <ul className="list-disc list-inside text-left">
-                    <li>HTML structure and semantic elements</li>
-                    <li>CSS styling and responsive design techniques</li>
-                    <li>JavaScript fundamentals and DOM manipulation</li>
-                    <li>Modern frameworks and development workflows</li>
-                    <li>Best practices for web development</li>
+                    <li>Core principles and best practices</li>
+                    <li>Practical implementation techniques</li>
+                    <li>Problem-solving approaches</li>
+                    <li>Industry-standard methodologies</li>
+                    <li>Real-world application examples</li>
                   </ul>
                   
                   <h3 className="text-xl font-semibold mt-4 text-left">Prerequisites</h3>
                   <p className="text-left">
-                    No prior experience is required for this beginner-level course. Just bring your enthusiasm to learn web development!
+                    No prior experience is required for this beginner-level course. Just bring your enthusiasm to learn!
                   </p>
                 </TabsContent>
               </Tabs>

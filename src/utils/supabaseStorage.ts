@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -109,11 +110,42 @@ export async function populateCourses(): Promise<{ success: boolean; message: st
       success: true, 
       message: `Successfully added ${data?.coursesAdded || 0} courses to the platform.`
     };
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error populating courses:", error);
     return { 
       success: false, 
       message: error.message || "Failed to populate courses. Please try again."
+    };
+  }
+}
+
+/**
+ * Processes a video to extract content analysis for a specific course
+ * @param videoId ID of the video to process
+ * @param courseId ID of the course the video belongs to
+ * @returns Result of the operation with analyzed content
+ */
+export async function processVideo(videoId: string, courseId: string): Promise<{ success: boolean; message: string; data?: any }> {
+  try {
+    const { data, error } = await supabase.functions.invoke("process-video", {
+      body: { videoId, courseId }
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      success: true,
+      message: "Video processed successfully",
+      data
+    };
+  } catch (error) {
+    console.error("Error processing video:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to process video. Please try again."
     };
   }
 }

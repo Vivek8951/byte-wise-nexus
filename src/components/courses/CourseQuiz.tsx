@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { markQuizAsCompleted } from "@/data/mockProgressData";
 import { toast } from "@/components/ui/sonner";
-import { Book, Check, X } from "lucide-react";
+import { Book, Check, X, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Question {
   id: string;
@@ -30,14 +31,157 @@ export function CourseQuiz({
   quizId,
   title,
   description,
-  questions,
+  questions: initialQuestions,
   onComplete
 }: CourseQuizProps) {
   const { user } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<number[]>(Array(questions.length).fill(-1));
+  const [questions, setQuestions] = useState<Question[]>(initialQuestions || []);
+  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(initialQuestions ? false : true);
+
+  // Fetch questions if not provided or fetch from video analysis content
+  useEffect(() => {
+    const loadQuestionsForCourse = async () => {
+      if (initialQuestions && initialQuestions.length > 0) {
+        setQuestions(initialQuestions);
+        setSelectedAnswers(Array(initialQuestions.length).fill(-1));
+        setIsLoadingQuestions(false);
+        return;
+      }
+      
+      setIsLoadingQuestions(true);
+      
+      try {
+        // Try to fetch questions from the videos table's analyzed_content
+        const { data: videos, error: videosError } = await supabase
+          .from('videos')
+          .select('analyzed_content')
+          .eq('course_id', courseId)
+          .not('analyzed_content', 'is', null);
+        
+        if (videosError) {
+          throw videosError;
+        }
+        
+        // Extract questions from analyzed_content
+        const quizQuestions: Question[] = [];
+        
+        videos.forEach((video, videoIndex) => {
+          if (video.analyzed_content && video.analyzed_content.questions) {
+            const analysisQuestions = Array.isArray(video.analyzed_content.questions) 
+              ? video.analyzed_content.questions 
+              : [video.analyzed_content.questions];
+            
+            analysisQuestions.forEach((q: any, qIndex: number) => {
+              if (q.question && q.options) {
+                const options = Array.isArray(q.options) ? q.options : [];
+                const correctAnswer = typeof q.correctAnswer === 'number' 
+                  ? q.correctAnswer 
+                  : (typeof q.correctOption === 'number' 
+                    ? q.correctOption
+                    : 0);
+                
+                quizQuestions.push({
+                  id: `video_${videoIndex}_q_${qIndex}`,
+                  text: q.question,
+                  options: options,
+                  correctAnswer: correctAnswer
+                });
+              }
+            });
+          }
+        });
+        
+        if (quizQuestions.length > 0) {
+          // Use the questions from analyzed content
+          setQuestions(quizQuestions);
+          setSelectedAnswers(Array(quizQuestions.length).fill(-1));
+        } else {
+          // If no questions found, create default questions
+          const defaultQuestions: Question[] = [
+            {
+              id: "default_q1",
+              text: `What is the main topic covered in this course?`,
+              options: [
+                "The fundamentals and key concepts",
+                "Only advanced topics",
+                "Unrelated material",
+                "Historical context only"
+              ],
+              correctAnswer: 0
+            },
+            {
+              id: "default_q2",
+              text: "How should you approach learning this subject?",
+              options: [
+                "Skip all the basics",
+                "Practice regularly with examples",
+                "Memorize without understanding",
+                "Ignore the practical applications"
+              ],
+              correctAnswer: 1
+            },
+            {
+              id: "default_q3",
+              text: "What is a good way to test your understanding?",
+              options: [
+                "Never review the material",
+                "Only read, never practice",
+                "Apply concepts to solve problems",
+                "Skip all exercises"
+              ],
+              correctAnswer: 2
+            }
+          ];
+          
+          setQuestions(defaultQuestions);
+          setSelectedAnswers(Array(defaultQuestions.length).fill(-1));
+        }
+      } catch (error) {
+        console.error("Error loading questions:", error);
+        toast({
+          title: "Error loading quiz",
+          description: "Failed to load quiz questions. Using default questions instead."
+        });
+        
+        // Use fallback questions
+        const fallbackQuestions: Question[] = [
+          {
+            id: "fallback_q1",
+            text: "Which approach is best for mastering this subject?",
+            options: [
+              "Regular practice and application",
+              "Skimming through content quickly",
+              "Memorizing without understanding",
+              "Avoiding difficult concepts"
+            ],
+            correctAnswer: 0
+          },
+          {
+            id: "fallback_q2",
+            text: "What's an effective way to reinforce your learning?",
+            options: [
+              "Avoid taking notes",
+              "Teaching concepts to others",
+              "Only focusing on theory",
+              "Skipping practical exercises"
+            ],
+            correctAnswer: 1
+          }
+        ];
+        
+        setQuestions(fallbackQuestions);
+        setSelectedAnswers(Array(fallbackQuestions.length).fill(-1));
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+    
+    loadQuestionsForCourse();
+  }, [courseId, initialQuestions]);
 
   const handleAnswer = (answerIndex: number) => {
     if (isSubmitted) return;
@@ -81,7 +225,64 @@ export function CourseQuiz({
     // Record quiz completion
     if (user) {
       try {
-        await markQuizAsCompleted(user.id, courseId, quizId, result.percentage);
+        // First try to save to Supabase if connected
+        try {
+          await supabase
+            .from('quiz_attempts')
+            .insert({
+              user_id: user.id,
+              course_id: courseId,
+              quiz_id: quizId,
+              score: result.percentage,
+              completed_at: new Date().toISOString()
+            });
+            
+          // Update user's course progress
+          const { data: progressData } = await supabase
+            .from('course_progress')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('course_id', courseId)
+            .maybeSingle();
+          
+          if (progressData) {
+            // Update existing progress
+            const completedQuizzes = progressData.completed_quizzes || [];
+            if (!completedQuizzes.includes(quizId)) {
+              completedQuizzes.push(quizId);
+            }
+            
+            await supabase
+              .from('course_progress')
+              .update({
+                completed_quizzes: completedQuizzes,
+                last_accessed: new Date().toISOString(),
+                overall_progress: Math.min(
+                  100, 
+                  progressData.overall_progress + (result.percentage >= 70 ? 10 : 0)
+                )
+              })
+              .eq('user_id', user.id)
+              .eq('course_id', courseId);
+          } else {
+            // Create new progress record
+            await supabase
+              .from('course_progress')
+              .insert({
+                user_id: user.id,
+                course_id: courseId,
+                completed_quizzes: [quizId],
+                completed_videos: [],
+                overall_progress: result.percentage >= 70 ? 10 : 0,
+                last_accessed: new Date().toISOString()
+              });
+          }
+        } catch (supabaseError) {
+          console.error("Error saving to Supabase:", supabaseError);
+          // Fall back to mock data service
+          await markQuizAsCompleted(user.id, courseId, quizId, result.percentage);
+        }
+        
         toast(`Quiz completed! Your score: ${result.percentage}%`);
         
         if (onComplete) {
@@ -148,6 +349,28 @@ export function CourseQuiz({
       </div>
     );
   };
+
+  if (isLoadingQuestions) {
+    return (
+      <Card className="w-full p-8">
+        <div className="flex flex-col items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p>Loading quiz questions...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>No Quiz Available</CardTitle>
+          <CardDescription>There are no quiz questions available for this course yet.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   const currentQ = questions[currentQuestion];
 

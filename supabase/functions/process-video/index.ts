@@ -60,8 +60,11 @@ async function transcribeAudio(audioKey: string): Promise<string | null> {
       throw new Error("Hugging Face API key not found");
     }
 
-    // Mock transcription result
-    const transcript = "This is a sample transcript of the video content. The speaker discusses key concepts related to the course material. There are several important points covered including theoretical frameworks and practical applications.";
+    // Mock transcription result based on the audio key to make it more specific to the content
+    const topicMatch = audioKey.match(/([^\/]+)\.wav$/);
+    const topic = topicMatch ? topicMatch[1].replace(/-|_/g, ' ') : '';
+    
+    const transcript = `This is a detailed transcript covering ${topic}. The instructor discusses key concepts related to the course material including theoretical frameworks and practical applications. Students will learn about the fundamentals and advanced techniques in ${topic}. There are several code examples and case studies presented throughout the lecture that demonstrate real-world applications.`;
     
     console.log("Transcript generated successfully");
     
@@ -73,7 +76,7 @@ async function transcribeAudio(audioKey: string): Promise<string | null> {
 }
 
 // Generate content analysis using Google Gemini API
-async function generateContentAnalysis(transcript: string): Promise<any | null> {
+async function generateContentAnalysis(transcript: string, courseId: string, videoTitle?: string): Promise<any | null> {
   try {
     console.log("Generating content analysis using Gemini API");
     
@@ -84,18 +87,30 @@ async function generateContentAnalysis(transcript: string): Promise<any | null> 
       throw new Error("Gemini API key not found");
     }
     
+    // Get course title to make content more specific
+    const { data: courseData } = await supabase
+      .from('courses')
+      .select('title, category')
+      .eq('id', courseId)
+      .maybeSingle();
+      
+    const courseTitle = courseData?.title || "Technology course";
+    const courseCategory = courseData?.category || "technology";
+    
     // Updated to use the v1 endpoint
     const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiApiKey}`;
     
     const prompt = `
-      Analyze this video transcript and create:
+      You're analyzing a video titled "${videoTitle || 'Course lecture'}" from a ${courseCategory} course called "${courseTitle}".
+      Based on this video transcript, create:
       1. A concise summary (max 200 words)
-      2. 3 quiz questions with multiple-choice answers related to the content
+      2. 3-5 quiz questions with multiple-choice answers (4 options each) related to the content
       3. Extract 5-7 key topics or keywords
       
       Transcript: "${transcript}"
       
       Format your response as JSON with these keys: summary, questions, keywords
+      For questions, each should have: question, options (array), correctAnswer (index number 0-3)
     `;
     
     const response = await fetch(apiUrl, {
@@ -138,16 +153,61 @@ async function generateContentAnalysis(transcript: string): Promise<any | null> 
       // If parsing fails, create a structured object manually
       console.warn("Failed to parse JSON response, creating structured response manually");
       
+      // Extract parts using regex
+      const summaryMatch = textResponse.match(/summary[:\s]+([^{]+?)(?=questions|keywords|\n\n)/i);
+      const summary = summaryMatch ? summaryMatch[1].trim() : `This video covers key concepts of ${courseTitle}.`;
+      
+      // Extract keywords
+      const keywordsMatch = textResponse.match(/keywords[:\s]+([\s\S]+?)(?=\n\n|$)/i);
+      let keywords = [];
+      if (keywordsMatch) {
+        const keywordsText = keywordsMatch[1];
+        keywords = keywordsText.match(/["']([^"']+)["']|(\w+)/g)
+          ?.map(k => k.replace(/["']/g, ''))
+          .filter(Boolean) || [];
+      }
+      
+      if (keywords.length === 0) {
+        keywords = courseCategory.split(/[,\s]+/).map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        );
+      }
+      
       return {
-        summary: "This is a summary of the video content covering key concepts.",
+        summary: summary,
         questions: [
           {
-            question: "What is the main topic of this video?",
-            options: ["Option A", "Option B", "Option C", "Option D"],
-            correctAnswer: "Option A"
+            question: `What is one of the main topics covered in this ${courseCategory} course?`,
+            options: [
+              `The fundamentals of ${courseTitle}`,
+              `Unrelated business topics`,
+              `Ancient history`,
+              `Cooking techniques`
+            ],
+            correctAnswer: 0
+          },
+          {
+            question: `Which best describes the focus of this course?`,
+            options: [
+              `Entertainment only`,
+              `${courseTitle} concepts and applications`,
+              `Non-technical writing`,
+              `Physical fitness`
+            ],
+            correctAnswer: 1
+          },
+          {
+            question: `What skills would you likely develop from this course?`,
+            options: [
+              `Gardening`,
+              `Painting`,
+              `${courseCategory} skills`,
+              `Musical abilities`
+            ],
+            correctAnswer: 2
           }
         ],
-        keywords: ["topic1", "topic2", "topic3"]
+        keywords: keywords.slice(0, 5)
       };
     }
   } catch (error) {
@@ -174,7 +234,8 @@ async function processVideo(videoId: string, courseId: string) {
     
     // Extract filename from URL
     const videoUrl = video.url;
-    const videoKey = videoUrl.split('/').pop();
+    const urlParts = videoUrl.split('/');
+    const videoKey = urlParts[urlParts.length - 1];
     
     // Extract audio from video
     const audioKey = await extractAudio(videoKey, courseId);
@@ -189,7 +250,7 @@ async function processVideo(videoId: string, courseId: string) {
     }
     
     // Generate content analysis
-    const contentAnalysis = await generateContentAnalysis(transcript);
+    const contentAnalysis = await generateContentAnalysis(transcript, courseId, video.title);
     if (!contentAnalysis) {
       throw new Error("Failed to generate content analysis");
     }
@@ -209,6 +270,32 @@ async function processVideo(videoId: string, courseId: string) {
       
     if (updateError) {
       throw new Error(`Error updating video: ${updateError.message}`);
+    }
+    
+    // Generate quiz for the course from this video if none exists
+    const { data: existingQuizzes } = await supabase
+      .from('quizzes')
+      .select('id')
+      .eq('course_id', courseId);
+      
+    if (!existingQuizzes || existingQuizzes.length === 0) {
+      // Create a quiz for this course based on the video content
+      const quizQuestions = contentAnalysis.questions.map((q: any) => ({
+        ...q,
+        id: crypto.randomUUID()
+      }));
+      
+      if (quizQuestions.length > 0) {
+        await supabase
+          .from('quizzes')
+          .insert({
+            title: `${video.title} Quiz`,
+            description: `Test your knowledge about ${video.title}`,
+            course_id: courseId,
+            questions: quizQuestions,
+            order_num: 1
+          });
+      }
     }
     
     console.log(`Video ${videoId} processed successfully`);
