@@ -8,8 +8,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
@@ -17,17 +15,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showResendDialog, setShowResendDialog] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  // Check for authentication status on every render
+  // Check for authentication status and redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       console.log("User is authenticated, redirecting to dashboard");
       navigate("/dashboard", { replace: true });
-      return;
     }
   }, [isAuthenticated, isLoading, navigate]);
   
@@ -38,51 +33,19 @@ export default function Login() {
     
     try {
       console.log("Attempting login with:", email);
-      await login(email, password);
-      // Redirect happens in useEffect when isAuthenticated updates
+      const success = await login(email, password);
+      
+      if (success) {
+        console.log("Login successful, waiting for redirect...");
+        // Redirect will happen via useEffect when isAuthenticated changes
+      }
     } catch (err: any) {
       const errorMsg = err?.message || "An error occurred during login";
       console.error("Login error:", errorMsg);
-      
-      if (errorMsg.includes("Email not confirmed")) {
-        setError("Your email has not been confirmed yet. Please check your inbox for a confirmation link or request a new one.");
-        setShowResendDialog(true);
-      } else {
-        setError(errorMsg);
-      }
+      setError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
-  };
-  
-  const handleResendConfirmation = async () => {
-    setIsSubmitting(true);
-    setResendSuccess(false);
-    
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-      });
-      
-      if (error) {
-        setError(error.message);
-      } else {
-        setResendSuccess(true);
-        setTimeout(() => {
-          setShowResendDialog(false);
-        }, 5000); // Close dialog after 5 seconds
-      }
-    } catch (err: any) {
-      setError(err?.message || "Failed to resend confirmation email");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const closeDialog = () => {
-    setShowResendDialog(false);
-    setResendSuccess(false);
   };
   
   // If still loading auth state, show loading indicator
@@ -96,6 +59,11 @@ export default function Login() {
         <Footer />
       </>
     );
+  }
+  
+  // If already authenticated, don't render the login form
+  if (isAuthenticated) {
+    return null; // This will be replaced by the redirect in useEffect
   }
   
   return (
@@ -175,41 +143,6 @@ export default function Login() {
           </p>
         </div>
       </div>
-      
-      <Dialog open={showResendDialog} onOpenChange={closeDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Verification Required</DialogTitle>
-            <DialogDescription>
-              Your email address needs to be verified before you can log in.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {resendSuccess ? (
-              <div className="p-3 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm">
-                Confirmation email sent! Please check your inbox and spam folder.
-              </div>
-            ) : (
-              <>
-                <p>
-                  We've sent a confirmation link to <strong>{email}</strong>. Please check your inbox and spam folder.
-                </p>
-                <p>
-                  If you didn't receive the email or it expired, you can request a new confirmation link.
-                </p>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={closeDialog}>Close</Button>
-                  <Button onClick={handleResendConfirmation} disabled={isSubmitting}>
-                    {isSubmitting ? "Sending..." : "Resend Confirmation"}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-      
       <Footer />
     </>
   );

@@ -67,14 +67,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
         
         if (!isMounted) return;
         
+        // Always update session state
         setSession(currentSession);
         
         if (currentSession?.user) {
+          // When we have a session and user, get their profile
           // Use setTimeout to prevent recursion issues
           setTimeout(async () => {
             if (!isMounted) return;
@@ -123,16 +125,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) {
-        throw error;
+        console.error("Login error:", error.message);
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return false;
       }
       
-      // Session handling happens via onAuthStateChange
       if (data.user) {
         toast({
           title: "Login successful!",
@@ -142,9 +150,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       return false;
-    } catch (error) {
-      // Let the error propagate up to the component
-      throw error;
+    } catch (error: any) {
+      console.error("Login exception:", error);
+      toast({
+        title: "Login failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +167,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Make sure role is properly set
       console.log("Registering with role:", role);
       
       const { data, error } = await supabase.auth.signUp({
@@ -163,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             name,
-            role // This will be stored in user metadata
+            role
           }
         }
       });
@@ -177,8 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       
-      // Important: Even if signUp succeeds, we now need to explicitly create
-      // a profile record to ensure the role is set correctly
+      // Create profile record to ensure the role is set correctly
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -186,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: data.user.id,
             name,
             email,
-            role: role // Make sure role is explicitly set here
+            role: role
           });
             
         if (profileError) {

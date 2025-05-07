@@ -1,5 +1,5 @@
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,12 @@ export default function Register() {
   const { register, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if already authenticated
-  if (isAuthenticated && !isLoading) {
-    navigate("/dashboard", { replace: true });
-  }
+  // Check for authentication status and redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -70,6 +72,11 @@ export default function Register() {
         <Footer />
       </>
     );
+  }
+  
+  // If already authenticated, don't render the registration form
+  if (isAuthenticated) {
+    return null; // This will be replaced by the redirect in useEffect
   }
   
   return (
