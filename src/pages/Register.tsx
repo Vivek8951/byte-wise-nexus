@@ -11,6 +11,9 @@ import { Footer } from "@/components/layout/Footer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BackButton } from "@/components/ui/back-button";
+import { useToast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { UserRole } from "@/types";
 
 export default function Register() {
   const [name, setName] = useState("");

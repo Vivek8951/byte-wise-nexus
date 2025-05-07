@@ -12,13 +12,14 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { CourseQuiz } from "@/components/courses/CourseQuiz";
 import { VideoAnalysis } from "@/components/courses/VideoAnalysis";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { BackButton } from "@/components/ui/back-button";
+import { mockQuizData } from "@/data/mockQuizData";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -288,7 +289,15 @@ export default function CourseDetail() {
             
             <TabsContent value="quiz" className="space-y-4 py-4">
               <h2 className="text-2xl font-bold">Course Quiz</h2>
-              <CourseQuiz />
+              {id && (
+                <CourseQuiz 
+                  courseId={id}
+                  quizId="quiz-1"
+                  title="Module Assessment Quiz"
+                  description="Test your knowledge of the concepts covered in this course"
+                  questions={mockQuizData}
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

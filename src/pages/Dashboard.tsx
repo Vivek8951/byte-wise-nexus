@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -95,7 +94,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-                  <AreaChart className="h-16 w-16 text-muted-foreground/50" />
+                  <AreaChart className="h-full w-full" />
                   <p className="ml-4 text-muted-foreground">Analytics chart will appear here</p>
                 </div>
               </CardContent>
