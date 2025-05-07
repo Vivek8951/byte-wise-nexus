@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Video } from '@/types';
 import { Loader2, AlertTriangle, Play } from 'lucide-react';
 import { VideoAnalysis } from './VideoAnalysis';
-import { processVideo } from '@/utils/supabaseStorage';
+import { processVideo, getVideoForCourse } from '@/utils/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
@@ -19,6 +19,7 @@ interface VideoPlayerWithAnalysisProps {
 
 export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }: VideoPlayerWithAnalysisProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [videoData, setVideoData] = useState<Video>(video);
   const [hasAnalysis, setHasAnalysis] = useState(false);
   const { toast } = useToast();
@@ -29,6 +30,40 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     if (Array.isArray(json)) return json as any[];
     return [];
   };
+
+  // Load video immediately on component mount
+  useEffect(() => {
+    const loadVideo = async () => {
+      setIsLoading(true);
+      
+      // If video already has URL, use it
+      if (video.url) {
+        setVideoData(video);
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        // Try to get a video URL right away
+        const result = await getVideoForCourse(video.id, courseId);
+        
+        if (result.success && result.videoUrl) {
+          setVideoData({
+            ...video,
+            url: result.videoUrl,
+            title: result.title || video.title,
+            description: result.description || video.description
+          });
+        }
+      } catch (error) {
+        console.error("Error loading video:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadVideo();
+  }, [video.id, courseId]);
 
   // Check if video has analysis data
   useEffect(() => {
@@ -137,7 +172,11 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     <div className="space-y-4">
       <Card className="overflow-hidden">
         <AspectRatio ratio={16/9}>
-          {videoData.url ? (
+          {isLoading ? (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : videoData.url ? (
             <iframe
               src={videoData.url}
               className="w-full h-full object-cover"

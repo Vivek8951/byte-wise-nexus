@@ -95,6 +95,95 @@ export async function deleteFile(bucketName: string, filePath: string): Promise<
 }
 
 /**
+ * Get a YouTube video URL for a specific course topic
+ * @param courseTitle Title of the course
+ * @param lectureTitle Optional lecture title for more specific videos
+ * @returns YouTube embed URL
+ */
+export function getYouTubeVideoUrl(courseTitle: string, lectureTitle?: string): string {
+  // Default programming education videos (general)
+  const defaultVideos = [
+    "https://www.youtube-nocookie.com/embed/PkZNo7MFNFg", // JavaScript
+    "https://www.youtube-nocookie.com/embed/rfscVS0vtbw", // Python
+    "https://www.youtube-nocookie.com/embed/bMknfKXIFA8", // React
+    "https://www.youtube-nocookie.com/embed/1Rs2ND1ryYc", // CSS
+    "https://www.youtube-nocookie.com/embed/gieEQFIfgYc"  // HTML
+  ];
+  
+  // Topic-specific videos
+  const topicVideos: Record<string, string[]> = {
+    "react": [
+      "https://www.youtube-nocookie.com/embed/w7ejDZ8SWv8", // React Crash Course
+      "https://www.youtube-nocookie.com/embed/bMknfKXIFA8", // Full React Course
+      "https://www.youtube-nocookie.com/embed/QFaFIcGhPoM", // React for Beginners
+      "https://www.youtube-nocookie.com/embed/RVFAyFWO4go", // React Hooks
+      "https://www.youtube-nocookie.com/embed/4UZrsTqkcW4"  // React Components
+    ],
+    "javascript": [
+      "https://www.youtube-nocookie.com/embed/PkZNo7MFNFg", // JavaScript Full Course
+      "https://www.youtube-nocookie.com/embed/W6NZfCO5SIk", // JavaScript Tutorial
+      "https://www.youtube-nocookie.com/embed/jS4aFq5-91M", // JavaScript Programming
+      "https://www.youtube-nocookie.com/embed/hdI2bqOjy3c", // JavaScript Crash Course
+      "https://www.youtube-nocookie.com/embed/8dWL3wF_OMw"  // JavaScript Concepts
+    ],
+    "python": [
+      "https://www.youtube-nocookie.com/embed/rfscVS0vtbw", // Python Full Course
+      "https://www.youtube-nocookie.com/embed/_uQrJ0TkZlc", // Python for Beginners
+      "https://www.youtube-nocookie.com/embed/Z1RJmh_OqeA", // Python Programming
+      "https://www.youtube-nocookie.com/embed/kqtD5dpn9C8", // Python Tutorial
+      "https://www.youtube-nocookie.com/embed/8DvywoWv6fI"  // Python for AI
+    ],
+    "css": [
+      "https://www.youtube-nocookie.com/embed/1Rs2ND1ryYc", // CSS Tutorial
+      "https://www.youtube-nocookie.com/embed/yfoY53QXEnI", // CSS Crash Course
+      "https://www.youtube-nocookie.com/embed/OXGznpKZ_sA", // CSS Full Course
+      "https://www.youtube-nocookie.com/embed/1PnVor36_40", // CSS Tutorial
+      "https://www.youtube-nocookie.com/embed/Edsxf_NBFrw"  // CSS Layout
+    ],
+    "html": [
+      "https://www.youtube-nocookie.com/embed/gieEQFIfgYc", // HTML Full Course
+      "https://www.youtube-nocookie.com/embed/pQN-pnXPaVg", // HTML Tutorial
+      "https://www.youtube-nocookie.com/embed/UB1O30fR-EE", // HTML Crash Course
+      "https://www.youtube-nocookie.com/embed/FNGoExJlLQY", // HTML for Beginners
+      "https://www.youtube-nocookie.com/embed/916GWv2Qs08"  // HTML5
+    ],
+    "web development": [
+      "https://www.youtube-nocookie.com/embed/Q33KBiDriJY", // Web Dev for Beginners
+      "https://www.youtube-nocookie.com/embed/PkZNo7MFNFg", // JavaScript
+      "https://www.youtube-nocookie.com/embed/gieEQFIfgYc", // HTML
+      "https://www.youtube-nocookie.com/embed/1Rs2ND1ryYc", // CSS
+      "https://www.youtube-nocookie.com/embed/bMknfKXIFA8"  // React
+    ]
+  };
+  
+  // Normalize input text for matching
+  const normalizedCourseTitle = courseTitle?.toLowerCase() || "";
+  const normalizedLectureTitle = lectureTitle?.toLowerCase() || "";
+  
+  // First try to match lecture title with topics
+  for (const [topic, videos] of Object.entries(topicVideos)) {
+    if (normalizedLectureTitle.includes(topic)) {
+      // Return a consistent video based on the lecture title's first character code
+      const index = Math.abs(lectureTitle?.charCodeAt(0) || 0) % videos.length;
+      return videos[index];
+    }
+  }
+  
+  // Then try to match course title with topics
+  for (const [topic, videos] of Object.entries(topicVideos)) {
+    if (normalizedCourseTitle.includes(topic)) {
+      // Return a consistent video based on the course title's first character code
+      const index = Math.abs(courseTitle?.charCodeAt(0) || 0) % videos.length;
+      return videos[index];
+    }
+  }
+  
+  // Return a default video if no matches
+  const index = Math.abs(courseTitle?.charCodeAt(0) || 0) % defaultVideos.length;
+  return defaultVideos[index];
+}
+
+/**
  * Runs the populate-courses edge function to seed the database with AI-generated courses
  * @param numberOfCourses Number of courses to generate (default: 1, max: 30)
  * @returns Result of the operation
@@ -166,6 +255,78 @@ export async function processVideo(videoId: string, courseId: string): Promise<{
     return {
       success: false,
       message: error.message || "Failed to process video. Please try again."
+    };
+  }
+}
+
+/**
+ * Gets a video for a course immediately without processing
+ * @param videoId ID of the video to get
+ * @param courseId ID of the course the video belongs to
+ * @returns Video URL and basic details
+ */
+export async function getVideoForCourse(videoId: string, courseId: string): Promise<{ success: boolean; videoUrl: string; title?: string; description?: string }> {
+  try {
+    // First try to get the video details from the videos table
+    const { data: videoData, error: videoError } = await supabase
+      .from('videos')
+      .select('title, description, url')
+      .eq('id', videoId)
+      .maybeSingle();
+      
+    if (videoError) {
+      throw videoError;
+    }
+    
+    // If the video already has a URL, return it
+    if (videoData && videoData.url) {
+      return {
+        success: true,
+        videoUrl: videoData.url,
+        title: videoData.title,
+        description: videoData.description
+      };
+    }
+    
+    // Get course data to determine video topic
+    const { data: courseData, error: courseError } = await supabase
+      .from('courses')
+      .select('title, category')
+      .eq('id', courseId)
+      .maybeSingle();
+      
+    if (courseError) {
+      throw courseError;
+    }
+    
+    if (!courseData) {
+      throw new Error("Course not found");
+    }
+    
+    // Get a YouTube video URL based on course title
+    const videoUrl = getYouTubeVideoUrl(courseData.title);
+    
+    // Update the video record with the YouTube URL
+    await supabase
+      .from('videos')
+      .update({ 
+        url: videoUrl,
+      })
+      .eq('id', videoId);
+    
+    return {
+      success: true,
+      videoUrl: videoUrl,
+      title: videoData?.title,
+      description: videoData?.description
+    };
+  } catch (error) {
+    console.error("Error getting video for course:", error);
+    
+    // Fallback to a default video URL
+    return {
+      success: false,
+      videoUrl: "https://www.youtube-nocookie.com/embed/PkZNo7MFNFg" // JavaScript tutorial as fallback
     };
   }
 }

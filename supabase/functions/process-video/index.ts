@@ -76,6 +76,45 @@ const EDUCATIONAL_VIDEOS_BY_CATEGORY = {
   ]
 };
 
+// Add more specific video categories
+const LECTURE_SPECIFIC_VIDEOS = {
+  "react components": [
+    "https://www.youtube-nocookie.com/embed/Tn6-PIqc4UM", // React Components
+    "https://www.youtube-nocookie.com/embed/Y2hgEGPzTZY", // React Components in Depth
+    "https://www.youtube-nocookie.com/embed/Cla1WwguArA", // Components and Props
+    "https://www.youtube-nocookie.com/embed/9U3IhLAnSxM", // Functional Components vs Class Components
+    "https://www.youtube-nocookie.com/embed/KnEbCS3H74I"  // React Components & State
+  ],
+  "jsx": [
+    "https://www.youtube-nocookie.com/embed/9D1x7-2FmTA", // React JSX
+    "https://www.youtube-nocookie.com/embed/7HSd1sk07uU", // JSX in Depth
+    "https://www.youtube-nocookie.com/embed/C8-Xi0ltbdw", // JSX vs HTML
+    "https://www.youtube-nocookie.com/embed/wdJGWNOIaAY", // React JSX Tutorial
+    "https://www.youtube-nocookie.com/embed/NCwa_xi0Uuc"  // JSX Explained
+  ],
+  "props": [
+    "https://www.youtube-nocookie.com/embed/PHaECbrKgs0", // React Props
+    "https://www.youtube-nocookie.com/embed/ae55rTTBib0", // Props Deep Dive
+    "https://www.youtube-nocookie.com/embed/m7OWXtbiXX8", // Props vs State
+    "https://www.youtube-nocookie.com/embed/Qbi-89gDOL0", // Props Tutorial
+    "https://www.youtube-nocookie.com/embed/KvapBXwpWTI"  // Advanced Props
+  ],
+  "hooks": [
+    "https://www.youtube-nocookie.com/embed/O6P86uwfdR0", // React Hooks
+    "https://www.youtube-nocookie.com/embed/TNhaISOUy6Q", // useState and useEffect
+    "https://www.youtube-nocookie.com/embed/j1ZRyw7OtZs", // Custom Hooks
+    "https://www.youtube-nocookie.com/embed/-MlNBTSg_Ww", // Hooks Deep Dive
+    "https://www.youtube-nocookie.com/embed/f687hBjwFcM"  // React Hooks Tutorial
+  ],
+  "effects": [
+    "https://www.youtube-nocookie.com/embed/0ZJgIjIuY7U", // useEffect Hook
+    "https://www.youtube-nocookie.com/embed/Bg7GxSakhMo", // Side Effects in React
+    "https://www.youtube-nocookie.com/embed/j0ycGQKqMT4", // useEffect Explained
+    "https://www.youtube-nocookie.com/embed/QQYeipc_cik", // useEffect Dependencies
+    "https://www.youtube-nocookie.com/embed/dH6i3GurZW8"  // Clean up in useEffect
+  ]
+};
+
 // Extract audio from video using ffmpeg
 async function extractAudio(videoKey: string, courseId: string): Promise<string | null> {
   try {
@@ -232,21 +271,44 @@ async function generateContentAnalysis(transcript: string, courseId: string, vid
   }
 }
 
-// Get relevant YouTube video URL based on course category and title
-function getRelevantVideoUrl(category: string, title: string): string {
-  // Normalize category and title by converting to lowercase 
+// Get relevant YouTube video URL based on course category, title and video title
+function getRelevantVideoUrl(category: string, courseTitle: string, videoTitle: string = ""): string {
+  // Normalize inputs by converting to lowercase 
   const normalizedCategory = category.toLowerCase();
-  const normalizedTitle = title.toLowerCase();
+  const normalizedCourseTitle = courseTitle.toLowerCase();
+  const normalizedVideoTitle = videoTitle.toLowerCase();
   
-  // First check for specific keywords in title
-  const keywords = ["react", "javascript", "web", "data", "programming", "design", "business", "technology"];
+  // First check for specific lecture topics
+  for (const [topic, videos] of Object.entries(LECTURE_SPECIFIC_VIDEOS)) {
+    if (normalizedVideoTitle.includes(topic)) {
+      // Return a consistent video based on the video title
+      const index = videoTitle.charCodeAt(0) % videos.length;
+      return videos[index];
+    }
+  }
+  
+  // Next check for specific keywords in video title
+  const keywords = ["react", "javascript", "web", "data", "programming", "design", "business", "technology", "props", "hooks", "effects", "jsx", "components"];
   for (const keyword of keywords) {
-    if (normalizedTitle.includes(keyword)) {
-      // Try to match with a specific category first
+    if (normalizedVideoTitle.includes(keyword)) {
+      // Try to match with a specific category
       if (EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword]) {
         const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword];
         // Return a consistent video based on the first character of the title
-        const index = title.charCodeAt(0) % videos.length;
+        const index = videoTitle.charCodeAt(0) % videos.length;
+        return videos[index];
+      }
+    }
+  }
+  
+  // Then check for course title keywords
+  for (const keyword of keywords) {
+    if (normalizedCourseTitle.includes(keyword)) {
+      // Try to match with a specific category
+      if (EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword]) {
+        const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[keyword];
+        // Return a consistent video based on the first character of the course title
+        const index = courseTitle.charCodeAt(0) % videos.length;
         return videos[index];
       }
     }
@@ -267,7 +329,7 @@ function getRelevantVideoUrl(category: string, title: string): string {
     }
     
     // Also check if title contains category keywords
-    if (normalizedTitle.includes(cat)) {
+    if (normalizedCourseTitle.includes(cat)) {
       const score = cat.length + 1; // Title match slightly preferred
       if (score > bestMatchScore) {
         bestMatchScore = score;
@@ -280,8 +342,8 @@ function getRelevantVideoUrl(category: string, title: string): string {
   const videos = EDUCATIONAL_VIDEOS_BY_CATEGORY[bestMatchCategory] || 
                  EDUCATIONAL_VIDEOS_BY_CATEGORY["technology"]; // Fallback
   
-  // Return a video from the category (consistently based on title's first char)
-  const charCode = title.charCodeAt(0) || 0;
+  // Return a video from the category (consistently based on course title's first char)
+  const charCode = courseTitle.charCodeAt(0) || 0;
   const index = charCode % videos.length;
   return videos[index];
 }
@@ -313,8 +375,8 @@ async function processVideo(videoId: string, courseId: string) {
       throw new Error(`Error fetching course: ${courseError.message}`);
     }
     
-    // Get a relevant YouTube video URL based on course category and title
-    const videoUrl = getRelevantVideoUrl(courseData.category, courseData.title);
+    // Get a relevant YouTube video URL based on course category, title and video title
+    const videoUrl = getRelevantVideoUrl(courseData.category, courseData.title, video.title);
     console.log(`Selected YouTube video URL: ${videoUrl}`);
     
     // Extract audio from video
