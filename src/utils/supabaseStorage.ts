@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Course, Video, Note, VideoDownloadInfo } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -341,7 +342,7 @@ export async function processVideo(videoId: string, courseId: string) {
 
     // Parse download info properly
     if (data && data.data && data.data.downloadInfo) {
-      const downloadInfo = data.data.downloadInfo as VideoDownloadInfo;
+      const downloadInfo = safeJsonToDownloadInfo(data.data.downloadInfo);
       data.data.downloadInfo = downloadInfo;
     }
 
@@ -378,7 +379,7 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
 
     if (video && video.url) {
       // Video already has a URL, return it
-      const downloadInfo = video.download_info as VideoDownloadInfo | null;
+      const downloadInfo = safeJsonToDownloadInfo(video.download_info);
       
       return {
         success: true,
@@ -400,7 +401,7 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
         title: result.data.title,
         description: result.data.description,
         thumbnail: result.data.thumbnail,
-        downloadInfo: result.data.downloadInfo as VideoDownloadInfo
+        downloadInfo: safeJsonToDownloadInfo(result.data.downloadInfo)
       };
     } else {
       return {
@@ -418,24 +419,37 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
 }
 
 /**
- * Generate random courses with AI
- * @param count Number of courses to generate (default: 5)
+ * Runs the populate-courses edge function to seed the database with AI-generated courses
+ * @param numberOfCourses Number of courses to generate (default: 1, max: 30)
+ * @param options Additional options for course generation
  * @returns Result of the operation
  */
-export async function populateCourses(count: number = 5) {
+export async function populateCourses(numberOfCourses: number = 5, options: { specificTopic?: string } = {}): Promise<{ success: boolean; message: string }> {
   try {
-    const { data, error } = await supabase.functions.invoke('populate-courses', {
-      body: { count },
+    // Validate input
+    const coursesToGenerate = Math.min(Math.max(1, numberOfCourses), 30);
+    
+    const { data, error } = await supabase.functions.invoke("populate-courses", {
+      body: { 
+        numberOfCourses: coursesToGenerate,
+        specificTopic: options.specificTopic
+      }
     });
-
+    
     if (error) {
-      console.error("Error populating courses:", error);
-      return { success: false, message: error.message };
+      throw error;
     }
-
-    return { success: true, message: data.message || `Generated ${count} courses successfully` };
-  } catch (error) {
-    console.error("Error generating courses:", error);
-    return { success: false, message: error.message || "Failed to generate courses" };
+    
+    return { 
+      success: true, 
+      message: `Successfully added ${data?.coursesAdded || 0} courses to the platform.`
+    };
+  }
+  catch (error) {
+    console.error("Error populating courses:", error);
+    return { 
+      success: false, 
+      message: error.message || "Failed to populate courses. Please try again."
+    };
   }
 }
