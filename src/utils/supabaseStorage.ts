@@ -420,7 +420,7 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
 
 /**
  * Runs the populate-courses edge function to seed the database with AI-generated courses
- * @param numberOfCourses Number of courses to generate (default: 1, max: 30)
+ * @param numberOfCourses Number of courses to generate (default: 5, max: 30)
  * @param options Additional options for course generation
  * @returns Result of the operation
  */
