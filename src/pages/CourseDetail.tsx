@@ -14,13 +14,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { CourseQuiz } from "@/components/courses/CourseQuiz";
-import { VideoAnalysis } from "@/components/courses/VideoAnalysis";
 import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "@/components/ui/back-button";
 import { getQuiz } from "@/data/mockQuizData";
 import { supabase } from "@/integrations/supabase/client";
-import { VideoPlayerWithAnalysis, SimpleVideoPlayer } from "@/components/courses";
+import { VideoPlayerWithAnalysis, SimpleVideoPlayer, CourseQuiz } from "@/components/courses";
 import { processVideo } from "@/utils/supabaseStorage";
 
 export default function CourseDetail() {
