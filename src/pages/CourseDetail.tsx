@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   BookOpen, Clock, BarChart3, Calendar, 
-  Star, Users, Play, Download, Loader2
+  Star, Users, Play, Download, Loader2, RefreshCw
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -21,7 +20,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "@/components/ui/back-button";
 import { getQuiz } from "@/data/mockQuizData";
 import { supabase } from "@/integrations/supabase/client";
-import { VideoPlayerWithAnalysis } from "@/components/courses/VideoPlayerWithAnalysis";
+import { VideoPlayerWithAnalysis, SimpleVideoPlayer } from "@/components/courses";
 import { processVideo } from "@/utils/supabaseStorage";
 
 export default function CourseDetail() {
@@ -272,7 +271,7 @@ export default function CourseDetail() {
           duration: v.duration,
           thumbnail: v.thumbnail,
           order: v.order_num,
-          analyzedContent: v.analyzed_content
+          download_info: v.download_info
         }));
         
         setVideos(updatedVideos);
@@ -286,7 +285,7 @@ export default function CourseDetail() {
       
       toast({
         title: "All videos processed",
-        description: "Video analysis complete and quizzes generated"
+        description: "Videos loaded successfully"
       });
     } catch (error) {
       console.error("Error processing videos:", error);
@@ -429,8 +428,8 @@ export default function CourseDetail() {
                   </>
                 ) : (
                   <>
-                    <Play className="h-4 w-4" />
-                    Process All Videos
+                    <RefreshCw className="h-4 w-4" />
+                    Load All Videos
                   </>
                 )}
               </Button>
@@ -472,13 +471,13 @@ export default function CourseDetail() {
                 <h2 className="text-2xl font-bold text-left">Course Lectures</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Video Section */}
+                  {/* Video Section - Updated to use SimpleVideoPlayer */}
                   <div className="md:col-span-2">
                     {activeVideo ? (
-                      <VideoPlayerWithAnalysis 
+                      <SimpleVideoPlayer 
                         video={activeVideo} 
                         courseId={id}
-                        onAnalysisComplete={() => fetchCourseQuizzes(id)}
+                        onProcessComplete={() => fetchCourseQuizzes(id)}
                       />
                     ) : (
                       <div className="flex items-center justify-center h-48 bg-gray-100 dark:bg-gray-800 rounded-md">
@@ -504,7 +503,7 @@ export default function CourseDetail() {
                     </div>
                   </div>
                   
-                  {/* Video List - Redesigned to match the image */}
+                  {/* Video List */}
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-left">Videos</h3>
                     <div className="space-y-2">

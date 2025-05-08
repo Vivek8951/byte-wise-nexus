@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -11,6 +10,9 @@ const corsHeaders = {
 const supabaseUrl = 'https://weiagpwgfmyjdglfpbeu.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// YouTube API key from environment
+const youtubeApiKey = Deno.env.get('YOUTUBE_API_KEY') || '';
 
 // Real course data with open source videos
 const coursesData = [
@@ -287,6 +289,75 @@ function getVideosForCategory(category: string, count: number = 3) {
   return result;
 }
 
+// Search YouTube for videos related to a topic
+async function searchYouTubeVideos(topic: string, maxResults: number = 3) {
+  if (!youtubeApiKey) {
+    console.log("YouTube API key not configured, falling back to default videos");
+    return null;
+  }
+  
+  try {
+    const encodedQuery = encodeURIComponent(`${topic} tutorial`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&q=${encodedQuery}&key=${youtubeApiKey}&type=video&videoDuration=medium`;
+    
+    console.log(`Searching YouTube for: ${topic}`);
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`YouTube API error: ${response.status}`, errorText);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (!data.items || data.items.length === 0) {
+      console.log("No videos found for:", topic);
+      return null;
+    }
+    
+    // Map the results to a simplified format with embedable URLs
+    const videos = data.items.map((item: any, index: number) => ({
+      title: item.snippet.title,
+      description: item.snippet.description,
+      url: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
+      duration: "600", // Estimated duration
+      order: index + 1,
+      thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
+      video_id: item.id.videoId
+    }));
+    
+    return videos;
+  } catch (error) {
+    console.error("Error searching YouTube:", error);
+    return null;
+  }
+}
+
+// Function to get videos for a course, either from YouTube or fallback
+async function getVideosForCourse(title: string, category: string, count: number = 3) {
+  // Try to get videos from YouTube API
+  const youtubeVideos = await searchYouTubeVideos(`${title} ${category}`, count);
+  
+  if (youtubeVideos && youtubeVideos.length > 0) {
+    console.log(`Found ${youtubeVideos.length} YouTube videos for ${title}`);
+    return youtubeVideos;
+  }
+  
+  // Fallback to category videos if no YouTube results
+  console.log(`Falling back to default videos for ${title}`);
+  const sources = getVideosForCategory(category, count);
+  
+  return Array(count).fill(0).map((_, index) => ({
+    title: `Module ${index + 1}: ${title} Fundamentals`,
+    description: `Learn essential concepts about ${title} in this comprehensive lecture.`,
+    url: sources[index],
+    duration: "600", // Default duration
+    order: index + 1,
+    thumbnail: `https://images.unsplash.com/photo-${Math.floor(1500000000 + Math.random() * 500000000)}?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3`
+  }));
+}
+
 // Analyze video content function
 function generateAnalyzedContent(title: string, description: string, courseTitle: string, courseCategory: string) {
   // Generate a realistic transcript related to the course content
@@ -509,6 +580,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
   const actualCount = Math.max(1, maxCount);      // Ensure at least 1 course
   
   console.log(`Generating ${actualCount} courses${options.specificTopic ? ` on topic: ${options.specificTopic}` : ''}`);
+  console.log(`Clear existing courses: ${options.clearExisting}`);
   
   try {
     // Get existing course titles to ensure uniqueness
@@ -580,15 +652,11 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
       
       const courseId = courseData.id;
       
+      // Try to get videos from YouTube instead of using predefined ones
+      const videos = await getVideosForCourse(courseTitle, course.category, 3);
+      
       // Insert videos with content specific to the course
-      for (const video of course.videos) {
-        const analyzedContent = generateAnalyzedContent(
-          video.title, 
-          video.description,
-          courseTitle,
-          course.category
-        );
-        
+      for (const video of videos) {
         const { error: videoError } = await supabase
           .from('videos')
           .insert({
@@ -597,9 +665,17 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
             description: video.description,
             url: video.url,
             duration: video.duration,
-            thumbnail: course.thumbnail,
+            thumbnail: video.thumbnail || course.thumbnail,
             order_num: video.order,
-            analyzed_content: analyzedContent
+            download_info: video.video_id ? {
+              success: true,
+              videoId: video.video_id,
+              embedUrl: video.url,
+              watchUrl: `https://www.youtube.com/watch?v=${video.video_id}`,
+              playerUrl: video.url,
+              downloadableUrl: `https://www.youtube.com/watch?v=${video.video_id}`,
+              thumbnails: [video.thumbnail]
+            } : null
           });
         
         if (videoError) {
@@ -660,7 +736,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
     
     // If we need more courses, fill in with template-based courses
     if (coursesAdded < actualCount) {
-      // How many more courses to generate from templates
+      // How many more courses to generate
       const remainingToAdd = actualCount - coursesAdded;
       
       // Add additional topics if a specific topic is requested
@@ -700,53 +776,81 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
             description: template.description,
             category: template.category,
             thumbnail: thumbnail,
-            thumbnail_url: thumbnail, // Added to support new schema
+            thumbnail_url: thumbnail,
             instructor: template.instructor,
             duration: `${Math.floor(4 + Math.random() * 8)} weeks`,
             level: template.level,
-            featured: Math.random() > 0.8, // 20% chance to be featured
+            featured: Math.random() > 0.7,
             enrolled_count: 0,
-            rating: 4 + Math.random() * 1 // Random rating between 4.0 and 5.0
+            rating: (3.5 + Math.random() * 1.5).toFixed(1)
           })
           .select()
           .single();
-        
+          
         if (courseError) {
-          console.error("Error inserting template course:", courseError);
+          console.error("Error inserting course:", courseError);
           continue;
         }
         
-        // Get appropriate videos for this category
-        const videoUrls = getVideosForCategory(template.category, 3);
-        
-        // Insert videos with content matching the course
         const courseId = courseData.id;
-        for (let v = 0; v < Math.min(template.videos.length, videoUrls.length); v++) {
-          const videoTemplate = template.videos[v];
-          const videoUrl = videoUrls[v];
+        
+        // Generate videos from YouTube API or fallback to defaults
+        const videoTopics = template.videos || [
+          { title: "Introduction", description: "Introduction to the course" },
+          { title: "Core Concepts", description: "Understanding the fundamentals" },
+          { title: "Advanced Techniques", description: "Taking your skills to the next level" }
+        ];
+        
+        // Try to get videos from YouTube API for each topic
+        for (let j = 0; j < videoTopics.length; j++) {
+          const topic = videoTopics[j];
+          // Use full title and category for better search results
+          const videos = await searchYouTubeVideos(`${uniqueTitle} ${topic.title}`, 1);
           
-          const analyzedContent = generateAnalyzedContent(
-            videoTemplate.title,
-            videoTemplate.description,
-            template.title,
-            template.category
-          );
-          
-          const { error: videoError } = await supabase
-            .from('videos')
-            .insert({
-              course_id: courseId,
-              title: videoTemplate.title,
-              description: videoTemplate.description,
-              url: videoUrl,
-              duration: Math.floor(300 + Math.random() * 600).toString(), // Random duration
-              thumbnail: thumbnail,
-              order_num: v + 1,
-              analyzed_content: analyzedContent
-            });
-          
-          if (videoError) {
-            console.error("Error inserting video for template course:", videoError);
+          if (videos && videos.length > 0) {
+            const video = videos[0];
+            const { error: videoError } = await supabase
+              .from('videos')
+              .insert({
+                course_id: courseId,
+                title: `${topic.title}: ${video.title}`,
+                description: video.description || topic.description,
+                url: video.url,
+                duration: video.duration || "600",
+                thumbnail: video.thumbnail || thumbnail,
+                order_num: j + 1,
+                download_info: video.video_id ? {
+                  success: true,
+                  videoId: video.video_id,
+                  embedUrl: video.url,
+                  watchUrl: `https://www.youtube.com/watch?v=${video.video_id}`,
+                  playerUrl: video.url,
+                  downloadableUrl: `https://www.youtube.com/watch?v=${video.video_id}`,
+                  thumbnails: [video.thumbnail]
+                } : null
+              });
+              
+            if (videoError) {
+              console.error("Error inserting video:", videoError);
+            }
+          } else {
+            // Fallback to default video if YouTube API fails
+            const videoUrl = getVideosForCategory(template.category)[j % videoSources[template.category]?.length || 0];
+            const { error: videoError } = await supabase
+              .from('videos')
+              .insert({
+                course_id: courseId,
+                title: topic.title,
+                description: topic.description,
+                url: videoUrl,
+                duration: "600",
+                thumbnail: thumbnail,
+                order_num: j + 1
+              });
+              
+            if (videoError) {
+              console.error("Error inserting fallback video:", videoError);
+            }
           }
         }
         
@@ -793,7 +897,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
           });
         
         if (quizError) {
-          console.error("Error inserting quiz for template course:", quizError);
+          console.error("Error inserting quiz:", quizError);
         }
         
         // Add study materials
@@ -809,7 +913,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
           });
         
         if (noteError) {
-          console.error("Error inserting note for template course:", noteError);
+          console.error("Error inserting note:", noteError);
         }
         
         // Insert document to support the new schema
@@ -824,20 +928,18 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
           });
         
         if (documentError) {
-          console.error("Error inserting document for template course:", documentError);
+          console.error("Error inserting document:", documentError);
         }
         
         coursesAdded++;
       }
     }
     
-    return { 
-      success: true, 
-      coursesAdded: coursesAdded 
-    };
+    console.log(`Successfully added ${coursesAdded} courses`);
+    return { success: true, coursesAdded };
   } catch (error) {
-    console.error("Error in populateCourses:", error);
-    return { success: false, error: error.message };
+    console.error("Error populating courses:", error);
+    return { success: false, error: String(error) };
   }
 }
 
