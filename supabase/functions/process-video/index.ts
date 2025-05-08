@@ -15,6 +15,45 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Get API keys from environment variables
 const HUGGING_FACE_API_KEY = Deno.env.get('HUGGING_FACE_API_KEY') || '';
 
+// High-quality educational thumbnails
+const COURSE_THUMBNAILS = {
+  "react": [
+    "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?q=80&w=1000", 
+    "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=1000",
+    "https://images.unsplash.com/photo-1555952517-2e8e729e0b44?q=80&w=1000"
+  ],
+  "javascript": [
+    "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?q=80&w=1000",
+    "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=1000", 
+    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1000"
+  ],
+  "python": [
+    "https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?q=80&w=1000",
+    "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1000",
+    "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=1000"
+  ],
+  "data": [
+    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000",
+    "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?q=80&w=1000",
+    "https://images.unsplash.com/photo-1535350356005-fd52b3b524fb?q=80&w=1000"
+  ],
+  "machine learning": [
+    "https://images.unsplash.com/photo-1527474305487-b87b222841cc?q=80&w=1000",
+    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000",
+    "https://images.unsplash.com/photo-1677442135143-9269c0225de2?q=80&w=1000"
+  ],
+  "web": [
+    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1000",
+    "https://images.unsplash.com/photo-1573867639040-6dd25fa5f597?q=80&w=1000",
+    "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=1000"
+  ],
+  "algorithm": [
+    "https://images.unsplash.com/photo-1564865878688-9a244444042a?q=80&w=1000",
+    "https://images.unsplash.com/photo-1509228627152-72ae9ae6848d?q=80&w=1000",
+    "https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?q=80&w=1000"
+  ]
+};
+
 // YouTube video links by category - these are real, publicly available educational videos
 const EDUCATIONAL_VIDEOS_BY_CATEGORY = {
   "web development": [
@@ -72,6 +111,20 @@ const EDUCATIONAL_VIDEOS_BY_CATEGORY = {
     "https://www.youtube-nocookie.com/embed/jS4aFq5-91M", // JavaScript Programming - Full Course
     "https://www.youtube-nocookie.com/embed/hdI2bqOjy3c", // JavaScript Crash Course For Beginners
     "https://www.youtube-nocookie.com/embed/8dWL3wF_OMw"  // Essential JavaScript Concepts
+  ],
+  "data structures": [
+    "https://www.youtube-nocookie.com/embed/0IAPZzGSbME", // Data Structures & Algorithms
+    "https://www.youtube-nocookie.com/embed/pkkFqlG0Hds", // Sorting Algorithms
+    "https://www.youtube-nocookie.com/embed/09_LlHjoEiY", // Graph Algorithms
+    "https://www.youtube-nocookie.com/embed/8hly31xKli0", // Algorithm Design
+    "https://www.youtube-nocookie.com/embed/HtSuA80QTyo"  // Dynamic Programming
+  ],
+  "algorithms": [
+    "https://www.youtube-nocookie.com/embed/0IAPZzGSbME", // Data Structures & Algorithms
+    "https://www.youtube-nocookie.com/embed/pkkFqlG0Hds", // Sorting Algorithms
+    "https://www.youtube-nocookie.com/embed/09_LlHjoEiY", // Graph Algorithms
+    "https://www.youtube-nocookie.com/embed/8hly31xKli0", // Algorithm Design
+    "https://www.youtube-nocookie.com/embed/HtSuA80QTyo"  // Dynamic Programming
   ]
 };
 
@@ -113,6 +166,54 @@ const LECTURE_SPECIFIC_VIDEOS = {
     "https://www.youtube-nocookie.com/embed/dH6i3GurZW8"  // Clean up in useEffect
   ]
 };
+
+/**
+ * Gets a high-quality themed thumbnail URL for a specific course topic
+ * @param courseTitle Title of the course
+ * @param courseCategory Category of the course
+ * @param videoTitle Optional video title for more specific thumbnails
+ * @returns Thumbnail URL that matches the course content
+ */
+function getCourseThumbnailUrl(courseTitle: string, courseCategory: string, videoTitle?: string): string {
+  // Default high-quality educational thumbnails
+  const defaultThumbnails = [
+    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=1000", // Tech/coding
+    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1000", // Programming
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000", // Data Science
+    "https://images.unsplash.com/photo-1581092219224-9775e73d0786?q=80&w=1000", // Modern Learning
+    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1000"  // Web development
+  ];
+  
+  // Normalize input text for matching
+  const normalizedCourseTitle = courseTitle?.toLowerCase() || "";
+  const normalizedCategory = courseCategory?.toLowerCase() || "";
+  const normalizedVideoTitle = videoTitle?.toLowerCase() || "";
+  
+  // Try to find a category match in our thumbnails
+  for (const [category, thumbnails] of Object.entries(COURSE_THUMBNAILS)) {
+    // Check if the video title contains the category
+    if (videoTitle && normalizedVideoTitle.includes(category)) {
+      const index = videoTitle.charCodeAt(0) % thumbnails.length;
+      return thumbnails[index];
+    }
+    
+    // Check if the course title contains the category
+    if (normalizedCourseTitle.includes(category)) {
+      const index = courseTitle.charCodeAt(0) % thumbnails.length;
+      return thumbnails[index];
+    }
+    
+    // Check if the course category contains the category
+    if (normalizedCategory.includes(category)) {
+      const index = courseCategory.charCodeAt(0) % thumbnails.length;
+      return thumbnails[index];
+    }
+  }
+  
+  // Get the first letter of the course title to make selections deterministic
+  const hash = courseTitle.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return defaultThumbnails[hash % defaultThumbnails.length];
+}
 
 // Function to call Hugging Face API to get relevant YouTube videos
 async function getYouTubeVideoWithHuggingFace(courseTitle: string, videoTitle: string): Promise<string | null> {
@@ -175,7 +276,7 @@ async function getYouTubeVideoWithHuggingFace(courseTitle: string, videoTitle: s
 }
 
 // Function to download video and generate thumbnail 
-async function downloadVideoAndGenerateThumbnail(videoUrl) {
+async function downloadVideoAndGenerateThumbnail(videoUrl, courseTitle, videoTitle) {
   try {
     if (!videoUrl) return { success: false, message: "No video URL provided" };
     
@@ -632,18 +733,15 @@ async function processVideo(videoId: string, courseId: string) {
     console.log(`Selected YouTube video URL: ${videoUrl}`);
     
     // Download video and generate thumbnail
-    const downloadInfo = await downloadVideoAndGenerateThumbnail(videoUrl);
+    const downloadInfo = await downloadVideoAndGenerateThumbnail(videoUrl, courseData.title, video.title);
     
-    // Try to generate AI thumbnail
-    let thumbnailUrl = null;
-    if (downloadInfo.success) {
-      // First try to use Hugging Face to generate an AI thumbnail
-      thumbnailUrl = await generateThumbnailWithHuggingFace(video.title, video.description);
-      
-      // If that fails, use YouTube thumbnails
-      if (!thumbnailUrl && downloadInfo.thumbnails && downloadInfo.thumbnails.length > 0) {
-        thumbnailUrl = downloadInfo.thumbnails[0];
-      }
+    // Get high-quality thumbnail URL based on course content
+    let thumbnailUrl = getCourseThumbnailUrl(courseData.title, courseData.category, video.title);
+    
+    // If YouTube thumbnails are available, use those as a fallback
+    if (downloadInfo.success && (!thumbnailUrl || thumbnailUrl.includes('unsplash.com')) && 
+        downloadInfo.thumbnails && downloadInfo.thumbnails.length > 0) {
+      thumbnailUrl = downloadInfo.thumbnails[0];
     }
     
     // Generate transcript based on course and video details

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -94,6 +95,91 @@ export async function deleteFile(bucketName: string, filePath: string): Promise<
 }
 
 /**
+ * Get a high-quality themed thumbnail URL for a specific course topic
+ * @param courseTitle Title of the course
+ * @param lectureTitle Optional lecture title for more specific thumbnails
+ * @returns Thumbnail URL from professional educational content
+ */
+export function getCourseThumbnailUrl(courseTitle: string, lectureTitle?: string): string {
+  // High-quality educational thumbnails
+  const defaultThumbnails = [
+    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=1000", // Tech/coding
+    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1000", // Programming
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000", // Data Science
+    "https://images.unsplash.com/photo-1581092219224-9775e73d0786?q=80&w=1000", // Modern Learning
+    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1000"  // Web development
+  ];
+  
+  // Topic-specific thumbnails
+  const topicThumbnails: Record<string, string[]> = {
+    "react": [
+      "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?q=80&w=1000", 
+      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=1000",
+      "https://images.unsplash.com/photo-1555952517-2e8e729e0b44?q=80&w=1000"
+    ],
+    "javascript": [
+      "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?q=80&w=1000",
+      "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=1000", 
+      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1000"
+    ],
+    "python": [
+      "https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?q=80&w=1000",
+      "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1000",
+      "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=1000"
+    ],
+    "data": [
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000",
+      "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?q=80&w=1000",
+      "https://images.unsplash.com/photo-1535350356005-fd52b3b524fb?q=80&w=1000"
+    ],
+    "machine learning": [
+      "https://images.unsplash.com/photo-1527474305487-b87b222841cc?q=80&w=1000",
+      "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000",
+      "https://images.unsplash.com/photo-1677442135143-9269c0225de2?q=80&w=1000"
+    ],
+    "web": [
+      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1000",
+      "https://images.unsplash.com/photo-1573867639040-6dd25fa5f597?q=80&w=1000",
+      "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=1000"
+    ],
+    "algorithm": [
+      "https://images.unsplash.com/photo-1564865878688-9a244444042a?q=80&w=1000",
+      "https://images.unsplash.com/photo-1509228627152-72ae9ae6848d?q=80&w=1000",
+      "https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?q=80&w=1000"
+    ]
+  };
+  
+  // Normalize input text for matching
+  const normalizedCourseTitle = courseTitle?.toLowerCase() || "";
+  const normalizedLectureTitle = lectureTitle?.toLowerCase() || "";
+  
+  // First try to match with lecture title
+  for (const [topic, thumbnails] of Object.entries(topicThumbnails)) {
+    if (normalizedLectureTitle.includes(topic)) {
+      // Select deterministically based on the lecture title
+      const hash = Array.from(lectureTitle || "").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const index = hash % thumbnails.length;
+      return thumbnails[index];
+    }
+  }
+  
+  // Then try to match with course title
+  for (const [topic, thumbnails] of Object.entries(topicThumbnails)) {
+    if (normalizedCourseTitle.includes(topic)) {
+      // Select deterministically based on the course title
+      const hash = Array.from(courseTitle || "").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const index = hash % thumbnails.length;
+      return thumbnails[index];
+    }
+  }
+  
+  // Return a default thumbnail if no matches
+  const hash = Array.from(courseTitle || "default").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const index = hash % defaultThumbnails.length;
+  return defaultThumbnails[index];
+}
+
+/**
  * Get a YouTube video URL for a specific course topic
  * @param courseTitle Title of the course
  * @param lectureTitle Optional lecture title for more specific videos
@@ -132,19 +218,19 @@ export function getYouTubeVideoUrl(courseTitle: string, lectureTitle?: string): 
       "https://www.youtube-nocookie.com/embed/kqtD5dpn9C8", // Python Tutorial
       "https://www.youtube-nocookie.com/embed/8DvywoWv6fI"  // Python for AI
     ],
-    "css": [
-      "https://www.youtube-nocookie.com/embed/1Rs2ND1ryYc", // CSS Tutorial
-      "https://www.youtube-nocookie.com/embed/yfoY53QXEnI", // CSS Crash Course
-      "https://www.youtube-nocookie.com/embed/OXGznpKZ_sA", // CSS Full Course
-      "https://www.youtube-nocookie.com/embed/1PnVor36_40", // CSS Tutorial
-      "https://www.youtube-nocookie.com/embed/Edsxf_NBFrw"  // CSS Layout
+    "data": [
+      "https://www.youtube-nocookie.com/embed/UA-CET52dHw", // Data Structures
+      "https://www.youtube-nocookie.com/embed/B31LgI4Y4DQ", // Data Science
+      "https://www.youtube-nocookie.com/embed/9XoBuOoNYP4", // Data Analysis
+      "https://www.youtube-nocookie.com/embed/fPq_naES_hA", // Data Visualization
+      "https://www.youtube-nocookie.com/embed/5Uh6gUb2-p0"  // Big Data
     ],
-    "html": [
-      "https://www.youtube-nocookie.com/embed/gieEQFIfgYc", // HTML Full Course
-      "https://www.youtube-nocookie.com/embed/pQN-pnXPaVg", // HTML Tutorial
-      "https://www.youtube-nocookie.com/embed/UB1O30fR-EE", // HTML Crash Course
-      "https://www.youtube-nocookie.com/embed/FNGoExJlLQY", // HTML for Beginners
-      "https://www.youtube-nocookie.com/embed/916GWv2Qs08"  // HTML5
+    "machine learning": [
+      "https://www.youtube-nocookie.com/embed/NWONeJKn6kc", // Machine Learning Tutorial
+      "https://www.youtube-nocookie.com/embed/7eh4d6sabA0", // Deep Learning
+      "https://www.youtube-nocookie.com/embed/i_LwzRVP7bg", // ML Fundamentals
+      "https://www.youtube-nocookie.com/embed/YRnxUOmJlKQ", // AI Intro
+      "https://www.youtube-nocookie.com/embed/JcI5Vnw0b2c"  // Practical ML
     ],
     "web development": [
       "https://www.youtube-nocookie.com/embed/Q33KBiDriJY", // Web Dev for Beginners
@@ -152,6 +238,13 @@ export function getYouTubeVideoUrl(courseTitle: string, lectureTitle?: string): 
       "https://www.youtube-nocookie.com/embed/gieEQFIfgYc", // HTML
       "https://www.youtube-nocookie.com/embed/1Rs2ND1ryYc", // CSS
       "https://www.youtube-nocookie.com/embed/bMknfKXIFA8"  // React
+    ],
+    "algorithms": [
+      "https://www.youtube-nocookie.com/embed/0IAPZzGSbME", // Data Structures & Algorithms
+      "https://www.youtube-nocookie.com/embed/pkkFqlG0Hds", // Sorting Algorithms
+      "https://www.youtube-nocookie.com/embed/09_LlHjoEiY", // Graph Algorithms
+      "https://www.youtube-nocookie.com/embed/8hly31xKli0", // Algorithm Design
+      "https://www.youtube-nocookie.com/embed/HtSuA80QTyo"  // Dynamic Programming
     ]
   };
   

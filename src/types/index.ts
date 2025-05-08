@@ -1,3 +1,4 @@
+
 export type UserRole = 'admin' | 'student';
 
 export interface User {
@@ -35,7 +36,15 @@ export interface Video {
   thumbnail?: string;
   order: number;
   analyzedContent?: any[]; 
-  download_info?: any; // This property is now properly defined in the interface
+  download_info?: {
+    success: boolean;
+    videoId: string;
+    embedUrl: string;
+    watchUrl: string;
+    playerUrl: string;
+    downloadableUrl: string;
+    thumbnails: string[];
+  };
 }
 
 export interface Note {
