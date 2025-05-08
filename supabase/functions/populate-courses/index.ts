@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -585,14 +586,13 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
   try {
     // Get existing course titles to ensure uniqueness
     const existingTitles: string[] = [];
-    if (options.ensureUnique) {
-      const { data: existingCourses } = await supabase
-        .from('courses')
-        .select('title');
-      
-      if (existingCourses) {
-        existingCourses.forEach(course => existingTitles.push(course.title));
-      }
+    // Always ensure uniqueness, even if not explicitly requested
+    const { data: existingCourses } = await supabase
+      .from('courses')
+      .select('title');
+    
+    if (existingCourses) {
+      existingCourses.forEach(course => existingTitles.push(course.title));
     }
 
     // Clear existing courses if requested
@@ -618,13 +618,15 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
       const course = coursesData[i];
       
       // Make the title unique if needed
-      const courseTitle = options.ensureUnique 
-        ? generateUniqueCourseTitle(existingTitles, { title: course.title, customizable: false }) 
-        : course.title;
+      const courseTitle = generateUniqueCourseTitle(existingTitles, { title: course.title, customizable: false });
       
-      if (options.ensureUnique) {
-        existingTitles.push(courseTitle);
+      // Skip this course if we couldn't make it unique
+      if (existingTitles.includes(courseTitle)) {
+        console.log(`Skipping duplicate course: ${courseTitle}`);
+        continue;
       }
+      
+      existingTitles.push(courseTitle);
       
       // Insert course
       const { data: courseData, error: courseError } = await supabase
@@ -757,13 +759,15 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
         const template = filteredTemplates[templateIdx];
         
         // Generate a unique title
-        const uniqueTitle = options.ensureUnique 
-          ? generateUniqueCourseTitle(existingTitles, { ...template, customizable: true }) 
-          : template.title;
+        const uniqueTitle = generateUniqueCourseTitle(existingTitles, { ...template, customizable: true });
         
-        if (options.ensureUnique) {
-          existingTitles.push(uniqueTitle);
+        // Skip this course if we couldn't make it unique
+        if (existingTitles.includes(uniqueTitle)) {
+          console.log(`Skipping duplicate course: ${uniqueTitle}`);
+          continue;
         }
+        
+        existingTitles.push(uniqueTitle);
         
         // Generate a thumbnail URL
         const thumbnail = `https://images.unsplash.com/photo-${Math.floor(1500000000 + Math.random() * 500000000)}?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3`;
@@ -953,7 +957,8 @@ serve(async (req) => {
     const requestData = await req.json();
     const numberOfCourses = requestData.numberOfCourses || 1;
     const specificTopic = requestData.specificTopic || '';
-    const ensureUnique = requestData.ensureUnique || false;
+    // Always ensure uniqueness
+    const ensureUnique = true;
     const clearExisting = requestData.clearExisting || false;
     
     console.log(`Received request to generate ${numberOfCourses} courses${specificTopic ? ` on topic: ${specificTopic}` : ''}`);
