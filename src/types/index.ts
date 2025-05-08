@@ -34,6 +34,7 @@ export interface VideoDownloadInfo {
   playerUrl: string;
   downloadableUrl: string;
   thumbnails: string[];
+  message?: string;
 }
 
 export interface Video {

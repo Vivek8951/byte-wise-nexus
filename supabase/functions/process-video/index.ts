@@ -306,6 +306,7 @@ async function downloadVideoAndGenerateThumbnail(videoUrl, courseTitle, videoTit
     // This is just for UI consistency - actual YouTube downloads would require a separate service
     const downloadableUrl = `https://vid.puffyan.us/watch?v=${videoId}`;
     
+    // Return a proper VideoDownloadInfo object
     return {
       success: true,
       videoId: videoId,
@@ -317,7 +318,16 @@ async function downloadVideoAndGenerateThumbnail(videoUrl, courseTitle, videoTit
     };
   } catch (error) {
     console.error("Error downloading video:", error);
-    return { success: false, message: "Failed to process video" };
+    return { 
+      success: false, 
+      message: "Failed to process video",
+      videoId: "",
+      embedUrl: "",
+      watchUrl: "",
+      playerUrl: "",
+      downloadableUrl: "",
+      thumbnails: []
+    };
   }
 }
 

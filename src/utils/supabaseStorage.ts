@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { VideoDownloadInfo } from "@/types";
 
@@ -309,6 +308,29 @@ export async function populateCourses(numberOfCourses: number = 1): Promise<{ su
 }
 
 /**
+ * Helper function to safely convert JSON to VideoDownloadInfo
+ * @param data Any JSON data that might be a VideoDownloadInfo object
+ * @returns VideoDownloadInfo object or null
+ */
+export function safeJsonToDownloadInfo(data: any): VideoDownloadInfo | null {
+  if (!data) return null;
+  
+  // Check if data has the required properties to be a valid VideoDownloadInfo
+  if (typeof data === 'object' && 
+      'success' in data && 
+      'videoId' in data && 
+      'embedUrl' in data && 
+      'watchUrl' in data && 
+      'playerUrl' in data && 
+      'downloadableUrl' in data && 
+      'thumbnails' in data) {
+    return data as VideoDownloadInfo;
+  }
+  
+  return null;
+}
+
+/**
  * Processes a video to extract content analysis for a specific course
  * @param videoId ID of the video to process
  * @param courseId ID of the course the video belongs to
@@ -333,6 +355,9 @@ export async function processVideo(videoId: string, courseId: string): Promise<{
     
     console.log("Video processed successfully:", data);
     
+    // Ensure downloadInfo is correctly typed
+    const downloadInfo = safeJsonToDownloadInfo(data.downloadInfo);
+    
     return {
       success: true,
       message: "Video processed successfully",
@@ -342,7 +367,7 @@ export async function processVideo(videoId: string, courseId: string): Promise<{
         title: data.title,
         description: data.description,
         thumbnail: data.thumbnail,
-        downloadInfo: data.downloadInfo as VideoDownloadInfo
+        downloadInfo: downloadInfo
       }
     };
   } catch (error) {
@@ -374,6 +399,10 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
       return { success: false, message: 'Error fetching video' };
     }
     
+    // Convert download_info to proper type
+    const downloadInfo = existingVideo?.download_info ? 
+      safeJsonToDownloadInfo(existingVideo.download_info) : null;
+    
     if (existingVideo?.url) {
       return { 
         success: true, 
@@ -381,7 +410,7 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
         title: existingVideo.title,
         description: existingVideo.description,
         thumbnail: existingVideo.thumbnail,
-        downloadInfo: existingVideo.download_info as VideoDownloadInfo
+        downloadInfo: downloadInfo
       };
     }
     

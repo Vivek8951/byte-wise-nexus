@@ -31,6 +31,25 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
     return [];
   };
 
+  // Helper function to safely convert Json to VideoDownloadInfo
+  const safeJsonToDownloadInfo = (json: any | null): VideoDownloadInfo | null => {
+    if (!json) return null;
+    
+    // Check if json has the required properties to be a valid VideoDownloadInfo
+    if (typeof json === 'object' && 
+        'success' in json && 
+        'videoId' in json && 
+        'embedUrl' in json && 
+        'watchUrl' in json && 
+        'playerUrl' in json && 
+        'downloadableUrl' in json && 
+        'thumbnails' in json) {
+      return json as VideoDownloadInfo;
+    }
+    
+    return null;
+  };
+
   // Load video immediately on component mount
   useEffect(() => {
     const loadVideo = async () => {
@@ -62,9 +81,12 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           }
           
           // If we have download info, use it
-          if (data.download_info && typeof data.download_info === 'object') {
-            updateData.download_info = data.download_info as VideoDownloadInfo;
-            setDownloadInfo(data.download_info as VideoDownloadInfo);
+          if (data.download_info) {
+            const parsedDownloadInfo = safeJsonToDownloadInfo(data.download_info);
+            if (parsedDownloadInfo) {
+              updateData.download_info = parsedDownloadInfo;
+              setDownloadInfo(parsedDownloadInfo);
+            }
           }
           
           // If we have a URL, use it
@@ -84,12 +106,14 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
                 url: result.videoUrl,
                 title: result.title || prevData.title,
                 description: result.description || prevData.description,
-                ...(result.thumbnail && { thumbnail: result.thumbnail }),
-                ...(result.downloadInfo && { download_info: result.downloadInfo as VideoDownloadInfo })
+                ...(result.thumbnail && { thumbnail: result.thumbnail })
               }));
               
-              if (result.downloadInfo && typeof result.downloadInfo === 'object') {
-                setDownloadInfo(result.downloadInfo as VideoDownloadInfo);
+              if (result.downloadInfo) {
+                const parsedDownloadInfo = safeJsonToDownloadInfo(result.downloadInfo);
+                if (parsedDownloadInfo) {
+                  setDownloadInfo(parsedDownloadInfo);
+                }
               }
             }
           }
@@ -103,12 +127,14 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
               url: result.videoUrl,
               title: result.title || prevData.title,
               description: result.description || prevData.description,
-              ...(result.thumbnail && { thumbnail: result.thumbnail }),
-              ...(result.downloadInfo && { download_info: result.downloadInfo as VideoDownloadInfo })
+              ...(result.thumbnail && { thumbnail: result.thumbnail })
             }));
             
-            if (result.downloadInfo && typeof result.downloadInfo === 'object') {
-              setDownloadInfo(result.downloadInfo as VideoDownloadInfo);
+            if (result.downloadInfo) {
+              const parsedDownloadInfo = safeJsonToDownloadInfo(result.downloadInfo);
+              if (parsedDownloadInfo) {
+                setDownloadInfo(parsedDownloadInfo);
+              }
             }
           }
         }
@@ -158,9 +184,12 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             }
           }
           
-          if (data.download_info && typeof data.download_info === 'object') {
-            updates.download_info = data.download_info as VideoDownloadInfo;
-            setDownloadInfo(data.download_info as VideoDownloadInfo);
+          if (data.download_info) {
+            const parsedDownloadInfo = safeJsonToDownloadInfo(data.download_info);
+            if (parsedDownloadInfo) {
+              updates.download_info = parsedDownloadInfo;
+              setDownloadInfo(parsedDownloadInfo);
+            }
           }
           
           if (data.thumbnail) {
@@ -229,14 +258,16 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             title: result.data.title || videoData.title,
             description: result.data.description || videoData.description,
             thumbnail: result.data.thumbnail || videoData.thumbnail,
-            download_info: result.data.downloadInfo as VideoDownloadInfo || videoData.download_info
           };
           
           setVideoData(updatedVideo);
           setHasAnalysis(!!result.data.analyzedContent);
           
-          if (result.data.downloadInfo && typeof result.data.downloadInfo === 'object') {
-            setDownloadInfo(result.data.downloadInfo as VideoDownloadInfo);
+          if (result.data.downloadInfo) {
+            const parsedDownloadInfo = safeJsonToDownloadInfo(result.data.downloadInfo);
+            if (parsedDownloadInfo) {
+              setDownloadInfo(parsedDownloadInfo);
+            }
           }
           
           // Notify parent component if needed
