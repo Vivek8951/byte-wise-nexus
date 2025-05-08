@@ -19,7 +19,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const totalCourses = courses.length;
   // Filter out duplicate courses by title for display
   const uniqueCourses = courses.filter((course, index, self) => 
-    index === self.findIndex((c) => c.title === course.title)
+    index === self.findIndex((c) => c.id === course.id)
   );
   
   return (
@@ -39,7 +39,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCourses}</div>
+            <div className="text-2xl font-bold">{uniqueCourses.length}</div>
             <p className="text-xs text-muted-foreground">
               Available on platform
             </p>

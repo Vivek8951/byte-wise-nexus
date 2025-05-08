@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -535,11 +536,11 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
     }
 
     let coursesAdded = 0;
-    const totalToAdd = Math.min(actualCount, coursesData.length + courseTemplates.length);
+    const totalToAdd = actualCount;
     
     // Process the fully detailed courses first, up to the requested count
     const detailedCourseLimit = Math.min(actualCount, coursesData.length);
-    for (let i = 0; i < detailedCourseLimit; i++) {
+    for (let i = 0; i < detailedCourseLimit && coursesAdded < totalToAdd; i++) {
       const course = coursesData[i];
       
       // Make the title unique if needed
@@ -699,6 +700,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
         const videoUrls = getVideosForCategory(template.category, 3);
         
         // Insert videos with content matching the course
+        const courseId = courseData.id;
         for (let v = 0; v < Math.min(template.videos.length, videoUrls.length); v++) {
           const videoTemplate = template.videos[v];
           const videoUrl = videoUrls[v];
