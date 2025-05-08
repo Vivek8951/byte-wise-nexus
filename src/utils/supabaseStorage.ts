@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Course, Video, Note, VideoDownloadInfo } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -399,7 +400,8 @@ export async function populateCourses(numberOfCourses: number = 5, options: { sp
     const { data, error } = await supabase.functions.invoke("populate-courses", {
       body: { 
         numberOfCourses: coursesToGenerate,
-        specificTopic: options.specificTopic
+        specificTopic: options.specificTopic,
+        ensureUnique: true // Add a flag to ensure unique courses
       }
     });
     

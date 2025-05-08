@@ -17,6 +17,10 @@ interface AdminDashboardProps {
 export function AdminDashboard({ courses }: AdminDashboardProps) {
   const navigate = useNavigate();
   const totalCourses = courses.length;
+  // Filter out duplicate courses by title for display
+  const uniqueCourses = courses.filter((course, index, self) => 
+    index === self.findIndex((c) => c.title === course.title)
+  );
   
   return (
     <>
@@ -114,8 +118,8 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses.length > 0 ? (
-                courses.map(course => (
+              {uniqueCourses.length > 0 ? (
+                uniqueCourses.map(course => (
                   <CourseCard key={course.id} course={course} />
                 ))
               ) : (

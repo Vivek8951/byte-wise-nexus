@@ -63,6 +63,7 @@ export default function AdminCourses() {
   const { toast } = useToast();
   const [isPopulating, setIsPopulating] = useState(false);
   const [courseCount, setCourseCount] = useState(5);
+  const [specificTopic, setSpecificTopic] = useState("");
   
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -93,6 +94,11 @@ export default function AdminCourses() {
   if (!user || user.role !== 'admin') {
     return null;
   }
+  
+  // Filter out duplicate courses by title for display
+  const uniqueCourses = courses.filter((course, index, self) => 
+    index === self.findIndex((c) => c.title === course.title)
+  );
   
   const handleAddCourse = () => {
     setCurrentCourse(null);
@@ -229,7 +235,9 @@ export default function AdminCourses() {
   const handlePopulateCourses = async () => {
     setIsPopulating(true);
     try {
-      const result = await populateCourses(courseCount);
+      const result = await populateCourses(courseCount, { 
+        specificTopic: specificTopic.trim() || undefined 
+      });
       
       if (result.success) {
         toast({
@@ -276,6 +284,13 @@ export default function AdminCourses() {
                 className="w-20"
                 placeholder="Count"
               />
+              <Input
+                type="text"
+                value={specificTopic}
+                onChange={(e) => setSpecificTopic(e.target.value)}
+                className="w-40 md:w-60"
+                placeholder="Topic (e.g. javascript, python)"
+              />
               <Button 
                 onClick={handlePopulateCourses}
                 variant="outline"
@@ -300,7 +315,7 @@ export default function AdminCourses() {
         </header>
         
         <div className="grid grid-cols-1 gap-6">
-          {courses.map(course => {
+          {uniqueCourses.map(course => {
             const videos = getCourseVideos(course.id);
             const notes = getCourseNotes(course.id);
             
@@ -393,7 +408,7 @@ export default function AdminCourses() {
             );
           })}
           
-          {courses.length === 0 && (
+          {uniqueCourses.length === 0 && (
             <div className="text-center py-20 animate-fade-in">
               <Book className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-xl font-medium mb-2">No courses yet</h3>

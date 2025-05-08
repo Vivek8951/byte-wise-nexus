@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -357,14 +356,172 @@ function generateAnalyzedContent(title: string, description: string, courseTitle
   };
 }
 
+// Function to generate a unique course title
+function generateUniqueCourseTitle(existingTitles: string[], template: any, attempt: number = 0): string {
+  // If we're using a predefined course
+  if (!template.customizable) {
+    return template.title;
+  }
+  
+  const baseTitle = template.title;
+  // First attempt, use the base title
+  if (attempt === 0) {
+    if (!existingTitles.includes(baseTitle)) {
+      return baseTitle;
+    }
+  }
+  
+  // Add variations to make the title unique
+  const topics = [
+    "Modern", "Advanced", "Professional", "Practical", "Essential", 
+    "Comprehensive", "Mastering", "Ultimate", "Complete", "In-depth",
+    "Hands-on", "Accelerated", "Interactive", "Strategic", "Fundamental"
+  ];
+  
+  const frameworks = [
+    "React", "Angular", "Vue", "Node.js", "Express", 
+    "Django", "Flask", "Spring Boot", "Laravel", "ASP.NET",
+    "TensorFlow", "PyTorch", "Pandas", "NumPy", "Scikit-learn"
+  ];
+  
+  const prefix = topics[attempt % topics.length];
+  const suffix = frameworks[(attempt + 3) % frameworks.length];
+  
+  // Attempt different variations
+  if (attempt < 5) {
+    const newTitle = `${prefix} ${baseTitle}`;
+    if (!existingTitles.includes(newTitle)) return newTitle;
+  } else if (attempt < 10) {
+    const newTitle = `${baseTitle} with ${suffix}`;
+    if (!existingTitles.includes(newTitle)) return newTitle;
+  } else {
+    const newTitle = `${prefix} ${baseTitle} with ${suffix} - ${attempt}`;
+    if (!existingTitles.includes(newTitle)) return newTitle;
+  }
+  
+  // Recursively try another variation
+  return generateUniqueCourseTitle(existingTitles, template, attempt + 1);
+}
+
+// Function to generate templates specific to a requested topic
+function generateTopicSpecificTemplates(topic: string) {
+  const templates = [];
+  const normalizedTopic = topic.toLowerCase();
+  
+  // Common instructors for various topics
+  const instructors = {
+    "web": ["Sarah Johnson", "Michael Chen", "Jessica Taylor"],
+    "data": ["David Rodriguez", "Emma Wilson", "James Lee"],
+    "programming": ["Linda Kumar", "Robert Martinez", "Sophia Wang"],
+    "ai": ["Daniel Kim", "Olivia Smith", "Ethan Johnson"],
+    "design": ["Mia Thompson", "Noah Garcia", "Isabella Chen"]
+  };
+  
+  // Get appropriate instructors based on topic
+  let topicInstructors = instructors.programming; // Default
+  Object.entries(instructors).forEach(([key, value]) => {
+    if (normalizedTopic.includes(key)) {
+      topicInstructors = value;
+    }
+  });
+  
+  // Add a few topic-specific courses
+  if (normalizedTopic.includes("javascript") || normalizedTopic.includes("web")) {
+    templates.push({
+      title: `Modern JavaScript ${normalizedTopic.includes("advanced") ? "Advanced Techniques" : "Fundamentals"}`,
+      category: "Web Development",
+      level: "intermediate",
+      instructor: topicInstructors[0],
+      description: "Master modern JavaScript with ES6+ features, async programming, and advanced patterns for building robust web applications."
+    });
+    
+    templates.push({
+      title: "Full Stack Web Development Bootcamp",
+      category: "Web Development",
+      level: "intermediate",
+      instructor: topicInstructors[1],
+      description: "Build complete web applications from frontend to backend using modern frameworks and tools including React, Node.js, Express, and MongoDB."
+    });
+  }
+  
+  if (normalizedTopic.includes("python") || normalizedTopic.includes("data")) {
+    templates.push({
+      title: "Python for Data Science and Analytics",
+      category: "Data Science",
+      level: "intermediate",
+      instructor: topicInstructors[0],
+      description: "Learn to analyze and visualize data using Python libraries like Pandas, NumPy, and Matplotlib for data-driven insights and decision making."
+    });
+    
+    templates.push({
+      title: "Data Engineering Fundamentals",
+      category: "Data Science",
+      level: "intermediate",
+      instructor: topicInstructors[2],
+      description: "Master the skills of building robust data pipelines, ETL processes, and data warehouses for effective data management."
+    });
+  }
+  
+  if (normalizedTopic.includes("ai") || normalizedTopic.includes("machine")) {
+    templates.push({
+      title: "Practical Machine Learning Projects",
+      category: "Data Science",
+      level: "advanced",
+      instructor: topicInstructors[1],
+      description: "Apply machine learning algorithms to real-world problems using Python and industry-standard libraries like scikit-learn and TensorFlow."
+    });
+    
+    templates.push({
+      title: "Deep Learning Fundamentals",
+      category: "Data Science",
+      level: "advanced",
+      instructor: topicInstructors[0],
+      description: "Understand the principles of neural networks and implement deep learning models for computer vision, NLP, and more."
+    });
+  }
+  
+  // If we still don't have any templates, create generic ones based on the topic
+  if (templates.length === 0) {
+    templates.push({
+      title: `Introduction to ${topic.charAt(0).toUpperCase() + topic.slice(1)}`,
+      category: "Programming",
+      level: "beginner",
+      instructor: topicInstructors[0],
+      description: `Learn the fundamentals of ${topic} from the ground up with practical exercises and real-world examples.`
+    });
+    
+    templates.push({
+      title: `Advanced ${topic.charAt(0).toUpperCase() + topic.slice(1)} Techniques`,
+      category: "Programming",
+      level: "advanced",
+      instructor: topicInstructors[1],
+      description: `Take your ${topic} skills to the next level with advanced concepts, best practices, and professional workflows.`
+    });
+  }
+  
+  return templates;
+}
+
 // Function to populate courses
-async function populateCourses(requestedCount = 1) {
+async function populateCourses(requestedCount = 1, options: { specificTopic?: string, ensureUnique?: boolean } = {}) {
   const maxCount = Math.min(requestedCount, 30);  // Limit max courses to 30
   const actualCount = Math.max(1, maxCount);      // Ensure at least 1 course
   
   console.log(`Generating ${actualCount} courses`);
   
   try {
+    // Get existing course titles to ensure uniqueness
+    const existingTitles: string[] = [];
+    if (options.ensureUnique) {
+      const { data: existingCourses } = await supabase
+        .from('courses')
+        .select('title');
+      
+      if (existingCourses) {
+        existingCourses.forEach(course => existingTitles.push(course.title));
+      }
+    }
+
     // Clear existing courses (for testing purposes)
     // In production, you might want to check if courses already exist
     const { error: clearError } = await supabase
@@ -385,11 +542,20 @@ async function populateCourses(requestedCount = 1) {
     for (let i = 0; i < detailedCourseLimit; i++) {
       const course = coursesData[i];
       
+      // Make the title unique if needed
+      const courseTitle = options.ensureUnique 
+        ? generateUniqueCourseTitle(existingTitles, { title: course.title, customizable: false }) 
+        : course.title;
+      
+      if (options.ensureUnique) {
+        existingTitles.push(courseTitle);
+      }
+      
       // Insert course
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .insert({
-          title: course.title,
+          title: courseTitle,
           description: course.description,
           category: course.category,
           thumbnail: course.thumbnail,
@@ -415,7 +581,7 @@ async function populateCourses(requestedCount = 1) {
         const analyzedContent = generateAnalyzedContent(
           video.title, 
           video.description,
-          course.title,
+          courseTitle,
           course.category
         );
         
@@ -437,7 +603,7 @@ async function populateCourses(requestedCount = 1) {
         }
       }
       
-      // Insert quizzes with questions directly related to the course content
+      // Insert quizzes and notes
       for (const quiz of course.quizzes) {
         const { error: quizError } = await supabase
           .from('quizzes')
@@ -454,13 +620,12 @@ async function populateCourses(requestedCount = 1) {
         }
       }
       
-      // Insert notes/materials
       const { error: noteError } = await supabase
         .from('notes')
         .insert({
           course_id: courseId,
-          title: `${course.title} - Study Material`,
-          description: `Comprehensive study materials for ${course.title}`,
+          title: `${courseTitle} - Study Material`,
+          description: `Comprehensive study materials for ${courseTitle}`,
           file_url: "https://cdn.lovablecdn.com/demo-content/sample-course-notes.pdf",
           file_type: "pdf",
           order_num: 1
@@ -478,10 +643,31 @@ async function populateCourses(requestedCount = 1) {
       // How many more courses to generate from templates
       const remainingToAdd = actualCount - coursesAdded;
       
+      // Add additional topics if a specific topic is requested
+      let filteredTemplates = [...courseTemplates];
+      if (options.specificTopic) {
+        const topic = options.specificTopic.toLowerCase();
+        // Add some topic-specific templates
+        const specificTemplates = generateTopicSpecificTemplates(topic);
+        filteredTemplates = [...specificTemplates, ...filteredTemplates];
+      }
+      
       // We'll cycle through the templates if we need more than we have templates for
       for (let i = 0; i < remainingToAdd; i++) {
-        const templateIdx = i % courseTemplates.length;
-        const template = courseTemplates[templateIdx];
+        // Use modulo to cycle through templates but add an offset based on courses already added
+        // This prevents the same templates from being used in the same order every time
+        const offset = coursesAdded % 3; // Add some variability
+        const templateIdx = (i + offset) % filteredTemplates.length;
+        const template = filteredTemplates[templateIdx];
+        
+        // Generate a unique title
+        const uniqueTitle = options.ensureUnique 
+          ? generateUniqueCourseTitle(existingTitles, { ...template, customizable: true }) 
+          : template.title;
+        
+        if (options.ensureUnique) {
+          existingTitles.push(uniqueTitle);
+        }
         
         // Generate a thumbnail URL
         const thumbnail = `https://images.unsplash.com/photo-${Math.floor(1500000000 + Math.random() * 500000000)}?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3`;
@@ -490,7 +676,7 @@ async function populateCourses(requestedCount = 1) {
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
           .insert({
-            title: template.title,
+            title: uniqueTitle,
             description: template.description,
             category: template.category,
             thumbnail: thumbnail,
@@ -508,8 +694,6 @@ async function populateCourses(requestedCount = 1) {
           console.error("Error inserting template course:", courseError);
           continue;
         }
-        
-        const courseId = courseData.id;
         
         // Get appropriate videos for this category
         const videoUrls = getVideosForCategory(template.category, 3);
@@ -629,10 +813,15 @@ serve(async (req) => {
   try {
     const requestData = await req.json();
     const numberOfCourses = requestData.numberOfCourses || 1;
+    const specificTopic = requestData.specificTopic || '';
+    const ensureUnique = requestData.ensureUnique || false;
     
-    console.log(`Received request to generate ${numberOfCourses} courses`);
+    console.log(`Received request to generate ${numberOfCourses} courses${specificTopic ? ` on topic: ${specificTopic}` : ''}`);
     
-    const result = await populateCourses(numberOfCourses);
+    const result = await populateCourses(numberOfCourses, { 
+      specificTopic,
+      ensureUnique
+    });
     
     return new Response(
       JSON.stringify(result),
