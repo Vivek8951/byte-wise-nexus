@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Course, Video, Note, VideoDownloadInfo } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -262,38 +261,6 @@ export function getYouTubeVideoUrl(courseTitle: string, lectureTitle?: string): 
   // Return a default video if no matches
   const index = Math.abs(courseTitle?.charCodeAt(0) || 0) % defaultVideos.length;
   return defaultVideos[index];
-}
-
-/**
- * Runs the populate-courses edge function to seed the database with AI-generated courses
- * @param numberOfCourses Number of courses to generate (default: 1, max: 30)
- * @returns Result of the operation
- */
-export async function populateCourses(numberOfCourses: number = 1): Promise<{ success: boolean; message: string }> {
-  try {
-    // Validate input
-    const coursesToGenerate = Math.min(Math.max(1, numberOfCourses), 30);
-    
-    const { data, error } = await supabase.functions.invoke("populate-courses", {
-      body: { numberOfCourses: coursesToGenerate }
-    });
-    
-    if (error) {
-      throw error;
-    }
-    
-    return { 
-      success: true, 
-      message: `Successfully added ${data?.coursesAdded || 0} courses to the platform.`
-    };
-  }
-  catch (error) {
-    console.error("Error populating courses:", error);
-    return { 
-      success: false, 
-      message: error.message || "Failed to populate courses. Please try again."
-    };
-  }
 }
 
 /**
