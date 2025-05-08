@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { VideoDownloadInfo } from "@/types";
 
 /**
  * Uploads a file to Supabase Storage
@@ -341,7 +342,7 @@ export async function processVideo(videoId: string, courseId: string): Promise<{
         title: data.title,
         description: data.description,
         thumbnail: data.thumbnail,
-        downloadInfo: data.downloadInfo
+        downloadInfo: data.downloadInfo as VideoDownloadInfo
       }
     };
   } catch (error) {
@@ -380,7 +381,7 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
         title: existingVideo.title,
         description: existingVideo.description,
         thumbnail: existingVideo.thumbnail,
-        downloadInfo: existingVideo.download_info
+        downloadInfo: existingVideo.download_info as VideoDownloadInfo
       };
     }
     

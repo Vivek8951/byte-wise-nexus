@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useToast } from '@/components/ui/use-toast';
-import { Video } from '@/types';
+import { Video, VideoDownloadInfo } from '@/types';
 import { Loader2, AlertTriangle, Play, Download } from 'lucide-react';
 import { VideoAnalysis } from './VideoAnalysis';
 import { processVideo, getVideoForCourse } from '@/utils/supabaseStorage';
@@ -20,7 +21,7 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
   const [isLoading, setIsLoading] = useState(true);
   const [videoData, setVideoData] = useState<Video>(video);
   const [hasAnalysis, setHasAnalysis] = useState(false);
-  const [downloadInfo, setDownloadInfo] = useState<any>(null);
+  const [downloadInfo, setDownloadInfo] = useState<VideoDownloadInfo | null>(null);
   const { toast } = useToast();
 
   // Helper function to safely convert Json to any[]
@@ -61,9 +62,9 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
           }
           
           // If we have download info, use it
-          if (data.download_info) {
-            updateData.download_info = data.download_info;
-            setDownloadInfo(data.download_info);
+          if (data.download_info && typeof data.download_info === 'object') {
+            updateData.download_info = data.download_info as VideoDownloadInfo;
+            setDownloadInfo(data.download_info as VideoDownloadInfo);
           }
           
           // If we have a URL, use it
@@ -84,11 +85,11 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
                 title: result.title || prevData.title,
                 description: result.description || prevData.description,
                 ...(result.thumbnail && { thumbnail: result.thumbnail }),
-                ...(result.downloadInfo && { download_info: result.downloadInfo })
+                ...(result.downloadInfo && { download_info: result.downloadInfo as VideoDownloadInfo })
               }));
               
-              if (result.downloadInfo) {
-                setDownloadInfo(result.downloadInfo);
+              if (result.downloadInfo && typeof result.downloadInfo === 'object') {
+                setDownloadInfo(result.downloadInfo as VideoDownloadInfo);
               }
             }
           }
@@ -103,11 +104,11 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
               title: result.title || prevData.title,
               description: result.description || prevData.description,
               ...(result.thumbnail && { thumbnail: result.thumbnail }),
-              ...(result.downloadInfo && { download_info: result.downloadInfo })
+              ...(result.downloadInfo && { download_info: result.downloadInfo as VideoDownloadInfo })
             }));
             
-            if (result.downloadInfo) {
-              setDownloadInfo(result.downloadInfo);
+            if (result.downloadInfo && typeof result.downloadInfo === 'object') {
+              setDownloadInfo(result.downloadInfo as VideoDownloadInfo);
             }
           }
         }
@@ -157,9 +158,9 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             }
           }
           
-          if (data.download_info) {
-            updates.download_info = data.download_info;
-            setDownloadInfo(data.download_info);
+          if (data.download_info && typeof data.download_info === 'object') {
+            updates.download_info = data.download_info as VideoDownloadInfo;
+            setDownloadInfo(data.download_info as VideoDownloadInfo);
           }
           
           if (data.thumbnail) {
@@ -228,14 +229,14 @@ export function VideoPlayerWithAnalysis({ video, courseId, onAnalysisComplete }:
             title: result.data.title || videoData.title,
             description: result.data.description || videoData.description,
             thumbnail: result.data.thumbnail || videoData.thumbnail,
-            download_info: result.data.downloadInfo || videoData.download_info
+            download_info: result.data.downloadInfo as VideoDownloadInfo || videoData.download_info
           };
           
           setVideoData(updatedVideo);
           setHasAnalysis(!!result.data.analyzedContent);
           
-          if (result.data.downloadInfo) {
-            setDownloadInfo(result.data.downloadInfo);
+          if (result.data.downloadInfo && typeof result.data.downloadInfo === 'object') {
+            setDownloadInfo(result.data.downloadInfo as VideoDownloadInfo);
           }
           
           // Notify parent component if needed

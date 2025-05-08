@@ -26,6 +26,16 @@ export interface Course {
   updatedAt: string;
 }
 
+export interface VideoDownloadInfo {
+  success: boolean;
+  videoId: string;
+  embedUrl: string;
+  watchUrl: string;
+  playerUrl: string;
+  downloadableUrl: string;
+  thumbnails: string[];
+}
+
 export interface Video {
   id: string;
   courseId: string;
@@ -36,15 +46,7 @@ export interface Video {
   thumbnail?: string;
   order: number;
   analyzedContent?: any[]; 
-  download_info?: {
-    success: boolean;
-    videoId: string;
-    embedUrl: string;
-    watchUrl: string;
-    playerUrl: string;
-    downloadableUrl: string;
-    thumbnails: string[];
-  };
+  download_info?: VideoDownloadInfo;
 }
 
 export interface Note {
