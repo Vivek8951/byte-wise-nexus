@@ -108,6 +108,7 @@ serve(async (req) => {
     const videoThumbnail = video.thumbnail || '';
     
     console.log(`Updating video ${videoId} with YouTube URL: ${videoUrl}`);
+    console.log(`Using thumbnail: ${videoThumbnail}`);
     
     // Update the video record
     const { error: updateError } = await supabase
@@ -158,7 +159,8 @@ serve(async (req) => {
             playerUrl: videoUrl,
             downloadableUrl: `https://www.youtube.com/watch?v=${video.id}`,
             thumbnails: [videoThumbnail]
-          }
+          },
+          analyzedContent: [] // Empty array for now, can be filled later
         }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -214,12 +216,15 @@ async function searchYouTubeVideos(query: string) {
       };
     }
     
-    // Map the results to a simplified format
+    // Map the results to a simplified format with high quality thumbnails
     const videos = data.items.map((item: any) => ({
       id: item.id.videoId,
       title: item.snippet.title,
       description: item.snippet.description,
-      thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url
+      // Try to get the highest quality thumbnail available
+      thumbnail: item.snippet.thumbnails.high?.url || 
+                item.snippet.thumbnails.medium?.url || 
+                item.snippet.thumbnails.default?.url
     }));
     
     return { 

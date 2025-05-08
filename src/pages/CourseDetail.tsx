@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, PlayCircle, BookOpen, Check, CheckCircle, Clock, Award, User } from "lucide-react";
-import { useCourseContext } from "@/context/CourseContext";
-import { useAuthContext } from "@/context/AuthContext";
+import { useCourses } from "@/context/CourseContext";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -15,13 +15,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "@/components/ui/back-button";
 import { getQuiz } from "@/data/mockQuizData";
 import { supabase } from "@/integrations/supabase/client";
-import { SimpleVideoPlayer, CourseQuiz } from "@/components/courses";
+import { SimpleVideoPlayer } from "@/components/courses";
 import { processVideo } from "@/utils/supabaseStorage";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
-  const { getCourse, getNextCourse } = useCourseContext();
-  const { user } = useAuthContext();
+  const { getCourse } = useCourses();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -118,16 +118,21 @@ export default function CourseDetail() {
       const result = await processVideo(selectedVideo.id, id);
 
       if (result.success) {
-        // Update the selected video with processed content
+        // Update the selected video with processed content and the YouTube thumbnail
         setSelectedVideo({
           ...selectedVideo,
           analyzed_content: result.data.analyzedContent,
+          thumbnail: result.data.thumbnail || selectedVideo.thumbnail,
         });
 
         // Also update in the videos array
         setVideos(videos.map(v => 
           v.id === selectedVideo.id 
-            ? { ...v, analyzed_content: result.data.analyzedContent } 
+            ? { 
+                ...v, 
+                analyzed_content: result.data.analyzedContent,
+                thumbnail: result.data.thumbnail || v.thumbnail
+              } 
             : v
         ));
 

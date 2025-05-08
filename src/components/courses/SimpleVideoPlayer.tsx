@@ -5,14 +5,16 @@ interface SimpleVideoPlayerProps {
   url: string;
   title?: string;
   autoPlay?: boolean;
+  thumbnail?: string;
 }
 
-export function SimpleVideoPlayer({ url, title, autoPlay = false }: SimpleVideoPlayerProps) {
+export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: SimpleVideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [showThumbnail, setShowThumbnail] = useState(!!thumbnail);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -20,6 +22,7 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false }: SimpleVideoP
     setIsPlaying(autoPlay);
     setCurrentTime(0);
     setIsLoading(true);
+    setShowThumbnail(!!thumbnail);
     
     // If the video is ready, play it if autoPlay is true
     if (videoRef.current) {
@@ -29,13 +32,17 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false }: SimpleVideoP
         });
       }
     }
-  }, [url, autoPlay]);
+  }, [url, autoPlay, thumbnail]);
 
   const handlePlayPause = () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
+        // Hide thumbnail when starting to play
+        if (showThumbnail) {
+          setShowThumbnail(false);
+        }
         videoRef.current.play().catch(() => {
           // Play was prevented - handle if needed
         });
@@ -77,6 +84,16 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false }: SimpleVideoP
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
+  
+  const handleThumbnailClick = () => {
+    setShowThumbnail(false);
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Play was prevented - handle if needed
+      });
+      setIsPlaying(true);
+    }
+  };
 
   // Check if the URL is a YouTube embed
   const isYouTubeEmbed = url?.includes('youtube.com/embed') || url?.includes('youtube-nocookie.com/embed');
@@ -84,14 +101,34 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false }: SimpleVideoP
   if (isYouTubeEmbed) {
     return (
       <div className="relative w-full h-full">
-        <iframe
-          src={`${url}?autoplay=${autoPlay ? 1 : 0}`}
-          title={title || "YouTube video player"}
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full aspect-video"
-        ></iframe>
+        {thumbnail && showThumbnail ? (
+          <div 
+            className="relative w-full h-full cursor-pointer" 
+            onClick={handleThumbnailClick}
+          >
+            <img 
+              src={thumbnail} 
+              alt={title || "Video thumbnail"} 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-50 transition-opacity">
+              <div className="bg-primary rounded-full p-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <iframe
+            src={`${url}?autoplay=${showThumbnail ? 0 : (autoPlay ? 1 : 0)}`}
+            title={title || "YouTube video player"}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full aspect-video"
+          ></iframe>
+        )}
       </div>
     );
   }
@@ -104,19 +141,40 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false }: SimpleVideoP
         </div>
       )}
       
-      <video
-        ref={videoRef}
-        src={url}
-        className="w-full h-full"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => setIsPlaying(false)}
-        autoPlay={autoPlay}
-        muted={isMuted}
-        controls
-      />
+      {thumbnail && showThumbnail ? (
+        <div 
+          className="relative w-full h-full cursor-pointer" 
+          onClick={handleThumbnailClick}
+        >
+          <img 
+            src={thumbnail} 
+            alt={title || "Video thumbnail"} 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-50 transition-opacity">
+            <div className="bg-primary rounded-full p-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          src={url}
+          className="w-full h-full"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+          autoPlay={autoPlay}
+          muted={isMuted}
+          controls
+          poster={thumbnail}
+        />
+      )}
     </div>
   );
 }
