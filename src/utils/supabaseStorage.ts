@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Course, Video, Note, VideoDownloadInfo } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -392,33 +391,47 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
  * @param options Additional options for course generation
  * @returns Result of the operation
  */
-export async function populateCourses(numberOfCourses: number = 5, options: { specificTopic?: string } = {}): Promise<{ success: boolean; message: string }> {
+export const populateCourses = async (
+  count: number = 5, 
+  options: { 
+    specificTopic?: string;
+    clearExisting?: boolean;
+  } = {}
+): Promise<{ success: boolean; message: string }> => {
   try {
-    // Validate input
-    const coursesToGenerate = Math.min(Math.max(1, numberOfCourses), 30);
-    
-    const { data, error } = await supabase.functions.invoke("populate-courses", {
-      body: { 
-        numberOfCourses: coursesToGenerate,
-        specificTopic: options.specificTopic,
-        ensureUnique: true // Add a flag to ensure unique courses
+    const { data, error } = await supabase.functions.invoke('populate-courses', {
+      body: {
+        numberOfCourses: count,
+        specificTopic: options.specificTopic || '',
+        ensureUnique: true,
+        clearExisting: options.clearExisting || false
       }
     });
-    
+
     if (error) {
-      throw error;
+      console.error("Error calling populate-courses function:", error);
+      return { 
+        success: false, 
+        message: `Failed to generate courses: ${error.message}` 
+      };
     }
-    
-    return { 
-      success: true, 
-      message: `Successfully added ${data?.coursesAdded || 0} courses to the platform.`
-    };
-  }
-  catch (error) {
-    console.error("Error populating courses:", error);
+
+    if (data.success) {
+      return { 
+        success: true, 
+        message: `Successfully generated ${data.coursesAdded} courses${options.specificTopic ? ` on topic: ${options.specificTopic}` : ''}` 
+      };
+    } else {
+      return { 
+        success: false, 
+        message: data.error || "Unknown error occurred" 
+      };
+    }
+  } catch (error) {
+    console.error("Exception in populateCourses:", error);
     return { 
       success: false, 
-      message: error.message || "Failed to populate courses. Please try again."
+      message: `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}` 
     };
   }
-}
+};

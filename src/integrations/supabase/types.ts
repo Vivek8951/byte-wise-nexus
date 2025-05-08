@@ -103,6 +103,7 @@ export type Database = {
           level: string
           rating: number | null
           thumbnail: string
+          thumbnail_url: string | null
           title: string
           updated_at: string | null
         }
@@ -118,6 +119,7 @@ export type Database = {
           level: string
           rating?: number | null
           thumbnail: string
+          thumbnail_url?: string | null
           title: string
           updated_at?: string | null
         }
@@ -133,10 +135,52 @@ export type Database = {
           level?: string
           rating?: number | null
           thumbnail?: string
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
         }
         Relationships: []
+      }
+      documents: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          description: string
+          document_url: string
+          file_type: string
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          description: string
+          document_url: string
+          file_type: string
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          description?: string
+          document_url?: string
+          file_type?: string
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notes: {
         Row: {

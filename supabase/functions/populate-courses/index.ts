@@ -504,11 +504,11 @@ function generateTopicSpecificTemplates(topic: string) {
 }
 
 // Function to populate courses
-async function populateCourses(requestedCount = 1, options: { specificTopic?: string, ensureUnique?: boolean } = {}) {
-  const maxCount = Math.min(requestedCount, 30);  // Limit max courses to 30
+async function populateCourses(requestedCount = 1, options: { specificTopic?: string; ensureUnique?: boolean; clearExisting?: boolean } = {}) {
+  const maxCount = Math.min(requestedCount, 100);  // Increased limit to 100 courses from 30
   const actualCount = Math.max(1, maxCount);      // Ensure at least 1 course
   
-  console.log(`Generating ${actualCount} courses`);
+  console.log(`Generating ${actualCount} courses${options.specificTopic ? ` on topic: ${options.specificTopic}` : ''}`);
   
   try {
     // Get existing course titles to ensure uniqueness
@@ -523,16 +523,18 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
       }
     }
 
-    // Clear existing courses (for testing purposes)
-    // In production, you might want to check if courses already exist
-    const { error: clearError } = await supabase
-      .from('courses')
-      .delete()
-      .not('id', 'is', null);
-    
-    if (clearError) {
-      console.error("Error clearing courses:", clearError);
-      return { success: false, error: clearError };
+    // Clear existing courses if requested
+    if (options.clearExisting) {
+      console.log("Clearing existing courses as requested");
+      const { error: clearError } = await supabase
+        .from('courses')
+        .delete()
+        .not('id', 'is', null);
+      
+      if (clearError) {
+        console.error("Error clearing courses:", clearError);
+        return { success: false, error: clearError };
+      }
     }
 
     let coursesAdded = 0;
@@ -560,6 +562,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
           description: course.description,
           category: course.category,
           thumbnail: course.thumbnail,
+          thumbnail_url: course.thumbnail, // Added to support new schema
           instructor: course.instructor,
           duration: course.duration,
           level: course.level,
@@ -621,6 +624,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
         }
       }
       
+      // Insert note as study material
       const { error: noteError } = await supabase
         .from('notes')
         .insert({
@@ -634,6 +638,21 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
       
       if (noteError) {
         console.error("Error inserting note:", noteError);
+      }
+      
+      // Insert document to support the new schema
+      const { error: documentError } = await supabase
+        .from('documents')
+        .insert({
+          course_id: courseId,
+          title: `${courseTitle} - Documentation`,
+          description: `Official documentation for ${courseTitle}`,
+          document_url: "https://cdn.lovablecdn.com/demo-content/sample-course-notes.pdf",
+          file_type: "PDF"
+        });
+      
+      if (documentError) {
+        console.error("Error inserting document:", documentError);
       }
       
       coursesAdded++;
@@ -681,6 +700,7 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
             description: template.description,
             category: template.category,
             thumbnail: thumbnail,
+            thumbnail_url: thumbnail, // Added to support new schema
             instructor: template.instructor,
             duration: `${Math.floor(4 + Math.random() * 8)} weeks`,
             level: template.level,
@@ -792,6 +812,21 @@ async function populateCourses(requestedCount = 1, options: { specificTopic?: st
           console.error("Error inserting note for template course:", noteError);
         }
         
+        // Insert document to support the new schema
+        const { error: documentError } = await supabase
+          .from('documents')
+          .insert({
+            course_id: courseId,
+            title: `${template.title} - Documentation`,
+            description: `Official documentation for ${template.title}`,
+            document_url: "https://cdn.lovablecdn.com/demo-content/sample-course-notes.pdf",
+            file_type: "PDF"
+          });
+        
+        if (documentError) {
+          console.error("Error inserting document for template course:", documentError);
+        }
+        
         coursesAdded++;
       }
     }
@@ -817,12 +852,15 @@ serve(async (req) => {
     const numberOfCourses = requestData.numberOfCourses || 1;
     const specificTopic = requestData.specificTopic || '';
     const ensureUnique = requestData.ensureUnique || false;
+    const clearExisting = requestData.clearExisting || false;
     
     console.log(`Received request to generate ${numberOfCourses} courses${specificTopic ? ` on topic: ${specificTopic}` : ''}`);
+    console.log(`Clear existing courses: ${clearExisting}`);
     
     const result = await populateCourses(numberOfCourses, { 
       specificTopic,
-      ensureUnique
+      ensureUnique,
+      clearExisting
     });
     
     return new Response(

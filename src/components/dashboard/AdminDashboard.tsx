@@ -2,13 +2,28 @@
 import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, Book, ChevronRight, FileText,
-  Users, Plus
+  Users, Plus, Download, Refresh, Trash2, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackButton } from "@/components/ui/back-button";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { Course } from "@/types";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
+import { populateCourses } from "@/utils/supabaseStorage";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface AdminDashboardProps {
   courses: Course[];
@@ -16,11 +31,51 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ courses }: AdminDashboardProps) {
   const navigate = useNavigate();
-  const totalCourses = courses.length;
-  // Filter out duplicate courses by title for display
+  const { toast } = useToast();
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const [courseCount, setCourseCount] = useState(10);
+  const [specificTopic, setSpecificTopic] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [clearExisting, setClearExisting] = useState(false);
+  
+  // Filter out duplicate courses by ID for display
   const uniqueCourses = courses.filter((course, index, self) => 
     index === self.findIndex((c) => c.id === course.id)
   );
+  
+  const handleGenerateCourses = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await populateCourses(courseCount, { 
+        specificTopic: specificTopic.trim(), 
+        clearExisting 
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Courses generated",
+          description: result.message,
+        });
+        setIsGenerateDialogOpen(false);
+        // Refresh courses data
+        window.location.reload();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
   
   return (
     <>
@@ -107,12 +162,21 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-bold">All Courses</CardTitle>
-              <Button 
-                onClick={() => navigate("/admin/courses")}
-                className="bg-tech-blue hover:bg-tech-darkblue"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add New Course
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setIsGenerateDialogOpen(true)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" /> Generate Courses
+                </Button>
+                <Button 
+                  onClick={() => navigate("/admin/courses")}
+                  className="bg-tech-blue hover:bg-tech-darkblue"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add New Course
+                </Button>
+              </div>
             </div>
             <CardDescription>Manage your existing courses</CardDescription>
           </CardHeader>
@@ -141,6 +205,84 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Generate Courses</DialogTitle>
+            <DialogDescription>
+              Generate sample courses for your platform. You can specify the number of courses and optional topic.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="courseCount" className="text-right">
+                Count
+              </Label>
+              <Input
+                id="courseCount"
+                type="number"
+                min={1}
+                max={100}
+                value={courseCount}
+                onChange={(e) => setCourseCount(parseInt(e.target.value) || 1)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="topic" className="text-right">
+                Topic
+              </Label>
+              <Input
+                id="topic"
+                placeholder="Optional topic (e.g. javascript, python)"
+                value={specificTopic}
+                onChange={(e) => setSpecificTopic(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="clearExisting" className="text-right">
+                Clear existing
+              </Label>
+              <div className="flex items-center space-x-2 col-span-3">
+                <Switch 
+                  id="clearExisting" 
+                  checked={clearExisting} 
+                  onCheckedChange={setClearExisting} 
+                />
+                <Label htmlFor="clearExisting" className="text-sm text-muted-foreground">
+                  Remove all existing courses before generating new ones
+                </Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button 
+              onClick={handleGenerateCourses} 
+              disabled={isGenerating}
+              className="flex gap-2 items-center"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Generate
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
