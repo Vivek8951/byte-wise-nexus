@@ -391,47 +391,45 @@ export async function getVideoForCourse(videoId: string, courseId: string) {
  * @param options Additional options for course generation
  * @returns Result of the operation
  */
-export const populateCourses = async (
-  count: number = 5, 
-  options: { 
-    specificTopic?: string;
-    clearExisting?: boolean;
-  } = {}
-): Promise<{ success: boolean; message: string }> => {
+export const populateCourses = async (count = 1, options: { specificTopic?: string; clearExisting?: boolean } = {}) => {
   try {
-    const { data, error } = await supabase.functions.invoke('populate-courses', {
+    const supabaseAdmin = supabase;
+    
+    // Call the edge function to populate courses
+    const { data, error } = await supabaseAdmin.functions.invoke('populate-courses', {
       body: {
         numberOfCourses: count,
         specificTopic: options.specificTopic || '',
-        ensureUnique: true,
-        clearExisting: options.clearExisting || false
+        clearExisting: options.clearExisting || false,
       }
     });
-
+    
     if (error) {
-      console.error("Error calling populate-courses function:", error);
-      return { 
-        success: false, 
-        message: `Failed to generate courses: ${error.message}` 
+      console.error("Error generating courses:", error);
+      return {
+        success: false,
+        message: `Failed to generate courses: ${error.message}`
       };
     }
-
-    if (data.success) {
-      return { 
-        success: true, 
-        message: `Successfully generated ${data.coursesAdded} courses${options.specificTopic ? ` on topic: ${options.specificTopic}` : ''}` 
-      };
-    } else {
-      return { 
-        success: false, 
-        message: data.error || "Unknown error occurred" 
+    
+    if (!data) {
+      return {
+        success: false,
+        message: "No response received from server"
       };
     }
-  } catch (error) {
-    console.error("Exception in populateCourses:", error);
-    return { 
-      success: false, 
-      message: `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}` 
+    
+    const coursesAdded = data.coursesAdded || 0;
+    
+    return {
+      success: true,
+      message: `Successfully generated ${coursesAdded} course${coursesAdded === 1 ? '' : 's'}`
+    };
+  } catch (error: any) {
+    console.error("Error in populateCourses:", error);
+    return {
+      success: false,
+      message: `Failed to generate courses: ${error.message}`
     };
   }
 };

@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, Book, ChevronRight, FileText,
-  Users, Plus, Download, Refresh, Trash2, Loader2
+  Users, Plus, Download, RefreshCw, Trash2, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
