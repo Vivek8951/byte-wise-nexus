@@ -1,5 +1,6 @@
-import { supabase } from "@/integrations/supabase/client";
-import { VideoDownloadInfo } from "@/types";
+import { supabase } from '@/integrations/supabase/client';
+import { Course, Video, Note, VideoDownloadInfo } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Uploads a file to Supabase Storage
@@ -8,40 +9,27 @@ import { VideoDownloadInfo } from "@/types";
  * @param filePath Path where the file will be stored
  * @returns URL of the uploaded file, or null if upload failed
  */
-export async function uploadFile(file: File, bucketName: string, filePath: string): Promise<string | null> {
+export async function uploadFile(file: File, bucketName: string, filePath?: string): Promise<string | null> {
   try {
-    // Create bucket if it doesn't exist (will be no-op if bucket exists)
-    const { error: bucketError } = await supabase.storage.createBucket(
-      bucketName, 
-      { public: true }
-    );
-    
-    if (bucketError && bucketError.message !== 'Bucket already exists') {
-      throw bucketError;
-    }
-    
+    // Generate a unique file path if not provided
+    const path = filePath || `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+
     // Upload file to Supabase Storage
-    const { data, error } = await supabase
-      .storage
+    const { data, error } = await supabase.storage
       .from(bucketName)
-      .upload(filePath, file, {
+      .upload(path, file, {
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
       });
-    
-    if (error) {
-      throw error;
-    }
-    
-    // Get public URL for the file
-    const { data: urlData } = supabase
-      .storage
-      .from(bucketName)
-      .getPublicUrl(data.path);
-    
+
+    if (error) throw error;
+
+    // Get public URL for the uploaded file
+    const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(path);
+
     return urlData.publicUrl;
   } catch (error) {
-    console.error("Error uploading file:", error);
+    console.error('Error uploading file:', error);
     return null;
   }
 }
@@ -105,7 +93,7 @@ export function getCourseThumbnailUrl(courseTitle: string, lectureTitle?: string
   const defaultThumbnails = [
     "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=1000", // Tech/coding
     "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1000", // Programming
-    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000", // Data Science
+    "https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?q=80&w=1000", // Data Science
     "https://images.unsplash.com/photo-1581092219224-9775e73d0786?q=80&w=1000", // Modern Learning
     "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1000"  // Web development
   ];
@@ -123,7 +111,7 @@ export function getCourseThumbnailUrl(courseTitle: string, lectureTitle?: string
       "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1000"
     ],
     "python": [
-      "https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?q=80&w=1000",
+      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000",
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1000",
       "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=1000"
     ],
@@ -336,45 +324,37 @@ export function safeJsonToDownloadInfo(data: any): VideoDownloadInfo | null {
  * @param courseId ID of the course the video belongs to
  * @returns Result of the operation with analyzed content
  */
-export async function processVideo(videoId: string, courseId: string): Promise<{ success: boolean; message: string; data?: any }> {
+export async function processVideo(videoId: string, courseId: string) {
   try {
-    console.log(`Processing video ${videoId} for course ${courseId}`);
-    const { data, error } = await supabase.functions.invoke("process-video", {
-      body: { videoId, courseId }
+    // Call Supabase Edge function to process video
+    const { data, error } = await supabase.functions.invoke('process-video', {
+      body: { videoId, courseId },
     });
-    
+
     if (error) {
-      console.error("Error from edge function:", error);
-      throw error;
+      console.error("Error calling process-video function:", error);
+      return { 
+        success: false, 
+        message: error.message || "Failed to process video" 
+      };
     }
-    
-    if (data.status === "error") {
-      console.error("Error processing video:", data.message);
-      throw new Error(data.message || "Failed to process video");
+
+    // Parse download info properly
+    if (data && data.data && data.data.downloadInfo) {
+      const downloadInfo = data.data.downloadInfo as VideoDownloadInfo;
+      data.data.downloadInfo = downloadInfo;
     }
-    
-    console.log("Video processed successfully:", data);
-    
-    // Ensure downloadInfo is correctly typed
-    const downloadInfo = safeJsonToDownloadInfo(data.downloadInfo);
-    
-    return {
-      success: true,
+
+    return { 
+      success: true, 
       message: "Video processed successfully",
-      data: {
-        analyzedContent: data.analyzedContent,
-        videoUrl: data.videoUrl,
-        title: data.title,
-        description: data.description,
-        thumbnail: data.thumbnail,
-        downloadInfo: downloadInfo
-      }
+      data: data.data
     };
   } catch (error) {
     console.error("Error processing video:", error);
-    return {
-      success: false,
-      message: error.message || "Failed to process video. Please try again."
+    return { 
+      success: false, 
+      message: error.message || "An unexpected error occurred" 
     };
   }
 }
@@ -387,49 +367,75 @@ export async function processVideo(videoId: string, courseId: string): Promise<{
  */
 export async function getVideoForCourse(videoId: string, courseId: string) {
   try {
-    // First check if we already have a valid video URL
-    const { data: existingVideo, error: videoError } = await supabase
+    // First check if video already has a URL
+    const { data: video, error } = await supabase
       .from('videos')
-      .select('url, title, description, thumbnail, download_info')
+      .select('*')
       .eq('id', videoId)
       .maybeSingle();
+
+    if (error) throw error;
+
+    if (video && video.url) {
+      // Video already has a URL, return it
+      const downloadInfo = video.download_info as VideoDownloadInfo | null;
       
-    if (videoError) {
-      console.error('Error fetching video:', videoError);
-      return { success: false, message: 'Error fetching video' };
-    }
-    
-    // Convert download_info to proper type
-    const downloadInfo = existingVideo?.download_info ? 
-      safeJsonToDownloadInfo(existingVideo.download_info) : null;
-    
-    if (existingVideo?.url) {
-      return { 
-        success: true, 
-        videoUrl: existingVideo.url,
-        title: existingVideo.title,
-        description: existingVideo.description,
-        thumbnail: existingVideo.thumbnail,
+      return {
+        success: true,
+        videoUrl: video.url,
+        title: video.title,
+        description: video.description,
+        thumbnail: video.thumbnail,
         downloadInfo: downloadInfo
       };
     }
-    
-    // If no URL exists, process the video through the Edge Function
+
+    // Video doesn't have a URL yet, process it to generate content
     const result = await processVideo(videoId, courseId);
-    if (result.success && result.data && result.data.videoUrl) {
+    
+    if (result.success && result.data) {
       return {
         success: true,
         videoUrl: result.data.videoUrl,
         title: result.data.title,
         description: result.data.description,
         thumbnail: result.data.thumbnail,
-        downloadInfo: result.data.downloadInfo
+        downloadInfo: result.data.downloadInfo as VideoDownloadInfo
       };
     } else {
-      return { success: false, message: result.message || 'Failed to get video' };
+      return {
+        success: false,
+        message: result.message || "Failed to get video content"
+      };
     }
   } catch (error) {
-    console.error('Error in getVideoForCourse:', error);
-    return { success: false, message: 'An unexpected error occurred' };
+    console.error("Error getting video for course:", error);
+    return {
+      success: false,
+      message: error.message || "An unexpected error occurred"
+    };
+  }
+}
+
+/**
+ * Generate random courses with AI
+ * @param count Number of courses to generate (default: 5)
+ * @returns Result of the operation
+ */
+export async function populateCourses(count: number = 5) {
+  try {
+    const { data, error } = await supabase.functions.invoke('populate-courses', {
+      body: { count },
+    });
+
+    if (error) {
+      console.error("Error populating courses:", error);
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, message: data.message || `Generated ${count} courses successfully` };
+  } catch (error) {
+    console.error("Error generating courses:", error);
+    return { success: false, message: error.message || "Failed to generate courses" };
   }
 }

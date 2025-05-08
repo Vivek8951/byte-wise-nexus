@@ -276,14 +276,34 @@ async function getYouTubeVideoWithHuggingFace(courseTitle: string, videoTitle: s
 }
 
 // Function to download video and generate thumbnail 
-async function downloadVideoAndGenerateThumbnail(videoUrl, courseTitle, videoTitle) {
+async function downloadVideoAndGenerateThumbnail(videoUrl: string, courseTitle: string, videoTitle: string): Promise<VideoDownloadInfo> {
   try {
-    if (!videoUrl) return { success: false, message: "No video URL provided" };
+    if (!videoUrl) {
+      return { 
+        success: false, 
+        message: "No video URL provided",
+        videoId: "",
+        embedUrl: "",
+        watchUrl: "",
+        playerUrl: "",
+        downloadableUrl: "",
+        thumbnails: []
+      };
+    }
     
     // Extract video ID from YouTube embed URL
     const videoIdMatch = videoUrl.match(/embed\/([a-zA-Z0-9_-]+)/);
     if (!videoIdMatch || !videoIdMatch[1]) {
-      return { success: false, message: "Invalid YouTube URL format" };
+      return { 
+        success: false, 
+        message: "Invalid YouTube URL format",
+        videoId: "",
+        embedUrl: "",
+        watchUrl: "",
+        playerUrl: "",
+        downloadableUrl: "",
+        thumbnails: []
+      };
     }
     
     const videoId = videoIdMatch[1];
@@ -315,6 +335,7 @@ async function downloadVideoAndGenerateThumbnail(videoUrl, courseTitle, videoTit
       playerUrl: playerUrl,
       downloadableUrl: downloadableUrl,
       thumbnails: thumbnailOptions,
+      message: "Video download info generated successfully"
     };
   } catch (error) {
     console.error("Error downloading video:", error);
@@ -332,7 +353,7 @@ async function downloadVideoAndGenerateThumbnail(videoUrl, courseTitle, videoTit
 }
 
 // Function to call Hugging Face API for thumbnail generation
-async function generateThumbnailWithHuggingFace(title, description) {
+async function generateThumbnailWithHuggingFace(title: string, description: string): Promise<string | null> {
   try {
     if (!HUGGING_FACE_API_KEY) {
       console.log("No Hugging Face API key provided, using default thumbnail");
@@ -711,6 +732,18 @@ async function generateContentAnalysis(transcript: string, courseId: string, vid
   }
 }
 
+// Add interface for VideoDownloadInfo to ensure proper typing
+interface VideoDownloadInfo {
+  success: boolean;
+  videoId: string;
+  embedUrl: string;
+  watchUrl: string;
+  playerUrl: string;
+  downloadableUrl: string;
+  thumbnails: string[];
+  message?: string;
+}
+
 // Process video function that orchestrates all steps
 async function processVideo(videoId: string, courseId: string) {
   try {
@@ -738,7 +771,7 @@ async function processVideo(videoId: string, courseId: string) {
       throw new Error(`Error fetching course: ${courseError.message}`);
     }
     
-    // Get a relevant YouTube video URL using Hugging Face API
+    // Get a relevant YouTube video URL using Hugging Face API or our predefined mapping
     const videoUrl = await getRelevantVideoUrl(courseData.category, courseData.title, video.title);
     console.log(`Selected YouTube video URL: ${videoUrl}`);
     
@@ -776,7 +809,7 @@ async function processVideo(videoId: string, courseId: string) {
         analyzed_content: analyzedContent,
         url: videoUrl, // Update with relevant YouTube URL
         thumbnail: thumbnailUrl, // Add thumbnail URL
-        download_info: downloadInfo.success ? downloadInfo : null // Add download info
+        download_info: downloadInfo // Add download info
       })
       .eq('id', videoId);
       
@@ -814,18 +847,22 @@ async function processVideo(videoId: string, courseId: string) {
     
     return {
       status: "success",
+      success: true,
       videoId: videoId,
-      analyzedContent: analyzedContent,
-      videoUrl: videoUrl,
-      title: video.title,
-      description: video.description,
-      thumbnail: thumbnailUrl,
-      downloadInfo: downloadInfo.success ? downloadInfo : null
+      data: {
+        analyzedContent: analyzedContent,
+        videoUrl: videoUrl,
+        title: video.title,
+        description: video.description,
+        thumbnail: thumbnailUrl,
+        downloadInfo: downloadInfo
+      }
     };
   } catch (error) {
     console.error("Error processing video:", error);
     return {
       status: "error",
+      success: false,
       message: error.message
     };
   }
