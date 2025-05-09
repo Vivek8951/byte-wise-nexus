@@ -20,7 +20,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useToast } from "@/components/ui/use-toast";
-import { VideoAIChat } from './VideoAnalysisChatbot';
+import { VideoAnalysisChatbot } from './VideoAnalysisChatbot';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface VideoAnalysisProps {
@@ -469,7 +469,7 @@ export function VideoAnalysis({ video, onAnalysisComplete }: VideoAnalysisProps)
       
       {/* AI Chat section */}
       {showAIChat && transcript && (
-        <VideoAIChat videoId={video.id} transcript={transcript} summary={summary} />
+        <VideoAnalysisChatbot videoId={video.id} transcript={transcript} summary={summary} />
       )}
       
       {/* Analysis results */}

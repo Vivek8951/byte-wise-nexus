@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Send, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,13 +14,14 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-interface VideoAIChatProps {
+interface VideoAnalysisChatbotProps {
   videoId: string;
   transcript: string;
   summary: string;
 }
 
-export function VideoAIChat({ videoId, transcript, summary }: VideoAIChatProps) {
+// Rename component to match the export name in index.ts
+export function VideoAnalysisChatbot({ videoId, transcript, summary }: VideoAnalysisChatbotProps) {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
