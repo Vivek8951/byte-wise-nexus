@@ -1,7 +1,8 @@
+
 import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, Book, ChevronRight, FileText,
-  Users, Plus, Download, RefreshCw, Trash2, Loader2,
+  Users, Plus, Download, Trash2, Loader2,
   Sparkles, Wand
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -162,13 +163,17 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 <Button 
                   onClick={() => setIsGenerateDialogOpen(true)}
                   variant="outline"
-                  className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white shadow-sm"
+                  className="group relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 animate-fade-in"
                 >
-                  <Sparkles className="h-4 w-4" /> Generate with AI
+                  <span className="absolute inset-0 bg-gradient-to-r from-violet-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                  <span className="relative flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 animate-pulse" /> 
+                    <span>Generate Courses with AI</span>
+                  </span>
                 </Button>
                 <Button 
                   onClick={() => navigate("/admin/courses")}
-                  className="bg-tech-blue hover:bg-tech-darkblue shadow-sm"
+                  className="bg-tech-blue hover:bg-tech-darkblue shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <Plus className="mr-2 h-4 w-4" /> Add New Course
                 </Button>
@@ -203,14 +208,16 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
       </div>
 
       <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] animate-scale-in">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wand className="h-5 w-5 text-violet-500" />
-              Generate Courses with AI
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-purple-600">
+                Generate Courses with AI
+              </span>
             </DialogTitle>
             <DialogDescription>
-              Let our AI create 5 professional courses for your platform with the Hugging Face API.
+              Let our AI create professional courses for your platform with the Hugging Face API.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -239,19 +246,22 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
             <Button 
               onClick={handleGenerateCourses} 
               disabled={isGenerating}
-              className="flex gap-2 items-center bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+              className="relative overflow-hidden group bg-gradient-to-br from-violet-500 to-purple-600 hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300"
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Generate 5 Courses
-                </>
-              )}
+              <span className="absolute inset-0 bg-gradient-to-r from-violet-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              <span className="relative flex items-center gap-2">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 animate-pulse" />
+                    <span>Generate Courses</span>
+                  </>
+                )}
+              </span>
             </Button>
           </DialogFooter>
         </DialogContent>

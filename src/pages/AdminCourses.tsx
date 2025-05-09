@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -277,18 +278,21 @@ export default function AdminCourses() {
             <Button 
               onClick={handlePopulateCourses}
               disabled={isPopulating}
-              className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white shadow-sm"
+              className="group relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 animate-fade-in"
             >
-              {isPopulating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {isPopulating ? "Generating..." : "Generate 5 Courses with AI"}
+              <span className="absolute inset-0 bg-gradient-to-r from-violet-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              <span className="relative flex items-center gap-2">
+                {isPopulating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                )}
+                <span>{isPopulating ? "Generating..." : "Generate Courses with AI"}</span>
+              </span>
             </Button>
             <Button 
               onClick={handleAddCourse}
-              className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in shadow-sm"
+              className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in shadow-sm hover:shadow-md transition-shadow duration-300"
             >
               <Plus className="h-4 w-4" /> New Course
             </Button>
