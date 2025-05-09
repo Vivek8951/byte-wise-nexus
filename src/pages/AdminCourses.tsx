@@ -231,6 +231,7 @@ export default function AdminCourses() {
     });
   };
   
+  // Update this function to generate exactly 5 courses
   const handlePopulateCourses = async () => {
     setIsPopulating(true);
     try {
@@ -276,7 +277,7 @@ export default function AdminCourses() {
             <Button 
               onClick={handlePopulateCourses}
               disabled={isPopulating}
-              className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white"
+              className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white shadow-sm"
             >
               {isPopulating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -287,7 +288,7 @@ export default function AdminCourses() {
             </Button>
             <Button 
               onClick={handleAddCourse}
-              className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in"
+              className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in shadow-sm"
             >
               <Plus className="h-4 w-4" /> New Course
             </Button>
@@ -395,7 +396,7 @@ export default function AdminCourses() {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Get started by creating your first course. Add videos, documents and organize content for your students.
               </p>
-              <Button onClick={handleAddCourse} className="bg-primary hover:bg-primary/90">
+              <Button onClick={handleAddCourse} className="bg-primary hover:bg-primary/90 shadow-sm">
                 <Plus className="h-4 w-4 mr-2" /> Create First Course
               </Button>
             </div>

@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, Book, ChevronRight, FileText,
@@ -163,13 +162,13 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 <Button 
                   onClick={() => setIsGenerateDialogOpen(true)}
                   variant="outline"
-                  className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white"
+                  className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white shadow-sm"
                 >
                   <Sparkles className="h-4 w-4" /> Generate with AI
                 </Button>
                 <Button 
                   onClick={() => navigate("/admin/courses")}
-                  className="bg-tech-blue hover:bg-tech-darkblue"
+                  className="bg-tech-blue hover:bg-tech-darkblue shadow-sm"
                 >
                   <Plus className="mr-2 h-4 w-4" /> Add New Course
                 </Button>
