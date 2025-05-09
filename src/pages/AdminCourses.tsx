@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -9,8 +10,9 @@ import {
   File,
   EyeOff,
   Eye,
-  Download,
-  Loader2
+  Sparkles,
+  Loader2,
+  Wand
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCourses } from "@/context/CourseContext";
@@ -63,7 +65,6 @@ export default function AdminCourses() {
   const { toast } = useToast();
   const [isPopulating, setIsPopulating] = useState(false);
   const [courseCount, setCourseCount] = useState(5);
-  const [specificTopic, setSpecificTopic] = useState("");
   
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -235,8 +236,8 @@ export default function AdminCourses() {
   const handlePopulateCourses = async () => {
     setIsPopulating(true);
     try {
-      const result = await populateCourses(courseCount, { 
-        specificTopic: specificTopic.trim() || undefined 
+      const result = await populateCourses(courseCount, {
+        clearExisting: false
       });
       
       if (result.success) {
@@ -284,25 +285,17 @@ export default function AdminCourses() {
                 className="w-20"
                 placeholder="Count"
               />
-              <Input
-                type="text"
-                value={specificTopic}
-                onChange={(e) => setSpecificTopic(e.target.value)}
-                className="w-40 md:w-60"
-                placeholder="Topic (e.g. javascript, python)"
-              />
               <Button 
                 onClick={handlePopulateCourses}
-                variant="outline"
                 disabled={isPopulating}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white"
               >
                 {isPopulating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Download className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4" />
                 )}
-                {isPopulating ? "Generating..." : "Generate Random Courses"}
+                {isPopulating ? "Generating..." : "Generate with AI"}
               </Button>
             </div>
             <Button 

@@ -2,7 +2,8 @@
 import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, Book, ChevronRight, FileText,
-  Users, Plus, Download, RefreshCw, Trash2, Loader2
+  Users, Plus, Download, RefreshCw, Trash2, Loader2,
+  Sparkles, Wand
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +35,6 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const { toast } = useToast();
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [courseCount, setCourseCount] = useState(10);
-  const [specificTopic, setSpecificTopic] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [clearExisting, setClearExisting] = useState(false);
   
@@ -47,7 +47,6 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
     setIsGenerating(true);
     try {
       const result = await populateCourses(courseCount, { 
-        specificTopic: specificTopic.trim(), 
         clearExisting 
       });
       
@@ -166,9 +165,9 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 <Button 
                   onClick={() => setIsGenerateDialogOpen(true)}
                   variant="outline"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white"
                 >
-                  <Download className="h-4 w-4" /> Generate Courses
+                  <Sparkles className="h-4 w-4" /> Generate with AI
                 </Button>
                 <Button 
                   onClick={() => navigate("/admin/courses")}
@@ -209,15 +208,18 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
       <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Generate Courses</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand className="h-5 w-5 text-violet-500" />
+              Generate Courses with AI
+            </DialogTitle>
             <DialogDescription>
-              Generate sample courses for your platform. You can specify the number of courses and optional topic.
+              Let our AI create professional courses for your platform. Just specify how many you need.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="courseCount" className="text-right">
-                Count
+                Number
               </Label>
               <Input
                 id="courseCount"
@@ -226,18 +228,6 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 max={100}
                 value={courseCount}
                 onChange={(e) => setCourseCount(parseInt(e.target.value) || 1)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="topic" className="text-right">
-                Topic
-              </Label>
-              <Input
-                id="topic"
-                placeholder="Optional topic (e.g. javascript, python)"
-                value={specificTopic}
-                onChange={(e) => setSpecificTopic(e.target.value)}
                 className="col-span-3"
               />
             </div>
@@ -266,7 +256,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
             <Button 
               onClick={handleGenerateCourses} 
               disabled={isGenerating}
-              className="flex gap-2 items-center"
+              className="flex gap-2 items-center bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
             >
               {isGenerating ? (
                 <>
@@ -275,7 +265,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 </>
               ) : (
                 <>
-                  <Download className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4" />
                   Generate
                 </>
               )}
