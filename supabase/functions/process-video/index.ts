@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 // Initialize Supabase client
-const supabaseUrl = 'https://weiagpwgfmyjdglfpbeu.supabase.co';
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://weiagpwgfmyjdglfpbeu.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -22,145 +22,164 @@ serve(async (req) => {
   }
 
   try {
-    const { videoId, courseId } = await req.json();
+    const { videoId, courseId, youtubeUrl } = await req.json();
+    let effectiveVideoId = videoId;
     
-    if (!videoId || !courseId) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Video ID and Course ID are required" 
-        }), 
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    console.log(`Processing video ${videoId} for course ${courseId}`);
-    
-    // Get video details
-    const { data: videoData, error: videoError } = await supabase
-      .from('videos')
-      .select('title, description, course_id')
-      .eq('id', videoId)
-      .maybeSingle();
-    
-    if (videoError || !videoData) {
-      console.error("Error fetching video data:", videoError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Error fetching video data" 
-        }), 
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Get course details to help with search relevance
-    const { data: courseData, error: courseError } = await supabase
-      .from('courses')
-      .select('title, category')
-      .eq('id', courseId)
-      .maybeSingle();
+    // If we received a full YouTube URL instead of just the ID
+    if (youtubeUrl && !effectiveVideoId) {
+      // Extract video ID from URL (supports multiple YouTube URL formats)
+      const urlMatch = youtubeUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+      effectiveVideoId = urlMatch ? urlMatch[1] : null;
       
-    if (courseError) {
-      console.error("Error fetching course data:", courseError);
+      if (!effectiveVideoId) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: "Invalid YouTube URL. Could not extract video ID." 
+          }), 
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
+    if (!effectiveVideoId) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Error fetching course data" 
+          message: "Video ID is required" 
         }), 
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Construct search query based on video title and course information
-    const searchQuery = `${videoData.title} ${courseData?.title || ''} ${courseData?.category || ''} tutorial`;
-    const searchResults = await searchYouTubeVideos(searchQuery);
+    console.log(`Processing YouTube video ${effectiveVideoId} for course ${courseId}`);
     
-    if (!searchResults.success) {
-      console.error("YouTube search failed:", searchResults.message);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: searchResults.message 
-        }), 
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Get the first result as our video
-    const video = searchResults.videos[0];
-    
-    if (!video) {
-      console.error("No videos found for the search query");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "No relevant videos found" 
-        }), 
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Prepare video data
-    const videoUrl = `https://www.youtube-nocookie.com/embed/${video.id}`;
-    const videoTitle = video.title || videoData.title;
-    const videoDescription = video.description || videoData.description;
-    const videoThumbnail = video.thumbnail || '';
-    
-    console.log(`Updating video ${videoId} with YouTube URL: ${videoUrl}`);
-    console.log(`Using thumbnail: ${videoThumbnail}`);
-    
-    // Update the video record
-    const { error: updateError } = await supabase
-      .from('videos')
-      .update({
-        url: videoUrl,
-        title: videoTitle,
-        description: videoDescription,
-        thumbnail: videoThumbnail,
-        download_info: {
-          success: true,
-          videoId: video.id,
-          embedUrl: videoUrl,
-          watchUrl: `https://www.youtube.com/watch?v=${video.id}`,
-          playerUrl: videoUrl,
-          downloadableUrl: `https://www.youtube.com/watch?v=${video.id}`,
-          thumbnails: [videoThumbnail]
+    // Get video details directly from the YouTube API if possible
+    if (youtubeApiKey) {
+      try {
+        const videoDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${effectiveVideoId}&key=${youtubeApiKey}`;
+        const detailsResponse = await fetch(videoDetailsUrl);
+        
+        if (!detailsResponse.ok) {
+          throw new Error(`YouTube API error: ${detailsResponse.status}`);
         }
-      })
-      .eq('id', videoId);
-    
-    if (updateError) {
-      console.error("Error updating video:", updateError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Error updating video with YouTube data" 
-        }), 
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        
+        const videoDetails = await detailsResponse.json();
+        
+        if (!videoDetails.items || videoDetails.items.length === 0) {
+          throw new Error("No video found with the provided ID");
+        }
+        
+        const snippet = videoDetails.items[0].snippet;
+        const contentDetails = videoDetails.items[0].contentDetails;
+        
+        // Get the best thumbnail available
+        const thumbnails = snippet.thumbnails;
+        const videoThumbnail = 
+          thumbnails.maxres?.url || 
+          thumbnails.high?.url || 
+          thumbnails.medium?.url || 
+          thumbnails.default?.url ||
+          `https://img.youtube.com/vi/${effectiveVideoId}/hqdefault.jpg`;
+        
+        // Parse duration from PT1H2M3S format to hours:minutes:seconds
+        let videoDuration = "0:00";
+        const duration = contentDetails.duration;
+        const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+        if (match) {
+          const hours = match[1] ? parseInt(match[1]) : 0;
+          const minutes = match[2] ? parseInt(match[2]) : 0;
+          const seconds = match[3] ? parseInt(match[3]) : 0;
+          
+          if (hours > 0) {
+            videoDuration = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          } else {
+            videoDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          }
+        }
+        
+        const embedUrl = `https://www.youtube-nocookie.com/embed/${effectiveVideoId}`;
+        
+        // If this is part of an actual course (not just testing), update the database
+        if (courseId && courseId !== 'new' && videoId) {
+          const { error: updateError } = await supabase
+            .from('videos')
+            .update({
+              title: snippet.title,
+              description: snippet.description.slice(0, 500), // Limit length
+              url: embedUrl,
+              thumbnail: videoThumbnail,
+              duration: videoDuration,
+              download_info: {
+                success: true,
+                videoId: effectiveVideoId,
+                embedUrl,
+                watchUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
+                playerUrl: embedUrl,
+                downloadableUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
+                thumbnails: [videoThumbnail]
+              }
+            })
+            .eq('id', videoId);
+          
+          if (updateError) {
+            console.error("Error updating video:", updateError);
+            throw updateError;
+          }
+        }
+        
+        // Return the processed information
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              title: snippet.title,
+              description: snippet.description.slice(0, 500), // Limit length
+              videoUrl: embedUrl,
+              thumbnail: videoThumbnail,
+              duration: videoDuration,
+              embedUrl,
+              watchUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
+              downloadInfo: {
+                success: true,
+                videoId: effectiveVideoId,
+                embedUrl,
+                watchUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
+                playerUrl: embedUrl,
+                downloadableUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
+                thumbnails: [videoThumbnail]
+              }
+            }
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("Error fetching YouTube video details:", error);
+        // Continue with fallback process if the API call fails
+      }
     }
     
-    console.log(`Video ${videoId} processed successfully`);
+    // Fallback: return a response with basic information
+    const embedUrl = `https://www.youtube-nocookie.com/embed/${effectiveVideoId}`;
+    const thumbnailUrl = `https://img.youtube.com/vi/${effectiveVideoId}/hqdefault.jpg`;
     
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          videoUrl,
-          title: videoTitle,
-          description: videoDescription,
-          thumbnail: videoThumbnail,
+          videoUrl: embedUrl,
+          thumbnail: thumbnailUrl,
+          embedUrl,
+          watchUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
           downloadInfo: {
             success: true,
-            videoId: video.id,
-            embedUrl: videoUrl,
-            watchUrl: `https://www.youtube.com/watch?v=${video.id}`,
-            playerUrl: videoUrl,
-            downloadableUrl: `https://www.youtube.com/watch?v=${video.id}`,
-            thumbnails: [videoThumbnail]
-          },
-          analyzedContent: [] // Empty array for now, can be filled later
+            videoId: effectiveVideoId,
+            embedUrl,
+            watchUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
+            playerUrl: embedUrl,
+            downloadableUrl: `https://www.youtube.com/watch?v=${effectiveVideoId}`,
+            thumbnails: [thumbnailUrl]
+          }
         }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -176,68 +195,3 @@ serve(async (req) => {
     );
   }
 });
-
-/**
- * Search YouTube for videos matching the query
- */
-async function searchYouTubeVideos(query: string) {
-  if (!youtubeApiKey) {
-    return { 
-      success: false, 
-      message: "YouTube API key not configured", 
-      videos: [] 
-    };
-  }
-  
-  try {
-    const encodedQuery = encodeURIComponent(query);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodedQuery}&key=${youtubeApiKey}&type=video&videoDuration=medium`;
-    
-    console.log(`Searching YouTube for: ${query}`);
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`YouTube API error: ${response.status}`, errorText);
-      return { 
-        success: false, 
-        message: `YouTube API error: ${response.status}`, 
-        videos: [] 
-      };
-    }
-    
-    const data = await response.json();
-    
-    if (!data.items || data.items.length === 0) {
-      return { 
-        success: false, 
-        message: "No videos found", 
-        videos: [] 
-      };
-    }
-    
-    // Map the results to a simplified format with high quality thumbnails
-    const videos = data.items.map((item: any) => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      description: item.snippet.description,
-      // Try to get the highest quality thumbnail available
-      thumbnail: item.snippet.thumbnails.high?.url || 
-                item.snippet.thumbnails.medium?.url || 
-                item.snippet.thumbnails.default?.url
-    }));
-    
-    return { 
-      success: true, 
-      message: "Videos found", 
-      videos 
-    };
-  } catch (error) {
-    console.error("Error searching YouTube:", error);
-    return { 
-      success: false, 
-      message: `Error searching YouTube: ${error.message}`, 
-      videos: [] 
-    };
-  }
-}

@@ -1,6 +1,8 @@
 
-// Export all components from the courses directory
+// Export components from this directory
 export { SimpleVideoPlayer } from './SimpleVideoPlayer';
-export { VideoPlayerWithAnalysis } from './VideoPlayerWithAnalysis';
-export { VideoAnalysis } from './VideoAnalysis';
+export { CourseCard } from './CourseCard';
 export { CourseQuiz } from './CourseQuiz';
+export { VideoAnalysis } from './VideoAnalysis';
+export { VideoAnalysisChatbot } from './VideoAnalysisChatbot';
+export { VideoPlayerWithAnalysis } from './VideoPlayerWithAnalysis';

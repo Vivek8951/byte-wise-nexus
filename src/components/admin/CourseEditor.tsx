@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
@@ -9,7 +10,8 @@ import {
   Upload,
   Loader2,
   Check,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +28,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Course, Video as VideoType, Note } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import { VideoAnalysis } from '@/components/courses/VideoAnalysis';
+import { supabase } from "@/integrations/supabase/client";
 
 interface CourseEditorProps {
   course?: Course;
@@ -34,7 +37,7 @@ interface CourseEditorProps {
 }
 
 export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm({
     defaultValues: course || {
       title: '',
       description: '',
@@ -59,10 +62,14 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
   
+  // AI generation states
+  const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
+  
   // File upload references
   const videoFileRefs = useRef<(HTMLInputElement | null)[]>([]);
   const noteFileRefs = useRef<(HTMLInputElement | null)[]>([]);
   const previewVideos = useRef<Record<string, string>>({});
+  const titleRef = useRef<HTMLInputElement | null>(null);
   
   const { toast } = useToast();
   
@@ -74,51 +81,150 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       
       // Simulated API call delay
       const fetchCourseContent = async () => {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Mock data for the course videos
-        const fetchedVideos: Partial<VideoType>[] = [
-          { 
-            title: 'Introduction', 
-            description: 'Course overview and goals', 
-            url: course?.thumbnail || '', // Using thumbnail as placeholder
-            duration: '10:15', 
-            order: 1 
-          },
-          {
-            title: 'Getting Started',
-            description: 'Initial setup and configuration',
-            url: course?.thumbnail || '', // Using thumbnail as placeholder
-            duration: '15:30',
-            order: 2
+        try {
+          // Fetch videos
+          const { data: videoData, error: videoError } = await supabase
+            .from('videos')
+            .select('*')
+            .eq('course_id', course.id)
+            .order('order_num', { ascending: true });
+          
+          if (videoError) throw videoError;
+          
+          const fetchedVideos: Partial<VideoType>[] = videoData.map(video => ({
+            id: video.id,
+            courseId: video.course_id,
+            title: video.title,
+            description: video.description,
+            url: video.url,
+            duration: video.duration,
+            thumbnail: video.thumbnail,
+            order: video.order_num
+          }));
+          
+          // Fetch notes
+          const { data: notesData, error: notesError } = await supabase
+            .from('notes')
+            .select('*')
+            .eq('course_id', course.id)
+            .order('order_num', { ascending: true });
+          
+          if (notesError) throw notesError;
+          
+          const fetchedNotes: Partial<Note>[] = notesData.map(note => ({
+            id: note.id,
+            courseId: note.course_id,
+            title: note.title,
+            description: note.description, 
+            fileUrl: note.file_url,
+            fileType: note.file_type as 'pdf' | 'doc' | 'txt',
+            order: note.order_num
+          }));
+          
+          // If no videos or notes were found, add empty ones
+          if (fetchedVideos.length === 0) {
+            fetchedVideos.push({ title: '', description: '', url: '', duration: '', order: 1 });
           }
-        ];
-        
-        // Mock data for the course notes/documents
-        const fetchedNotes: Partial<Note>[] = [
-          {
-            title: 'Course Syllabus',
-            description: 'Complete outline of course topics',
-            fileUrl: 'syllabus.pdf',
-            fileType: 'pdf',
-            order: 1
-          },
-          {
-            title: 'Reference Guide',
-            description: 'Quick reference for important concepts',
-            fileUrl: 'reference.pdf',
-            fileType: 'pdf',
-            order: 2
+          
+          if (fetchedNotes.length === 0) {
+            fetchedNotes.push({ title: '', description: '', fileUrl: '', fileType: 'pdf', order: 1 });
           }
-        ];
-        
-        setVideos(fetchedVideos);
-        setNotes(fetchedNotes);
+          
+          setVideos(fetchedVideos);
+          setNotes(fetchedNotes);
+        } catch (error) {
+          console.error("Error fetching course content:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load course content",
+            variant: "destructive",
+          });
+          
+          // Set default empty content
+          setVideos([{ title: '', description: '', url: '', duration: '', order: 1 }]);
+          setNotes([{ title: '', description: '', fileUrl: '', fileType: 'pdf', order: 1 }]);
+        }
       };
       
       fetchCourseContent();
     }
-  }, [course?.id, course?.thumbnail]);
+  }, [course?.id, course?.thumbnail, toast]);
+  
+  // Generate course details with AI
+  const generateCourseDetails = async () => {
+    const titleValue = titleRef.current?.value;
+    if (!titleValue) {
+      toast({
+        title: "Title required",
+        description: "Please enter a course title before generating details",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsGeneratingDetails(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-course-details', {
+        body: { title: titleValue }
+      });
+      
+      if (error) throw error;
+      
+      if (data.success && data.courseDetails) {
+        const { description, category, instructor, duration, level: aiLevel, videos: videoTitles } = data.courseDetails;
+        
+        // Update form values
+        setValue('description', description);
+        setValue('category', category);
+        setValue('instructor', instructor);
+        setValue('duration', duration);
+        setLevel(aiLevel);
+        
+        // Generate a thumbnail URL - use Unsplash for now
+        const thumbnailUrl = `https://source.unsplash.com/random/800x600/?${encodeURIComponent(category.toLowerCase())}`;
+        setValue('thumbnail', thumbnailUrl);
+        
+        // Update video titles
+        const newVideos = videoTitles.map((title: string, index: number) => ({
+          title,
+          description: `Video lesson for ${title}`,
+          url: '',
+          duration: '',
+          order: index + 1
+        }));
+        
+        // Add at least one video if none were generated
+        if (newVideos.length === 0) {
+          newVideos.push({ 
+            title: `Introduction to ${titleValue}`, 
+            description: `Video lesson introducing ${titleValue}`, 
+            url: '', 
+            duration: '', 
+            order: 1 
+          });
+        }
+        
+        setVideos(newVideos);
+        
+        toast({
+          title: "Course details generated",
+          description: "AI has generated course details based on your title",
+        });
+      } else {
+        throw new Error("Failed to generate course details");
+      }
+    } catch (error) {
+      console.error("Error generating course details:", error);
+      toast({
+        title: "Generation failed",
+        description: "Failed to generate course details. Please try again or fill in manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingDetails(false);
+    }
+  };
   
   // Add new state for auto-generated content
   const [autoGeneratedContent, setAutoGeneratedContent] = useState<{
@@ -230,6 +336,49 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
         }
       }, 2000 + Math.random() * 2000);
     });
+  };
+  
+  // Process and fetch YouTube information for a video URL
+  const processYouTubeUrl = async (index: number, url: string) => {
+    // Check if this is a YouTube URL
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(youtubeRegex);
+    
+    if (!match) return;
+    
+    const videoId = match[1];
+    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+    
+    // Update the URL to the embed version
+    updateVideo(index, 'url', embedUrl);
+    
+    try {
+      // Call the process-video edge function to get video details
+      const { data, error } = await supabase.functions.invoke('process-video', {
+        body: { videoId, courseId: course?.id || 'new' }
+      });
+      
+      if (error) throw error;
+      
+      if (data && data.success) {
+        // Update with the retrieved data
+        updateVideo(index, 'title', data.data.title || videos[index].title || '');
+        updateVideo(index, 'description', data.data.description || videos[index].description || '');
+        updateVideo(index, 'thumbnail', data.data.thumbnail || '');
+        
+        toast({
+          title: "Video processed",
+          description: "YouTube video details have been retrieved",
+        });
+      }
+    } catch (error) {
+      console.error("Error processing YouTube video:", error);
+      toast({
+        title: "Processing failed",
+        description: "Failed to retrieve YouTube video details",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle file uploads for videos - enhanced with video analysis
@@ -368,6 +517,12 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
   };
   
   const onSubmit = (data: any) => {
+    // Show saving indicator
+    toast({
+      title: "Saving course...",
+      description: "Please wait while we save your course",
+    });
+    
     // Validate required fields for videos and notes
     const videosValid = videos.every(v => v.title && v.url);
     const notesValid = notes.every(n => n.title && n.fileUrl);
@@ -433,13 +588,35 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Basic course information form fields */}
         <div className="space-y-6">
-          {/* Title field */}
+          {/* Title field with AI generation */}
           <div className="space-y-2">
-            <Label htmlFor="title">Course Title<span className="text-red-500">*</span></Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="title">Course Title<span className="text-red-500">*</span></Label>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={generateCourseDetails}
+                disabled={isGeneratingDetails}
+                className="flex items-center gap-1 text-xs"
+              >
+                {isGeneratingDetails ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3 text-yellow-500" />
+                )}
+                {isGeneratingDetails ? "Generating..." : "Generate Details with AI"}
+              </Button>
+            </div>
             <Input
               id="title"
               {...register('title', { required: true })}
               className={errors.title ? 'border-red-500' : ''}
+              ref={(el) => {
+                titleRef.current = el;
+                const { ref } = register('title', { required: true });
+                if (typeof ref === 'function') ref(el);
+              }}
             />
             {errors.title && (
               <p className="text-red-500 text-sm">Course title is required</p>
@@ -578,6 +755,22 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     </div>
                   )}
                   
+                  {/* YouTube video preview */}
+                  {video.url && video.url.includes('youtube') && video.thumbnail && (
+                    <div className="mt-2 mb-3 relative">
+                      <img 
+                        src={video.thumbnail} 
+                        alt={video.title || "Video thumbnail"}
+                        className="w-full max-h-40 object-cover rounded-md" 
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-black bg-opacity-50 rounded-full p-3">
+                          <VideoIcon className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Check if this video is currently being analyzed */}
                   {autoGeneratedContent && autoGeneratedContent.videoIndex === index && (
                     <div className="mb-3 p-3 bg-muted rounded-md">
@@ -609,13 +802,18 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     </div>
                     
                     <div>
-                      <Label htmlFor={`video-file-${index}`}>Video File<span className="text-red-500">*</span></Label>
+                      <Label htmlFor={`video-file-${index}`}>Video URL or File<span className="text-red-500">*</span></Label>
                       <div className="flex gap-2">
                         <Input
                           id={`video-url-${index}`}
                           value={video.url}
-                          onChange={(e) => updateVideo(index, 'url', e.target.value)}
-                          placeholder="Upload a video file"
+                          onChange={(e) => {
+                            updateVideo(index, 'url', e.target.value);
+                            if (e.target.value.includes('youtube.com') || e.target.value.includes('youtu.be')) {
+                              processYouTubeUrl(index, e.target.value);
+                            }
+                          }}
+                          placeholder="YouTube URL or upload a video file"
                           className="flex-1"
                           required
                           disabled={uploadStatus[`video_${index}_${Date.now()}`] === 'uploading'}

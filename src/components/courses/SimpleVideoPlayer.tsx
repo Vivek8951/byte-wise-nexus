@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 
 interface SimpleVideoPlayerProps {
@@ -97,17 +96,40 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
 
   // Check if the URL is a YouTube embed
   const isYouTubeEmbed = url?.includes('youtube.com/embed') || url?.includes('youtube-nocookie.com/embed');
+  
+  // Extract YouTube video ID for higher quality thumbnails if not provided
+  const extractYouTubeVideoId = () => {
+    if (!isYouTubeEmbed) return null;
+    
+    const match = url.match(/embed\/([\w-]+)/);
+    return match ? match[1] : null;
+  };
+  
+  const youtubeVideoId = extractYouTubeVideoId();
+  
+  // Get YouTube thumbnail if we have a video ID and no specific thumbnail provided
+  const getYouTubeThumbnail = () => {
+    if (!youtubeVideoId) return thumbnail;
+    
+    // If a custom thumbnail is provided, use that
+    if (thumbnail) return thumbnail;
+    
+    // Otherwise use the YouTube high quality thumbnail
+    return `https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`;
+  };
+  
+  const effectiveThumbnail = isYouTubeEmbed ? getYouTubeThumbnail() : thumbnail;
 
   if (isYouTubeEmbed) {
     return (
       <div className="relative w-full h-full">
-        {thumbnail && showThumbnail ? (
+        {effectiveThumbnail && showThumbnail ? (
           <div 
             className="relative w-full h-full cursor-pointer" 
             onClick={handleThumbnailClick}
           >
             <img 
-              src={thumbnail} 
+              src={effectiveThumbnail} 
               alt={title || "Video thumbnail"} 
               className="w-full h-full object-cover"
             />
@@ -141,13 +163,13 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
         </div>
       )}
       
-      {thumbnail && showThumbnail ? (
+      {effectiveThumbnail && showThumbnail ? (
         <div 
           className="relative w-full h-full cursor-pointer" 
           onClick={handleThumbnailClick}
         >
           <img 
-            src={thumbnail} 
+            src={effectiveThumbnail} 
             alt={title || "Video thumbnail"} 
             className="w-full h-full object-cover"
           />
@@ -172,7 +194,7 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
           autoPlay={autoPlay}
           muted={isMuted}
           controls
-          poster={thumbnail}
+          poster={effectiveThumbnail}
         />
       )}
     </div>
