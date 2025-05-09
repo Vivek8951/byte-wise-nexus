@@ -11,7 +11,6 @@ import { BackButton } from "@/components/ui/back-button";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { Course } from "@/types";
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { 
   Dialog,
@@ -34,7 +33,6 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
-  const [courseCount, setCourseCount] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
   const [clearExisting, setClearExisting] = useState(false);
   
@@ -46,7 +44,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const handleGenerateCourses = async () => {
     setIsGenerating(true);
     try {
-      const result = await populateCourses(courseCount, { 
+      const result = await populateCourses(5, { 
         clearExisting 
       });
       
@@ -213,24 +211,10 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
               Generate Courses with AI
             </DialogTitle>
             <DialogDescription>
-              Let our AI create professional courses for your platform. Just specify how many you need.
+              Let our AI create 5 professional courses for your platform with the Hugging Face API.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="courseCount" className="text-right">
-                Number
-              </Label>
-              <Input
-                id="courseCount"
-                type="number"
-                min={1}
-                max={100}
-                value={courseCount}
-                onChange={(e) => setCourseCount(parseInt(e.target.value) || 1)}
-                className="col-span-3"
-              />
-            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="clearExisting" className="text-right">
                 Clear existing
@@ -266,7 +250,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Generate
+                  Generate 5 Courses
                 </>
               )}
             </Button>

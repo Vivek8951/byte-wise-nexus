@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -64,7 +63,6 @@ export default function AdminCourses() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isPopulating, setIsPopulating] = useState(false);
-  const [courseCount, setCourseCount] = useState(5);
   
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -236,7 +234,7 @@ export default function AdminCourses() {
   const handlePopulateCourses = async () => {
     setIsPopulating(true);
     try {
-      const result = await populateCourses(courseCount, {
+      const result = await populateCourses(5, {
         clearExisting: false
       });
       
@@ -275,29 +273,18 @@ export default function AdminCourses() {
             <p className="text-muted-foreground">Manage and update course content</p>
           </div>
           <div className="flex gap-2">
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                value={courseCount}
-                onChange={(e) => setCourseCount(parseInt(e.target.value) || 1)}
-                min={1}
-                max={30}
-                className="w-20"
-                placeholder="Count"
-              />
-              <Button 
-                onClick={handlePopulateCourses}
-                disabled={isPopulating}
-                className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white"
-              >
-                {isPopulating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                {isPopulating ? "Generating..." : "Generate with AI"}
-              </Button>
-            </div>
+            <Button 
+              onClick={handlePopulateCourses}
+              disabled={isPopulating}
+              className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:text-white"
+            >
+              {isPopulating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {isPopulating ? "Generating..." : "Generate 5 Courses with AI"}
+            </Button>
             <Button 
               onClick={handleAddCourse}
               className="bg-primary hover:bg-primary/90 flex items-center gap-2 animate-fade-in"

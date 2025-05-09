@@ -14,243 +14,145 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // YouTube API key
 const youtubeApiKey = Deno.env.get('YOUTUBE_API_KEY') || '';
+// Hugging Face API key
+const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY') || '';
 
-// Courses data generator
-const techCourses = [
-  // Web Development
-  {
-    title: "Introduction to Web Development",
-    description: "Learn the fundamentals of web development including HTML, CSS, and JavaScript to build responsive websites.",
-    category: "Web Development", 
-    instructor: "Sarah Johnson",
-    duration: "8 weeks",
-    level: "beginner"
-  },
-  {
-    title: "Advanced JavaScript Frameworks",
-    description: "Deep dive into modern JavaScript frameworks like React, Vue, and Angular with real-world projects.",
-    category: "Web Development", 
-    instructor: "David Chen",
-    duration: "10 weeks",
-    level: "advanced" 
-  },
-  {
-    title: "Full-Stack Web Development",
-    description: "Learn both frontend and backend technologies to become a versatile full-stack developer.",
-    category: "Web Development", 
-    instructor: "Maya Patel",
-    duration: "12 weeks",
-    level: "intermediate"
-  },
-  
-  // Programming Languages
-  {
-    title: "Python for Beginners",
-    description: "Start your programming journey with Python, one of the most beginner-friendly and versatile languages.",
-    category: "Programming", 
-    instructor: "James Wilson",
-    duration: "6 weeks",
-    level: "beginner"
-  },
-  {
-    title: "Advanced Python Programming",
-    description: "Take your Python skills to the next level with advanced concepts, data structures, and algorithms.",
-    category: "Programming", 
-    instructor: "Emma Clark",
-    duration: "8 weeks",
-    level: "advanced"
-  },
-  {
-    title: "Java Programming Masterclass",
-    description: "Comprehensive Java course covering core concepts, object-oriented programming, and enterprise applications.",
-    category: "Programming", 
-    instructor: "Michael Brown",
-    duration: "10 weeks",
-    level: "intermediate"
-  },
-  
-  // Data Science & AI
-  {
-    title: "Introduction to Data Science",
-    description: "Learn the foundations of data science including data analysis, visualization, and basic machine learning.",
-    category: "Data Science", 
-    instructor: "Sophia Lee",
-    duration: "8 weeks",
-    level: "beginner"
-  },
-  {
-    title: "Machine Learning Engineering",
-    description: "Build and deploy machine learning models to solve real-world problems with Python and scikit-learn.",
-    category: "Data Science", 
-    instructor: "Daniel Kim",
-    duration: "12 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "Deep Learning and Neural Networks",
-    description: "Explore deep learning architectures, neural networks, and applications in computer vision and NLP.",
-    category: "Data Science", 
-    instructor: "Priya Sharma",
-    duration: "10 weeks",
-    level: "advanced"
-  },
-  
-  // Mobile Development
-  {
-    title: "iOS App Development with Swift",
-    description: "Learn to build native iOS applications using Swift and the iOS SDK with hands-on projects.",
-    category: "Mobile Development", 
-    instructor: "Ryan Martinez",
-    duration: "9 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "Android App Development",
-    description: "Create native Android applications using Kotlin and Android Studio with focus on material design.",
-    category: "Mobile Development", 
-    instructor: "Angela Yu",
-    duration: "9 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "Cross-Platform Mobile Development",
-    description: "Build mobile apps for both iOS and Android using frameworks like React Native and Flutter.",
-    category: "Mobile Development", 
-    instructor: "Tyler Johnson",
-    duration: "8 weeks",
-    level: "intermediate"
-  },
-  
-  // Cybersecurity
-  {
-    title: "Cybersecurity Fundamentals",
-    description: "Learn essential security concepts including threat modeling, encryption, network security, web security, and ethical hacking techniques to protect systems from attacks.",
-    category: "Cybersecurity", 
-    instructor: "Kevin Mitnick",
-    duration: "7 weeks",
-    level: "beginner"
-  },
-  {
-    title: "Ethical Hacking",
-    description: "Master ethical hacking techniques to identify and fix security vulnerabilities in systems and networks.",
-    category: "Cybersecurity", 
-    instructor: "Lisa Romano",
-    duration: "8 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "Network Security",
-    description: "Learn to secure network infrastructure, implement firewalls, VPNs, and intrusion detection systems.",
-    category: "Cybersecurity", 
-    instructor: "Omar Farooq",
-    duration: "6 weeks",
-    level: "intermediate"
-  },
-  
-  // Cloud Computing
-  {
-    title: "AWS Cloud Practitioner",
-    description: "Introduction to Amazon Web Services cloud computing platform and essential services.",
-    category: "Cloud Computing", 
-    instructor: "Jennifer Smith",
-    duration: "5 weeks",
-    level: "beginner"
-  },
-  {
-    title: "Azure Solutions Architect",
-    description: "Design and implement solutions on Microsoft Azure with focus on security, scalability, and reliability.",
-    category: "Cloud Computing", 
-    instructor: "Thomas Wright",
-    duration: "8 weeks",
-    level: "advanced"
-  },
-  {
-    title: "Google Cloud Engineer",
-    description: "Learn to deploy, manage, and operate applications on Google Cloud Platform infrastructure.",
-    category: "Cloud Computing", 
-    instructor: "Aisha Khan",
-    duration: "7 weeks",
-    level: "intermediate"
-  },
-  
-  // DevOps
-  {
-    title: "DevOps Engineering",
-    description: "Master the practices, tools, and philosophies for efficient software delivery and infrastructure management.",
-    category: "DevOps", 
-    instructor: "Carlos Mendez",
-    duration: "9 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "Docker and Kubernetes",
-    description: "Learn containerization with Docker and orchestration with Kubernetes for modern application deployment.",
-    category: "DevOps", 
-    instructor: "Nina Patel",
-    duration: "6 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "CI/CD Pipeline Implementation",
-    description: "Implement continuous integration and continuous deployment pipelines for automated software delivery.",
-    category: "DevOps", 
-    instructor: "Alex Johnson",
-    duration: "5 weeks",
-    level: "intermediate"
-  },
-  
-  // Data Structures and Algorithms
-  {
-    title: "Algorithms and Data Structures",
-    description: "Master fundamental data structures and algorithms essential for efficient problem solving and software development.",
-    category: "Computer Science", 
-    instructor: "Robert Sedgewick",
-    duration: "10 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "Advanced Algorithms",
-    description: "Study complex algorithms, computational complexity, and optimization techniques for challenging problems.",
-    category: "Computer Science", 
-    instructor: "Ada Lovelace",
-    duration: "8 weeks",
-    level: "advanced"
-  },
-  {
-    title: "Competitive Programming",
-    description: "Sharpen your problem-solving skills through algorithmic challenges and competition strategies.",
-    category: "Computer Science", 
-    instructor: "Wei Zhang",
-    duration: "6 weeks",
-    level: "advanced"
-  },
-  
-  // UI/UX Design
-  {
-    title: "UI/UX Design Fundamentals",
-    description: "Learn the principles of user interface and user experience design to create intuitive digital products.",
-    category: "Design", 
-    instructor: "Emily Rodriguez",
-    duration: "7 weeks",
-    level: "beginner"
-  },
-  {
-    title: "Advanced UI Design with Figma",
-    description: "Master UI design workflows using Figma to create beautiful and functional interfaces.",
-    category: "Design", 
-    instructor: "Jordan Lee",
-    duration: "6 weeks",
-    level: "intermediate"
-  },
-  {
-    title: "UX Research and Testing",
-    description: "Learn techniques for user research, usability testing, and implementing user-centered design processes.",
-    category: "Design", 
-    instructor: "Naomi Campbell",
-    duration: "5 weeks",
-    level: "intermediate"
-  }
+// Course categories for AI generation
+const courseCategories = [
+  "Web Development",
+  "Data Science", 
+  "Programming", 
+  "Mobile Development",
+  "Cybersecurity", 
+  "Cloud Computing", 
+  "DevOps", 
+  "Computer Science",
+  "Design",
+  "Artificial Intelligence",
+  "Machine Learning",
+  "Database Management",
+  "Networking",
+  "Operating Systems",
+  "Algorithms"
 ];
+
+// Course difficulty levels
+const courseLevels = ["beginner", "intermediate", "advanced"];
+
+// Instructor names for variety
+const instructorNames = [
+  "Dr. Sarah Johnson", 
+  "Prof. David Chen", 
+  "Maya Patel", 
+  "James Wilson", 
+  "Emma Clark",
+  "Michael Brown",
+  "Sophia Lee",
+  "Daniel Kim",
+  "Priya Sharma",
+  "Ryan Martinez",
+  "Angela Yu",
+  "Tyler Johnson",
+  "Kevin Mitnick",
+  "Lisa Romano",
+  "Omar Farooq",
+  "Jennifer Smith",
+  "Thomas Wright",
+  "Aisha Khan",
+  "Carlos Mendez",
+  "Nina Patel",
+  "Alex Johnson",
+  "Robert Sedgewick",
+  "Ada Lovelace",
+  "Wei Zhang",
+  "Emily Rodriguez",
+  "Jordan Lee",
+  "Naomi Campbell"
+];
+
+// Generate a course with AI using Hugging Face API
+async function generateCourseWithAI(category: string) {
+  // Default course in case AI generation fails
+  let course = {
+    title: `Introduction to ${category}`,
+    description: `Learn the fundamentals of ${category} with hands-on projects and real-world applications.`,
+    category: category,
+    instructor: instructorNames[Math.floor(Math.random() * instructorNames.length)],
+    duration: `${Math.floor(Math.random() * 10) + 4} weeks`,
+    level: courseLevels[Math.floor(Math.random() * courseLevels.length)] as "beginner" | "intermediate" | "advanced"
+  };
+  
+  if (huggingFaceApiKey) {
+    try {
+      const prompt = `Generate a tech course about ${category}. Return the result as JSON with the following fields:
+      {
+        "title": "course title",
+        "description": "detailed course description in 1-2 sentences",
+        "instructor": "instructor name",
+        "duration": "course duration in weeks",
+        "level": "difficulty level (beginner, intermediate, or advanced)"
+      }`;
+      
+      const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${huggingFaceApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 250,
+            temperature: 0.7,
+            return_full_text: false
+          }
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Hugging Face API response:", result);
+        
+        // Extract JSON content from the response
+        let jsonContent;
+        try {
+          // The API might return the response in various formats, so we need to handle them
+          if (Array.isArray(result) && result[0]?.generated_text) {
+            // Try to extract JSON from the generated text
+            const matches = result[0].generated_text.match(/\{[\s\S]*\}/);
+            if (matches) {
+              jsonContent = JSON.parse(matches[0]);
+            }
+          } else if (typeof result === 'object') {
+            jsonContent = result;
+          }
+          
+          if (jsonContent) {
+            // Validate and use AI-generated content
+            if (jsonContent.title && jsonContent.description) {
+              course = {
+                title: jsonContent.title,
+                description: jsonContent.description,
+                category: category,
+                instructor: jsonContent.instructor || course.instructor,
+                duration: jsonContent.duration || course.duration,
+                level: (jsonContent.level === "beginner" || jsonContent.level === "intermediate" || jsonContent.level === "advanced") 
+                  ? jsonContent.level as "beginner" | "intermediate" | "advanced"
+                  : course.level
+              };
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing AI response:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error generating course with AI:", error);
+    }
+  }
+  
+  return course;
+}
 
 async function searchYouTubeForCourse(course: any) {
   if (!youtubeApiKey) {
@@ -304,7 +206,7 @@ serve(async (req) => {
   }
   
   try {
-    const { count = 5, specificTopic, clearExisting = false } = await req.json();
+    const { count = 5, clearExisting = false } = await req.json();
     
     console.log(`Received request to generate ${count} courses`);
     console.log(`Clear existing courses: ${clearExisting}`);
@@ -333,7 +235,7 @@ serve(async (req) => {
       }
     }
     
-    console.log(`Generating ${count} courses`);
+    console.log(`Generating ${count} courses with AI`);
     
     // Get existing course titles to avoid duplicates
     const { data: existingCourses, error: fetchError } = await supabase
@@ -346,57 +248,25 @@ serve(async (req) => {
     
     const existingTitles = new Set(existingCourses?.map(course => course.title.toLowerCase()) || []);
     
-    // Filter courses by specific topic if provided
-    let filteredCourses = [...techCourses];
-    if (specificTopic) {
-      const topicLower = specificTopic.toLowerCase();
-      filteredCourses = techCourses.filter(course => 
-        course.title.toLowerCase().includes(topicLower) || 
-        course.category.toLowerCase().includes(topicLower) || 
-        course.description.toLowerCase().includes(topicLower)
-      );
+    // Generate AI courses
+    const aiCoursesPromises = [];
+    // Select random categories without repeating
+    const shuffledCategories = [...courseCategories].sort(() => 0.5 - Math.random());
+    const selectedCategories = shuffledCategories.slice(0, count);
+    
+    for (const category of selectedCategories) {
+      aiCoursesPromises.push(generateCourseWithAI(category));
     }
     
+    const aiCourses = await Promise.all(aiCoursesPromises);
+    
     // Filter out courses that already exist
-    const uniqueCourses = filteredCourses.filter(course => 
+    const uniqueCourses = aiCourses.filter(course => 
       !existingTitles.has(course.title.toLowerCase())
     );
     
-    // If we don't have enough unique courses, take random ones from the full list
-    // that we haven't used yet
-    if (uniqueCourses.length < count && filteredCourses.length > uniqueCourses.length) {
-      const remainingCourses = filteredCourses.filter(course => 
-        !uniqueCourses.some(uc => uc.title === course.title) && 
-        !existingTitles.has(course.title.toLowerCase())
-      );
-      
-      // Shuffle remaining courses
-      for (let i = remainingCourses.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [remainingCourses[i], remainingCourses[j]] = [remainingCourses[j], remainingCourses[i]];
-      }
-      
-      // Add courses until we reach the count or run out of courses
-      while (uniqueCourses.length < count && remainingCourses.length > 0) {
-        uniqueCourses.push(remainingCourses.pop()!);
-      }
-    }
-    
-    // Limit to requested count
-    const coursesToAdd = uniqueCourses.slice(0, count);
-    
-    if (coursesToAdd.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "No unique courses available to add. Try a different topic or clear existing courses." 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
     // Add courses to database with YouTube content
-    for (const course of coursesToAdd) {
+    for (const course of uniqueCourses) {
       // Search YouTube for related videos and get a thumbnail
       console.log(`Searching YouTube for: ${course.title} ${course.category}`);
       const { videoIds, thumbnail } = await searchYouTubeForCourse(course);
@@ -512,13 +382,13 @@ serve(async (req) => {
       }
     }
     
-    console.log(`Successfully added ${coursesToAdd.length} courses`);
+    console.log(`Successfully added ${uniqueCourses.length} courses`);
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully generated ${coursesToAdd.length} courses`, 
-        count: coursesToAdd.length
+        message: `Successfully generated ${uniqueCourses.length} courses with AI`, 
+        count: uniqueCourses.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
