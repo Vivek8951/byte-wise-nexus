@@ -1,4 +1,3 @@
-
 import { CourseProgress, CourseEnrollment } from '../types';
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,11 +96,20 @@ export const getUserCourseProgress = async (userId: string, courseId: string): P
     
     if (dbProgress) {
       // Map Supabase data to our CourseProgress interface
+      // Convert JSON array to string array for completedVideos and completedQuizzes
+      const completedVideos = Array.isArray(dbProgress.completed_videos) 
+        ? dbProgress.completed_videos.map(id => String(id)) 
+        : [];
+      
+      const completedQuizzes = Array.isArray(dbProgress.completed_quizzes) 
+        ? dbProgress.completed_quizzes.map(id => String(id)) 
+        : [];
+      
       return {
         userId: dbProgress.user_id,
         courseId: dbProgress.course_id,
-        completedVideos: Array.isArray(dbProgress.completed_videos) ? dbProgress.completed_videos : [],
-        completedQuizzes: Array.isArray(dbProgress.completed_quizzes) ? dbProgress.completed_quizzes : [],
+        completedVideos: completedVideos,
+        completedQuizzes: completedQuizzes,
         lastAccessed: dbProgress.last_accessed,
         overallProgress: dbProgress.overall_progress || 0,
       };
@@ -305,11 +313,20 @@ export const updateCourseProgress = async (
       }
       
       // Map Supabase data to our CourseProgress interface
+      // Convert JSON array to string array for completedVideos and completedQuizzes
+      const completedVideos = Array.isArray(dbProgress.completed_videos)
+        ? dbProgress.completed_videos.map(id => String(id))
+        : [];
+        
+      const completedQuizzes = Array.isArray(dbProgress.completed_quizzes)
+        ? dbProgress.completed_quizzes.map(id => String(id))
+        : [];
+      
       return {
         userId: dbProgress.user_id,
         courseId: dbProgress.course_id,
-        completedVideos: Array.isArray(dbProgress.completed_videos) ? dbProgress.completed_videos : [],
-        completedQuizzes: Array.isArray(dbProgress.completed_quizzes) ? dbProgress.completed_quizzes : [],
+        completedVideos: completedVideos,
+        completedQuizzes: completedQuizzes,
         lastAccessed: dbProgress.last_accessed,
         overallProgress: dbProgress.overall_progress || 0,
       };

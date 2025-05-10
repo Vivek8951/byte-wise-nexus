@@ -61,7 +61,9 @@ export function CourseCard({ course }: CourseCardProps) {
           .insert({
             user_id: user?.id,
             course_id: course.id,
-            enrollment_date: new Date().toISOString()
+            enrollment_date: new Date().toISOString(),
+            is_completed: false,
+            certificate_issued: false
           });
 
         if (enrollError) {
