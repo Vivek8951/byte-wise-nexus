@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { Clock, Users, BookOpen, Award } from "lucide-react";
 
 interface CourseCardProps {
   course: Course;
@@ -96,16 +97,42 @@ export function CourseCard({ course }: CourseCardProps) {
 
   const getLevelColor = (level: string) => {
     switch (level) {
-      case 'beginner': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'intermediate': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'advanced': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+      case 'beginner': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border border-green-200 dark:border-green-800';
+      case 'intermediate': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+      case 'advanced': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700';
     }
+  };
+
+  // Function to render star rating
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex items-center">
+        {[...Array(5)].map((_, i) => (
+          <svg
+            key={i}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill={i < Math.floor(rating) ? "currentColor" : "none"}
+            stroke="currentColor"
+            className={`w-4 h-4 ${i < Math.floor(rating) ? "text-amber-500" : "text-gray-300"}`}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={i < Math.floor(rating) ? 0 : 1}
+              d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+            />
+          </svg>
+        ))}
+        <span className="ml-1 text-sm text-amber-500 font-medium">{rating.toFixed(1)}</span>
+      </div>
+    );
   };
 
   return (
     <Link to={`/courses/${course.id}`} className="group">
-      <div className="bg-card border rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/30 h-full flex flex-col">
+      <div className="bg-white dark:bg-gray-800 border rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-primary/30 h-full flex flex-col card-hover animate-fade-in">
         <div className="relative">
           {course.thumbnail ? (
             <img 
@@ -116,41 +143,25 @@ export function CourseCard({ course }: CourseCardProps) {
             />
           ) : (
             <div className="w-full aspect-video bg-muted flex items-center justify-center">
-              <span className="text-muted-foreground">No thumbnail</span>
+              <BookOpen className="h-12 w-12 text-muted-foreground/50" />
             </div>
           )}
-          <div className="absolute top-2 right-2">
-            <Badge variant="outline" className={`${getLevelColor(course.level)}`}>
+          <div className="absolute top-3 right-3">
+            <Badge variant="outline" className={`${getLevelColor(course.level)} shadow-sm`}>
               {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
             </Badge>
           </div>
         </div>
         
-        <div className="p-4 text-left flex-1 flex flex-col">
-          <div className="flex items-center justify-between mb-2">
-            <Badge variant="outline" className="bg-card">
+        <div className="p-5 text-left flex-1 flex flex-col">
+          <div className="flex items-center justify-between mb-3">
+            <Badge variant="outline" className="bg-blue-50 text-blue-600 dark:bg-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
               {course.category}
             </Badge>
-            {course.rating && (
-              <div className="flex items-center text-amber-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-4 h-4 mr-1"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {course.rating.toFixed(1)}
-              </div>
-            )}
+            {course.rating && renderStars(course.rating)}
           </div>
           
-          <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+          <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors line-clamp-2">
             {course.title}
           </h3>
           
@@ -158,24 +169,29 @@ export function CourseCard({ course }: CourseCardProps) {
             {course.description}
           </p>
           
-          <div className="mt-auto">
-            <div className="flex items-center justify-between text-sm mb-4">
-              <div className="font-medium">
-                {course.instructor}
+          <div className="mt-auto space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Award className="h-4 w-4" />
+                <span className="font-medium text-foreground">
+                  {course.instructor}
+                </span>
               </div>
-              <div className="text-muted-foreground">
-                {course.duration}
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>{course.duration}</span>
               </div>
             </div>
             
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-muted-foreground">
-                {course.enrolledCount || 0} students enrolled
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Users className="h-3 w-3" />
+                <span>{course.enrolledCount || 0} enrolled</span>
               </div>
               <Button 
-                size="sm" 
+                size="sm"
                 onClick={handleEnrollClick}
-                className="transition-all"
+                className="transition-all hover:scale-105"
                 disabled={isAuthenticated && user?.role === 'admin'}
               >
                 {isAuthenticated && user?.role === 'admin' ? 'Cannot Enroll' : 'Enroll Now'}
@@ -191,19 +207,19 @@ export function CourseCard({ course }: CourseCardProps) {
 // Add a skeleton loader version of the card for better loading states
 export function CourseCardSkeleton() {
   return (
-    <div className="bg-card border rounded-lg overflow-hidden h-full">
+    <div className="bg-white dark:bg-gray-800 border rounded-xl overflow-hidden h-full">
       <Skeleton className="w-full aspect-video" />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-5">
+        <div className="flex items-center justify-between mb-3">
           <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-5 w-10" />
+          <Skeleton className="h-5 w-20" />
         </div>
-        <Skeleton className="h-6 w-3/4 mb-2" />
+        <Skeleton className="h-7 w-3/4 mb-3" />
         <Skeleton className="h-4 w-full mb-1" />
         <Skeleton className="h-4 w-5/6 mb-4" />
         <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-16" />
         </div>
         <div className="flex justify-between items-center">
           <Skeleton className="h-4 w-1/3" />
