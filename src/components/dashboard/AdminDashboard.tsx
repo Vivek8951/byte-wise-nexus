@@ -85,27 +85,27 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
+        <Card className="bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <BookOpen className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{uniqueCourses.length}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-400">
               Available on platform
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-            <Plus className="h-4 w-4 text-muted-foreground" />
+            <Plus className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
             <Button 
-              className="w-full justify-between mb-2" 
+              className="w-full justify-between mb-2 bg-blue-600 hover:bg-blue-700 text-white border-none" 
               variant="outline"
               onClick={() => navigate("/admin/courses")}
             >
@@ -113,7 +113,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button 
-              className="w-full justify-between" 
+              className="w-full justify-between bg-purple-600 hover:bg-purple-700 text-white border-none" 
               variant="outline"
               onClick={() => navigate("/admin/users")}
             >
@@ -123,30 +123,30 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-4 w-4 text-orange-400" />
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center">
-                <div className="mr-4 rounded-full bg-primary/10 p-2">
-                  <Users className="h-4 w-4 text-primary" />
+                <div className="mr-4 rounded-full bg-blue-900/30 p-2">
+                  <Users className="h-4 w-4 text-blue-400" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">New student registration</p>
-                  <p className="text-xs text-muted-foreground">2 hours ago</p>
+                  <p className="text-xs text-gray-400">2 hours ago</p>
                 </div>
               </div>
               
               <div className="flex items-center">
-                <div className="mr-4 rounded-full bg-primary/10 p-2">
-                  <Book className="h-4 w-4 text-primary" />
+                <div className="mr-4 rounded-full bg-green-900/30 p-2">
+                  <Book className="h-4 w-4 text-green-400" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Course content updated</p>
-                  <p className="text-xs text-muted-foreground">5 hours ago</p>
+                  <p className="text-xs text-gray-400">5 hours ago</p>
                 </div>
               </div>
             </div>
@@ -155,7 +155,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
       </div>
       
       <div className="mt-8">
-        <Card>
+        <Card className="bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl font-bold">All Courses</CardTitle>
@@ -163,23 +163,22 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 <Button 
                   onClick={() => setIsGenerateDialogOpen(true)}
                   variant="outline"
-                  className="group relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 animate-fade-in"
+                  className="group relative overflow-hidden border-none bg-gradient-to-br from-violet-600 to-purple-700 text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 animate-pulse"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-violet-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                   <span className="relative flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 animate-pulse" /> 
+                    <Sparkles className="h-4 w-4" /> 
                     <span>Generate Courses with AI</span>
                   </span>
                 </Button>
                 <Button 
                   onClick={() => navigate("/admin/courses")}
-                  className="bg-tech-blue hover:bg-tech-darkblue shadow-sm hover:shadow-md transition-shadow duration-300"
+                  className="bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <Plus className="mr-2 h-4 w-4" /> Add New Course
                 </Button>
               </div>
             </div>
-            <CardDescription>Manage your existing courses</CardDescription>
+            <CardDescription className="text-gray-400">Manage your existing courses</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -189,14 +188,14 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 ))
               ) : (
                 <div className="col-span-3 text-center py-8">
-                  <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <BookOpen className="h-12 w-12 mx-auto text-gray-500 mb-4" />
                   <h3 className="text-lg font-medium mb-2">No courses available</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-gray-400 mb-4">
                     Start by creating your first course
                   </p>
                   <Button 
                     onClick={() => navigate("/admin/courses")}
-                    className="bg-tech-blue hover:bg-tech-darkblue"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add Course
                   </Button>
@@ -208,21 +207,21 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
       </div>
 
       <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] animate-scale-in">
+        <DialogContent className="sm:max-w-[425px] animate-scale-in bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Wand className="h-5 w-5 text-violet-500" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-purple-600">
+              <Wand className="h-5 w-5 text-purple-400" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-purple-400">
                 Generate Courses with AI
               </span>
             </DialogTitle>
-            <DialogDescription>
-              Let our AI create professional courses for your platform with the Hugging Face API.
+            <DialogDescription className="text-gray-400">
+              Let our AI create professional courses for your platform.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clearExisting" className="text-right">
+              <Label htmlFor="clearExisting" className="text-right text-gray-300">
                 Clear existing
               </Label>
               <div className="flex items-center space-x-2 col-span-3">
@@ -231,7 +230,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                   checked={clearExisting} 
                   onCheckedChange={setClearExisting} 
                 />
-                <Label htmlFor="clearExisting" className="text-sm text-muted-foreground">
+                <Label htmlFor="clearExisting" className="text-sm text-gray-400">
                   Remove all existing courses before generating new ones
                 </Label>
               </div>
@@ -239,29 +238,26 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
                 Cancel
               </Button>
             </DialogClose>
             <Button 
               onClick={handleGenerateCourses} 
               disabled={isGenerating}
-              className="relative overflow-hidden group bg-gradient-to-br from-violet-500 to-purple-600 hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300"
+              className="relative overflow-hidden group bg-gradient-to-br from-violet-600 to-purple-700 hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-white"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-violet-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-              <span className="relative flex items-center gap-2">
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Generating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 animate-pulse" />
-                    <span>Generate Courses</span>
-                  </>
-                )}
-              </span>
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span>Generate Courses</span>
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

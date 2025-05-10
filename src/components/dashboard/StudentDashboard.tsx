@@ -1,12 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, BarChart as BarChartIcon, Clock, Award, Play } from "lucide-react";
+import { BookOpen, Clock, Award, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BackButton } from "@/components/ui/back-button";
 import { CourseCard } from "@/components/courses/CourseCard";
-import { isUserEnrolled, getUserEnrollments, enrollUserInCourse } from "@/data/mockProgressData";
+import { isUserEnrolled, getUserEnrollments, enrollUserInCourse, updateCourseProgress } from "@/data/mockProgressData";
 import { toast } from "@/components/ui/sonner";
 import { User, Course } from "@/types";
 
@@ -21,9 +21,9 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
   const [dashboardStats, setDashboardStats] = useState({
     coursesInProgress: 0,
     coursesCompleted: 0,
-    totalHoursLearned: 0,
     certificatesEarned: 0,
   });
+  const [loading, setLoading] = useState(false);
   
   useEffect(() => {
     async function fetchEnrollments() {
@@ -36,7 +36,6 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
           setDashboardStats({
             coursesInProgress: enrollments.filter(e => !e.isCompleted).length,
             coursesCompleted: enrollments.filter(e => e.isCompleted).length,
-            totalHoursLearned: Math.floor(Math.random() * 50) + 10, // Mock data
             certificatesEarned: enrollments.filter(e => e.certificateIssued).length,
           });
         } catch (error) {
@@ -59,14 +58,48 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
   
   const enrollInCourse = async (courseId: string) => {
     if (user) {
+      setLoading(true);
       try {
         await enrollUserInCourse(user.id, courseId);
         toast.success("Successfully enrolled in course!");
         setEnrolledCourseIds(prev => [...prev, courseId]);
+        
+        // Update dashboard stats
+        setDashboardStats(prev => ({
+          ...prev,
+          coursesInProgress: prev.coursesInProgress + 1
+        }));
       } catch (error) {
         console.error("Error enrolling in course:", error);
         toast.error("Failed to enroll in course. Please try again.");
+      } finally {
+        setLoading(false);
       }
+    }
+  };
+
+  const handleMarkComplete = async (courseId: string) => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Update progress to 100%
+      await updateCourseProgress(user.id, courseId, { overallProgress: 100 });
+      
+      // Update local state
+      setDashboardStats(prev => ({
+        ...prev,
+        coursesInProgress: Math.max(0, prev.coursesInProgress - 1),
+        coursesCompleted: prev.coursesCompleted + 1,
+        certificatesEarned: prev.certificatesEarned + 1,
+      }));
+      
+      toast.success("Course marked as complete! Certificate issued.");
+    } catch (error) {
+      console.error("Error marking course as complete:", error);
+      toast.error("Failed to update course status. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -80,58 +113,44 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
       </div>
       
       {/* Dashboard stats cards - Coursera-like */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card className="bg-white hover:shadow-md transition-shadow">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card className="bg-gradient-to-br from-gray-900 to-gray-950 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 border-gray-800 text-white">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">In Progress</p>
-                <h3 className="text-2xl font-bold text-tech-blue">{dashboardStats.coursesInProgress}</h3>
+                <p className="text-sm font-medium text-blue-300 mb-1">In Progress</p>
+                <h3 className="text-2xl font-bold text-white">{dashboardStats.coursesInProgress}</h3>
               </div>
-              <div className="bg-blue-100 p-2 rounded-full">
-                <Play className="h-5 w-5 text-tech-blue" />
+              <div className="bg-blue-900/50 p-2 rounded-full">
+                <Play className="h-5 w-5 text-blue-400" />
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-white hover:shadow-md transition-shadow">
+        <Card className="bg-gradient-to-br from-gray-900 to-gray-950 hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 border-gray-800 text-white">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Completed</p>
-                <h3 className="text-2xl font-bold text-green-600">{dashboardStats.coursesCompleted}</h3>
+                <p className="text-sm font-medium text-green-300 mb-1">Completed</p>
+                <h3 className="text-2xl font-bold text-white">{dashboardStats.coursesCompleted}</h3>
               </div>
-              <div className="bg-green-100 p-2 rounded-full">
-                <Award className="h-5 w-5 text-green-600" />
+              <div className="bg-green-900/50 p-2 rounded-full">
+                <Award className="h-5 w-5 text-green-400" />
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-white hover:shadow-md transition-shadow">
+        <Card className="bg-gradient-to-br from-gray-900 to-gray-950 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 border-gray-800 text-white">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Hours Learned</p>
-                <h3 className="text-2xl font-bold text-orange-500">{dashboardStats.totalHoursLearned}</h3>
+                <p className="text-sm font-medium text-purple-300 mb-1">Certificates</p>
+                <h3 className="text-2xl font-bold text-white">{dashboardStats.certificatesEarned}</h3>
               </div>
-              <div className="bg-orange-100 p-2 rounded-full">
-                <Clock className="h-5 w-5 text-orange-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Certificates</p>
-                <h3 className="text-2xl font-bold text-purple-600">{dashboardStats.certificatesEarned}</h3>
-              </div>
-              <div className="bg-purple-100 p-2 rounded-full">
-                <Award className="h-5 w-5 text-purple-600" />
+              <div className="bg-purple-900/50 p-2 rounded-full">
+                <Award className="h-5 w-5 text-purple-400" />
               </div>
             </div>
           </CardContent>
@@ -139,17 +158,17 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
       </div>
       
       <Tabs defaultValue="enrolled" className="mb-8">
-        <TabsList className="bg-slate-100 dark:bg-slate-800 p-1 rounded-md">
-          <TabsTrigger value="enrolled" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700">My Courses</TabsTrigger>
-          <TabsTrigger value="available" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700">Available Courses</TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700">Account Settings</TabsTrigger>
+        <TabsList className="bg-slate-800 dark:bg-slate-800 p-1 rounded-md">
+          <TabsTrigger value="enrolled" className="data-[state=active]:bg-blue-600 text-white">My Courses</TabsTrigger>
+          <TabsTrigger value="available" className="data-[state=active]:bg-blue-600 text-white">Available Courses</TabsTrigger>
+          <TabsTrigger value="settings" className="data-[state=active]:bg-blue-600 text-white">Account Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="enrolled" className="mt-6">
           {enrolledCourses.length > 0 ? (
             <div className="space-y-6">
               {enrolledCourses.map(course => (
-                <Card key={course.id} className="overflow-hidden transition-all hover:shadow-lg border-t-4 border-t-tech-blue">
+                <Card key={course.id} className="overflow-hidden transition-all hover:shadow-lg bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 border-t-4 border-t-blue-600 text-white">
                   <div className="flex flex-col md:flex-row">
                     <img 
                       src={course.thumbnail} 
@@ -160,23 +179,34 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-bold text-lg mb-1">{course.title}</h4>
-                          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{course.description}</p>
+                          <p className="text-gray-300 text-sm mb-4 line-clamp-2">{course.description}</p>
                         </div>
-                        <span className="bg-tech-blue/10 text-tech-blue px-3 py-1 rounded-full text-sm font-medium">
+                        <span className="bg-blue-900/30 text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
                           {course.level}
                         </span>
                       </div>
                       <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center text-sm text-muted-foreground">
+                        <div className="flex items-center text-sm text-gray-400">
                           <BookOpen className="h-4 w-4 mr-1" />
                           <span>{course.duration}</span>
                         </div>
-                        <Button 
-                          onClick={() => navigate(`/courses/${course.id}`)}
-                          className="bg-tech-blue hover:bg-tech-darkblue transition-colors"
-                        >
-                          Continue Learning
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => handleMarkComplete(course.id)}
+                            variant="outline" 
+                            className="border-green-500 text-green-400 hover:bg-green-950/50"
+                            disabled={loading}
+                          >
+                            Mark Complete
+                          </Button>
+                          <Button 
+                            onClick={() => navigate(`/courses/${course.id}`)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                            disabled={loading}
+                          >
+                            Continue
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -184,13 +214,13 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-muted/20 rounded-lg">
-              <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No courses yet</h3>
-              <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+            <div className="text-center py-12 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-lg">
+              <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2 text-white">No courses yet</h3>
+              <p className="text-gray-400 mb-4 max-w-md mx-auto">
                 You haven't enrolled in any courses yet. Start by exploring our available courses.
               </p>
-              <Button onClick={() => navigate("/courses")} className="bg-tech-blue hover:bg-tech-darkblue">
+              <Button onClick={() => navigate("/courses")} className="bg-blue-600 hover:bg-blue-700 animate-pulse">
                 Browse Courses
               </Button>
             </div>
@@ -200,12 +230,12 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         <TabsContent value="available" className="mt-6">
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Recommended for you</h2>
-            <p className="text-muted-foreground">Courses selected based on your interests and goals</p>
+            <p className="text-gray-400">Courses selected based on your interests and goals</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recommendedCourses.map(course => (
-              <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-all border border-gray-100">
+              <Card key={course.id} className="overflow-hidden hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white">
                 <img 
                   src={course.thumbnail} 
                   alt={course.title} 
@@ -214,19 +244,20 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-3">
                     <h4 className="font-bold text-lg">{course.title}</h4>
-                    <span className="bg-tech-blue/10 text-tech-blue px-3 py-1 rounded-full text-sm font-medium">
+                    <span className="bg-blue-900/30 text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
                       {course.level}
                     </span>
                   </div>
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{course.description}</p>
+                  <p className="text-gray-300 text-sm mb-4 line-clamp-2">{course.description}</p>
                   <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="flex items-center text-sm text-gray-400">
                       <BookOpen className="h-4 w-4 mr-1" />
                       <span>{course.duration}</span>
                     </div>
                     <Button 
                       onClick={() => enrollInCourse(course.id)}
-                      className="bg-tech-blue hover:bg-tech-darkblue"
+                      className="bg-blue-600 hover:bg-blue-700 transition-colors"
+                      disabled={loading}
                     >
                       Enroll Now
                     </Button>
@@ -240,7 +271,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
             <Button 
               variant="outline" 
               onClick={() => navigate("/courses")}
-              className="border-tech-blue text-tech-blue hover:bg-tech-blue/10"
+              className="border-blue-500 text-blue-400 hover:bg-blue-950/50 animate-pulse"
             >
               Explore All Courses
             </Button>
@@ -248,10 +279,10 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         </TabsContent>
         
         <TabsContent value="settings" className="mt-6">
-          <Card>
+          <Card className="bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white">
             <CardHeader>
               <CardTitle>Account Settings</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-gray-400">
                 Manage your account information and preferences
               </CardDescription>
             </CardHeader>
@@ -260,33 +291,33 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-medium">Profile Information</h4>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-400">
                       Update your name, email, and profile details
                     </p>
                   </div>
-                  <Button variant="outline">
+                  <Button variant="outline" className="border-blue-500 text-blue-300 hover:bg-blue-900/30">
                     Edit
                   </Button>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-medium">Password</h4>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-400">
                       Change your password and security settings
                     </p>
                   </div>
-                  <Button variant="outline">
+                  <Button variant="outline" className="border-blue-500 text-blue-300 hover:bg-blue-900/30">
                     Change
                   </Button>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-medium">Notification Preferences</h4>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-400">
                       Control how and when you receive notifications
                     </p>
                   </div>
-                  <Button variant="outline">
+                  <Button variant="outline" className="border-blue-500 text-blue-300 hover:bg-blue-900/30">
                     Configure
                   </Button>
                 </div>

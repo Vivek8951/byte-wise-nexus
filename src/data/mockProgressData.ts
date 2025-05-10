@@ -1,3 +1,4 @@
+
 import { CourseProgress, CourseEnrollment } from '../types';
 import { toast } from "@/components/ui/sonner";
 
@@ -65,38 +66,6 @@ export const mockEnrollments: CourseEnrollment[] = [
     enrollmentDate: '2023-06-10',
     isCompleted: false,
     certificateIssued: false,
-  },
-];
-
-// Mock progress data for the dashboard charts
-export const mockProgressData = [
-  {
-    name: "Week 1",
-    value: 40,
-  },
-  {
-    name: "Week 2",
-    value: 30,
-  },
-  {
-    name: "Week 3",
-    value: 45,
-  },
-  {
-    name: "Week 4",
-    value: 50,
-  },
-  {
-    name: "Week 5",
-    value: 60,
-  },
-  {
-    name: "Week 6",
-    value: 70,
-  },
-  {
-    name: "Week 7",
-    value: 80,
   },
 ];
 
@@ -188,11 +157,23 @@ export const updateCourseProgress = async (
 ): Promise<CourseProgress | undefined> => {
   console.log(`[API] Updating progress for user ${userId} on course ${courseId}`, data);
   
-  const progressIndex = mockCourseProgress.findIndex(
+  let progressIndex = mockCourseProgress.findIndex(
     p => p.userId === userId && p.courseId === courseId
   );
   
-  if (progressIndex === -1) return simulateApiCall(undefined);
+  // If no progress record exists, create one
+  if (progressIndex === -1) {
+    const newProgress: CourseProgress = {
+      userId,
+      courseId,
+      completedVideos: [],
+      completedQuizzes: [],
+      lastAccessed: new Date().toISOString().split('T')[0],
+      overallProgress: 0,
+    };
+    mockCourseProgress.push(newProgress);
+    progressIndex = mockCourseProgress.length - 1;
+  }
   
   // Calculate overall progress based on videos completed
   let calculatedProgress = data.overallProgress;
@@ -202,10 +183,11 @@ export const updateCourseProgress = async (
     calculatedProgress = Math.min(Math.floor((data.completedVideos.length / 10) * 100), 100);
   }
   
+  // Update progress
   mockCourseProgress[progressIndex] = {
     ...mockCourseProgress[progressIndex],
     ...data,
-    overallProgress: calculatedProgress || mockCourseProgress[progressIndex].overallProgress,
+    overallProgress: calculatedProgress !== undefined ? calculatedProgress : mockCourseProgress[progressIndex].overallProgress,
     lastAccessed: new Date().toISOString().split('T')[0],
   };
   
@@ -221,8 +203,19 @@ export const updateCourseProgress = async (
       // Generate certificate if not already issued
       if (!mockEnrollments[enrollmentIndex].certificateIssued) {
         mockEnrollments[enrollmentIndex].certificateIssued = true;
-        toast("Congratulations! You've completed this course and earned a certificate!");
+        toast.success("Congratulations! You've completed this course and earned a certificate!");
       }
+    } else {
+      // If no enrollment record exists, create one
+      const newEnrollment: CourseEnrollment = {
+        userId,
+        courseId,
+        enrollmentDate: new Date().toISOString().split('T')[0],
+        isCompleted: true,
+        certificateIssued: true,
+      };
+      mockEnrollments.push(newEnrollment);
+      toast.success("Congratulations! You've completed this course and earned a certificate!");
     }
   }
   
@@ -242,7 +235,19 @@ export const markVideoAsCompleted = async (
     p => p.userId === userId && p.courseId === courseId
   );
   
-  if (!userProgress) return simulateApiCall(undefined);
+  if (!userProgress) {
+    // Create a new progress entry if one doesn't exist
+    const newProgress: CourseProgress = {
+      userId,
+      courseId,
+      completedVideos: [videoId],
+      completedQuizzes: [],
+      lastAccessed: new Date().toISOString().split('T')[0],
+      overallProgress: 10, // Starting progress
+    };
+    mockCourseProgress.push(newProgress);
+    return simulateApiCall(newProgress);
+  }
   
   // Only add if not already completed
   if (!userProgress.completedVideos.includes(videoId)) {
@@ -267,7 +272,19 @@ export const markQuizAsCompleted = async (
     p => p.userId === userId && p.courseId === courseId
   );
   
-  if (!userProgress) return simulateApiCall(undefined);
+  if (!userProgress) {
+    // Create a new progress entry if one doesn't exist
+    const newProgress: CourseProgress = {
+      userId,
+      courseId,
+      completedVideos: [],
+      completedQuizzes: [quizId],
+      lastAccessed: new Date().toISOString().split('T')[0],
+      overallProgress: 10, // Starting progress
+    };
+    mockCourseProgress.push(newProgress);
+    return simulateApiCall(newProgress);
+  }
   
   // Only add if not already completed
   if (!userProgress.completedQuizzes.includes(quizId)) {

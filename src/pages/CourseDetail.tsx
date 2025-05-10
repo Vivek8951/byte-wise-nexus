@@ -17,6 +17,7 @@ import { getQuiz } from "@/data/mockQuizData";
 import { supabase } from "@/integrations/supabase/client";
 import { SimpleVideoPlayer } from "@/components/courses";
 import { processVideo } from "@/utils/supabaseStorage";
+import { updateCourseProgress, getUserCourseProgress } from "@/data/mockProgressData";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +31,7 @@ export default function CourseDetail() {
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCompletingCourse, setIsCompletingCourse] = useState(false);
   const [loadingVideoId, setLoadingVideoId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [quizzes, setQuizzes] = useState<any[]>([]);
@@ -84,9 +86,15 @@ export default function CourseDetail() {
         if (materialsError) throw materialsError;
         setMaterials(materialsData || []);
 
-        // Calculate progress (simplified for demo)
-        if (videoData && videoData.length > 0) {
-          setProgress(Math.floor(Math.random() * 100));
+        // Fetch user progress if logged in
+        if (user) {
+          const userProgress = await getUserCourseProgress(user.id, id);
+          if (userProgress) {
+            setProgress(userProgress.overallProgress);
+          } else {
+            // Initialize with default progress
+            setProgress(0);
+          }
         }
 
       } catch (error: any) {
@@ -102,10 +110,58 @@ export default function CourseDetail() {
     }
 
     fetchCourseData();
-  }, [id, toast]);
+  }, [id, toast, user]);
 
   const handleVideoSelect = async (video: any) => {
     setSelectedVideo(video);
+    
+    // Update progress when a new video is selected
+    if (user && id && videos.length > 0) {
+      try {
+        // Calculate new progress based on video position
+        const videoIndex = videos.findIndex(v => v.id === video.id);
+        const newProgress = Math.round(((videoIndex + 1) / videos.length) * 100);
+        
+        // Only update if progress increased
+        if (newProgress > progress) {
+          await updateCourseProgress(user.id, id, {
+            completedVideos: videos.slice(0, videoIndex + 1).map(v => v.id),
+            overallProgress: newProgress
+          });
+          
+          setProgress(newProgress);
+        }
+      } catch (error) {
+        console.error('Error updating progress:', error);
+      }
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!user || !id) return;
+    
+    setIsCompletingCourse(true);
+    try {
+      await updateCourseProgress(user.id, id, { 
+        completedVideos: videos.map(v => v.id),
+        overallProgress: 100 
+      });
+      
+      setProgress(100);
+      toast({
+        title: "Course Completed!",
+        description: "Congratulations! You've completed this course.",
+      });
+    } catch (error) {
+      console.error('Error marking course as complete:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update course progress",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCompletingCourse(false);
+    }
   };
 
   const processSelectedVideo = async () => {
@@ -322,7 +378,7 @@ export default function CourseDetail() {
           {/* Sidebar with course info and progress */}
           <div className="space-y-6">
             {/* Course progress card */}
-            <div className="rounded-lg border bg-card text-card-foreground shadow p-4">
+            <div className="rounded-lg border bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white shadow p-4">
               <h3 className="text-lg font-medium mb-2">Your Progress</h3>
               <div className="space-y-3">
                 <div className="space-y-1">
@@ -330,41 +386,61 @@ export default function CourseDetail() {
                     <span>{progress}% Complete</span>
                     <span>{Math.round(videos.length * progress / 100)}/{videos.length} Videos</span>
                   </div>
-                  <Progress value={progress} className="h-2" />
+                  <Progress value={progress} className="h-2 bg-gray-700">
+                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${progress}%` }} />
+                  </Progress>
                 </div>
-                <Button variant="outline" className="w-full">
-                  <Check className="mr-2 h-4 w-4" /> Mark as Complete
+                <Button 
+                  onClick={handleMarkComplete} 
+                  variant="outline" 
+                  className="w-full border border-green-500 text-green-400 hover:bg-green-900/20"
+                  disabled={isCompletingCourse || progress === 100}
+                >
+                  {isCompletingCourse ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-green-500 mr-2" />
+                      Processing...
+                    </div>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" /> {progress === 100 ? "Completed!" : "Mark as Complete"}
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
           
             {/* Course description card */}
-            <div className="rounded-lg border bg-card text-card-foreground shadow p-4">
+            <div className="rounded-lg border bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white shadow p-4">
               <h3 className="text-lg font-medium mb-2">About This Course</h3>
-              <p className="text-muted-foreground">{course.description}</p>
-              <Separator className="my-4" />
+              <p className="text-gray-300">{course.description}</p>
+              <Separator className="my-4 bg-gray-700" />
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Category</span>
-                  <Badge>{course.category}</Badge>
+                  <span className="text-sm text-gray-400">Category</span>
+                  <Badge className="bg-gray-700 hover:bg-gray-600 text-white">{course.category}</Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Level</span>
+                  <span className="text-sm text-gray-400">Level</span>
                   <span className="text-sm">{course.level ? course.level.charAt(0).toUpperCase() + course.level.slice(1) : 'All Levels'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Instructor</span>
+                  <span className="text-sm text-gray-400">Instructor</span>
                   <span className="text-sm">{course.instructor}</span>
                 </div>
               </div>
             </div>
             
             {/* Certificate card */}
-            <div className="rounded-lg border bg-card text-card-foreground shadow p-4 text-center">
-              <CheckCircle className="mx-auto h-8 w-8 text-primary mb-2" />
+            <div className="rounded-lg border bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white shadow p-4 text-center">
+              <CheckCircle className="mx-auto h-8 w-8 text-blue-400 mb-2" />
               <h3 className="text-lg font-medium">Get Certified</h3>
-              <p className="text-sm text-muted-foreground mb-4">Complete this course to earn a certificate</p>
-              <Button variant="outline" className="w-full" disabled={progress < 100}>
+              <p className="text-sm text-gray-300 mb-4">Complete this course to earn a certificate</p>
+              <Button 
+                variant="outline" 
+                className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/20" 
+                disabled={progress < 100}
+              >
                 {progress < 100 ? 'Complete Course to Earn' : 'Download Certificate'}
               </Button>
             </div>

@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Filter, Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Chatbot } from "@/components/chatbot/Chatbot";
@@ -21,7 +22,6 @@ export default function Courses() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCourses, setFilteredCourses] = useState(courses);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("newest");
   
@@ -29,9 +29,9 @@ export default function Courses() {
     document.title = "Courses - TechLearn";
     
     // Get initial filters from URL params
-    const category = searchParams.get("category");
-    if (category) {
-      setSelectedCategory(category);
+    const level = searchParams.get("level");
+    if (level) {
+      setSelectedLevel(level);
     }
   }, [searchParams]);
   
@@ -46,11 +46,6 @@ export default function Courses() {
         course => course.title.toLowerCase().includes(term) || 
                  course.description.toLowerCase().includes(term)
       );
-    }
-    
-    // Filter by category
-    if (selectedCategory) {
-      result = result.filter(course => course.category === selectedCategory);
     }
     
     // Filter by level
@@ -74,7 +69,7 @@ export default function Courses() {
     }
     
     setFilteredCourses(result);
-  }, [courses, searchTerm, selectedCategory, selectedLevel, sortBy]);
+  }, [courses, searchTerm, selectedLevel, sortBy]);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,31 +78,21 @@ export default function Courses() {
   
   const applyFilters = () => {
     // Update URL params if needed
-    if (selectedCategory) {
-      searchParams.set("category", selectedCategory);
+    if (selectedLevel) {
+      searchParams.set("level", selectedLevel);
     } else {
-      searchParams.delete("category");
+      searchParams.delete("level");
     }
     
     setSearchParams(searchParams);
   };
   
   const resetFilters = () => {
-    setSelectedCategory(null);
     setSelectedLevel(null);
     setSearchTerm("");
-    searchParams.delete("category");
+    searchParams.delete("level");
     setSearchParams(searchParams);
   };
-  
-  const categories = [
-    { id: 'algorithms', name: 'Data Structures & Algorithms' },
-    { id: 'systems', name: 'Operating Systems' },
-    { id: 'databases', name: 'Database Management' },
-    { id: 'networking', name: 'Networking' },
-    { id: 'ai', name: 'Artificial Intelligence' },
-    { id: 'web', name: 'Web Development' },
-  ];
   
   const levels = [
     { id: 'beginner', name: 'Beginner' },
@@ -117,30 +102,6 @@ export default function Courses() {
   
   const renderFilters = () => (
     <div className="space-y-6">
-      {/* Categories */}
-      <div>
-        <h3 className="font-medium mb-4">Categories</h3>
-        <div className="space-y-2">
-          {categories.map(category => (
-            <div key={category.id} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`category-${category.id}`} 
-                checked={selectedCategory === category.id}
-                onCheckedChange={() => setSelectedCategory(
-                  selectedCategory === category.id ? null : category.id
-                )}
-              />
-              <Label 
-                htmlFor={`category-${category.id}`}
-                className="text-sm"
-              >
-                {category.name}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-      
       {/* Levels */}
       <div>
         <h3 className="font-medium mb-4">Difficulty Level</h3>
@@ -166,7 +127,7 @@ export default function Courses() {
       </div>
       
       <div className="flex flex-col gap-2">
-        <Button onClick={applyFilters}>Apply Filters</Button>
+        <Button onClick={applyFilters} className="bg-blue-600 hover:bg-blue-700 transition-colors">Apply Filters</Button>
         <Button variant="outline" onClick={resetFilters}>Reset Filters</Button>
       </div>
     </div>
@@ -190,7 +151,7 @@ export default function Courses() {
           {/* Filters - Desktop */}
           <div className="hidden md:block">
             <div className="sticky top-20">
-              <div className="bg-card rounded-lg border p-4">
+              <div className="bg-card rounded-lg border p-4 bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-lg font-medium">Filters</h2>
                   <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
