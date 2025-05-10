@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CourseCardProps {
   course: Course;
@@ -16,7 +17,7 @@ export function CourseCard({ course }: CourseCardProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleEnrollClick = (e: React.MouseEvent) => {
+  const handleEnrollClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -40,8 +41,55 @@ export function CourseCard({ course }: CourseCardProps) {
       return;
     }
 
-    // If authenticated, navigate to course detail page
-    navigate(`/courses/${course.id}`);
+    // Check if user is already enrolled (from Supabase)
+    try {
+      const { data: existingEnrollment, error: enrollCheckError } = await supabase
+        .from('course_enrollments')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('course_id', course.id)
+        .single();
+
+      if (enrollCheckError && !enrollCheckError.message.includes('No rows found')) {
+        console.error("Error checking enrollment:", enrollCheckError);
+      }
+
+      // If not enrolled, create enrollment
+      if (!existingEnrollment) {
+        const { error: enrollError } = await supabase
+          .from('course_enrollments')
+          .insert({
+            user_id: user?.id,
+            course_id: course.id,
+            enrollment_date: new Date().toISOString()
+          });
+
+        if (enrollError) {
+          console.error("Error enrolling in course:", enrollError);
+          toast({
+            title: "Enrollment failed",
+            description: "Could not enroll in this course. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Successfully enrolled",
+          description: "You have been enrolled in this course.",
+        });
+      }
+
+      // Navigate to course detail page
+      navigate(`/courses/${course.id}`);
+    } catch (error) {
+      console.error("Error in enrollment process:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getLevelColor = (level: string) => {

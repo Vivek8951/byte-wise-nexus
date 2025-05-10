@@ -1,6 +1,7 @@
 
 import { CourseProgress, CourseEnrollment } from '../types';
 import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // This simulates data that would normally come from a backend server
 export const mockCourseProgress: CourseProgress[] = [
@@ -81,7 +82,35 @@ const simulateApiCall = <T>(data: T): Promise<T> => {
 export const getUserCourseProgress = async (userId: string, courseId: string): Promise<CourseProgress | undefined> => {
   console.log(`[API] Fetching progress for user ${userId} on course ${courseId}`);
   
-  // Simulate API call
+  try {
+    // First try to get progress from Supabase
+    const { data: dbProgress, error } = await supabase
+      .from('course_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .single();
+    
+    if (error && !error.message.includes('No rows found')) {
+      console.error("Error fetching course progress:", error);
+    }
+    
+    if (dbProgress) {
+      // Map Supabase data to our CourseProgress interface
+      return {
+        userId: dbProgress.user_id,
+        courseId: dbProgress.course_id,
+        completedVideos: Array.isArray(dbProgress.completed_videos) ? dbProgress.completed_videos : [],
+        completedQuizzes: Array.isArray(dbProgress.completed_quizzes) ? dbProgress.completed_quizzes : [],
+        lastAccessed: dbProgress.last_accessed,
+        overallProgress: dbProgress.overall_progress || 0,
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching progress from database:", error);
+  }
+  
+  // Fallback to mock data if we couldn't get from Supabase
   return simulateApiCall(
     mockCourseProgress.find(
       progress => progress.userId === userId && progress.courseId === courseId
@@ -92,7 +121,33 @@ export const getUserCourseProgress = async (userId: string, courseId: string): P
 export const getUserEnrollments = async (userId: string): Promise<CourseEnrollment[]> => {
   console.log(`[API] Fetching all enrollments for user ${userId}`);
   
-  // Simulate API call
+  try {
+    // First try to get enrollments from Supabase
+    const { data: dbEnrollments, error } = await supabase
+      .from('course_enrollments')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error("Error fetching enrollments:", error);
+      throw error;
+    }
+    
+    if (dbEnrollments && dbEnrollments.length > 0) {
+      // Map Supabase data to our CourseEnrollment interface
+      return dbEnrollments.map(enrollment => ({
+        userId: enrollment.user_id,
+        courseId: enrollment.course_id,
+        enrollmentDate: enrollment.enrollment_date,
+        isCompleted: enrollment.is_completed || false,
+        certificateIssued: enrollment.certificate_issued || false,
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching enrollments from database:", error);
+  }
+  
+  // Fallback to mock data
   return simulateApiCall(
     mockEnrollments.filter(enrollment => enrollment.userId === userId)
   );
@@ -101,7 +156,27 @@ export const getUserEnrollments = async (userId: string): Promise<CourseEnrollme
 export const isUserEnrolled = async (userId: string, courseId: string): Promise<boolean> => {
   console.log(`[API] Checking if user ${userId} is enrolled in course ${courseId}`);
   
-  // Simulate API call
+  try {
+    // First check in Supabase
+    const { data: dbEnrollment, error } = await supabase
+      .from('course_enrollments')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .single();
+    
+    if (error && !error.message.includes('No rows found')) {
+      console.error("Error checking enrollment:", error);
+    }
+    
+    if (dbEnrollment) {
+      return true;
+    }
+  } catch (error) {
+    console.error("Error checking enrollment in database:", error);
+  }
+  
+  // Fallback to mock data
   return simulateApiCall(
     mockEnrollments.some(
       enrollment => enrollment.userId === userId && enrollment.courseId === courseId
@@ -112,7 +187,39 @@ export const isUserEnrolled = async (userId: string, courseId: string): Promise<
 export const enrollUserInCourse = async (userId: string, courseId: string): Promise<CourseEnrollment> => {
   console.log(`[API] Enrolling user ${userId} in course ${courseId}`);
   
-  // Check if already enrolled
+  try {
+    // First try to enroll in Supabase
+    const { data: dbEnrollment, error } = await supabase
+      .from('course_enrollments')
+      .insert({
+        user_id: userId,
+        course_id: courseId,
+        enrollment_date: new Date().toISOString(),
+        is_completed: false,
+        certificate_issued: false
+      })
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error("Error enrolling in Supabase:", error);
+    }
+    
+    if (dbEnrollment) {
+      // Map Supabase data to our CourseEnrollment interface
+      return {
+        userId: dbEnrollment.user_id,
+        courseId: dbEnrollment.course_id,
+        enrollmentDate: dbEnrollment.enrollment_date,
+        isCompleted: dbEnrollment.is_completed || false,
+        certificateIssued: dbEnrollment.certificate_issued || false,
+      };
+    }
+  } catch (error) {
+    console.error("Error enrolling in course in database:", error);
+  }
+  
+  // Check if already enrolled in mock data
   const alreadyEnrolled = mockEnrollments.some(
     e => e.userId === userId && e.courseId === courseId
   );
@@ -124,6 +231,7 @@ export const enrollUserInCourse = async (userId: string, courseId: string): Prom
     );
   }
   
+  // Fallback to mock enrollment
   const newEnrollment: CourseEnrollment = {
     userId,
     courseId,
@@ -157,6 +265,60 @@ export const updateCourseProgress = async (
 ): Promise<CourseProgress | undefined> => {
   console.log(`[API] Updating progress for user ${userId} on course ${courseId}`, data);
   
+  try {
+    // First try to update in Supabase
+    const supabaseData: any = {
+      user_id: userId,
+      course_id: courseId,
+      last_accessed: new Date().toISOString()
+    };
+    
+    if (data.completedVideos) supabaseData.completed_videos = data.completedVideos;
+    if (data.completedQuizzes) supabaseData.completed_quizzes = data.completedQuizzes;
+    if (data.overallProgress !== undefined) supabaseData.overall_progress = data.overallProgress;
+    
+    const { data: dbProgress, error } = await supabase
+      .from('course_progress')
+      .upsert(supabaseData)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error("Error updating course progress in Supabase:", error);
+    }
+    
+    if (dbProgress) {
+      // If progress is 100%, update the enrollment record
+      if (dbProgress.overall_progress >= 100) {
+        const { error: enrollError } = await supabase
+          .from('course_enrollments')
+          .update({
+            is_completed: true,
+            certificate_issued: true
+          })
+          .eq('user_id', userId)
+          .eq('course_id', courseId);
+        
+        if (enrollError) {
+          console.error("Error updating enrollment status:", enrollError);
+        }
+      }
+      
+      // Map Supabase data to our CourseProgress interface
+      return {
+        userId: dbProgress.user_id,
+        courseId: dbProgress.course_id,
+        completedVideos: Array.isArray(dbProgress.completed_videos) ? dbProgress.completed_videos : [],
+        completedQuizzes: Array.isArray(dbProgress.completed_quizzes) ? dbProgress.completed_quizzes : [],
+        lastAccessed: dbProgress.last_accessed,
+        overallProgress: dbProgress.overall_progress || 0,
+      };
+    }
+  } catch (error) {
+    console.error("Error updating progress in database:", error);
+  }
+  
+  // Fallback to mock data
   let progressIndex = mockCourseProgress.findIndex(
     p => p.userId === userId && p.courseId === courseId
   );

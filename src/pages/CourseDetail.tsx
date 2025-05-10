@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -274,7 +273,6 @@ export default function CourseDetail() {
             <div className="rounded-lg overflow-hidden border bg-card text-card-foreground shadow">
               {selectedVideo ? (
                 <div className="space-y-4">
-                  {/* Fixed 16:9 aspect ratio for video */}
                   <AspectRatio ratio={16 / 9} className="bg-muted">
                     <SimpleVideoPlayer 
                       url={selectedVideo.url} 
@@ -310,21 +308,21 @@ export default function CourseDetail() {
                   {videos.map((video) => (
                     <div
                       key={video.id}
-                      className={`p-3 rounded-md cursor-pointer flex items-start hover:bg-accent/50 ${selectedVideo?.id === video.id ? 'bg-accent' : ''}`}
+                      className={`p-3 rounded-md cursor-pointer hover:bg-accent/50 ${selectedVideo?.id === video.id ? 'bg-accent' : ''}`}
                       onClick={() => handleVideoSelect(video)}
                     >
-                      <div className="h-10 w-10 rounded bg-muted flex items-center justify-center mr-3 flex-shrink-0">
-                        <PlayCircle className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <div className="flex-grow">
-                        <p className="font-medium">{video.title}</p>
-                        <p className="text-sm text-muted-foreground truncate">{video.description}</p>
-                      </div>
-                      <div className="ml-2 flex-shrink-0">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded bg-muted flex items-center justify-center mr-3 flex-shrink-0">
+                          <PlayCircle className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm md:text-base truncate">{video.title}</h4>
+                          <p className="text-xs md:text-sm text-muted-foreground truncate max-w-full">{video.description}</p>
+                        </div>
                         {loadingVideoId === video.id ? (
-                          <div className="animate-spin h-5 w-5 border-t-2 border-primary rounded-full"></div>
+                          <div className="ml-2 animate-spin h-5 w-5 border-t-2 border-primary rounded-full flex-shrink-0"></div>
                         ) : (
-                          <Badge variant="outline">{Math.floor(parseInt(video.duration) / 60)} min</Badge>
+                          <Badge variant="outline" className="ml-2 flex-shrink-0">{Math.floor(parseInt(video.duration) / 60)} min</Badge>
                         )}
                       </div>
                     </div>
@@ -332,6 +330,7 @@ export default function CourseDetail() {
                 </div>
               </TabsContent>
               
+              {/* Quiz content tab */}
               <TabsContent value="quiz" className="p-4 focus:outline-none">
                 <h3 className="text-lg font-medium mb-4">Assessment Quizzes</h3>
                 {quizzes.length > 0 ? (
@@ -351,6 +350,7 @@ export default function CourseDetail() {
                 )}
               </TabsContent>
               
+              {/* Materials content tab */}
               <TabsContent value="materials" className="p-4 focus:outline-none">
                 <h3 className="text-lg font-medium mb-4">Study Materials</h3>
                 {materials.length > 0 ? (
