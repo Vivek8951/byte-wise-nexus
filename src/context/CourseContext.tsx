@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Course, Video, Note } from '../types';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,7 @@ interface CourseContextType {
   updateNote: (id: string, noteData: Partial<Note>) => Promise<boolean>;
   deleteNote: (id: string) => Promise<boolean>;
   isLoading: boolean;
+  refetchData: () => Promise<void>;
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -42,109 +44,135 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
     return [];
   };
   
-  // Fetch data from Supabase
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+  // Extract fetch logic to a reusable function
+  const fetchCoursesData = useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      // Fetch courses
+      console.log("Fetching courses data from Supabase...");
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      try {
-        // Fetch courses
-        const { data: coursesData, error: coursesError } = await supabase
-          .from('courses')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (coursesError) {
-          throw coursesError;
-        }
-        
-        // Fetch videos
-        const { data: videosData, error: videosError } = await supabase
-          .from('videos')
-          .select('*')
-          .order('order_num', { ascending: true });
-        
-        if (videosError) {
-          throw videosError;
-        }
-        
-        // Fetch notes
-        const { data: notesData, error: notesError } = await supabase
-          .from('notes')
-          .select('*')
-          .order('order_num', { ascending: true });
-        
-        if (notesError) {
-          throw notesError;
-        }
-        
-        // Map Supabase data to our interfaces
-        const mappedCourses: Course[] = coursesData.map(course => ({
-          id: course.id,
-          title: course.title,
-          description: course.description,
-          category: course.category,
-          thumbnail: course.thumbnail,
-          instructor: course.instructor,
-          duration: course.duration,
-          level: course.level as 'beginner' | 'intermediate' | 'advanced',
-          rating: course.rating || 0,
-          enrolledCount: course.enrolled_count || 0,
-          featured: course.featured || false,
-          createdAt: course.created_at,
-          updatedAt: course.updated_at
-        }));
-        
-        const mappedVideos: Video[] = videosData.map(video => ({
-          id: video.id,
-          courseId: video.course_id,
-          title: video.title,
-          description: video.description,
-          url: video.url,
-          duration: video.duration,
-          thumbnail: video.thumbnail,
-          order: video.order_num,
-          analyzedContent: safeJsonToArray(video.analyzed_content)
-        }));
-        
-        const mappedNotes: Note[] = notesData.map(note => ({
-          id: note.id,
-          courseId: note.course_id,
-          title: note.title,
-          description: note.description,
-          fileUrl: note.file_url,
-          fileType: note.file_type as 'pdf' | 'doc' | 'txt',
-          order: note.order_num
-        }));
-        
-        setCourses(mappedCourses);
-        setVideos(mappedVideos);
-        setNotes(mappedNotes);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load courses data",
-          variant: "destructive",
-        });
-        
-        // Use local storage as fallback if available
-        const storedCourses = localStorage.getItem('techlearn_courses');
-        const storedVideos = localStorage.getItem('techlearn_videos');
-        const storedNotes = localStorage.getItem('techlearn_notes');
-        
-        if (storedCourses && storedVideos && storedNotes) {
-          setCourses(JSON.parse(storedCourses));
-          setVideos(JSON.parse(storedVideos));
-          setNotes(JSON.parse(storedNotes));
-        }
-      } finally {
-        setIsLoading(false);
+      if (coursesError) {
+        throw coursesError;
       }
+      
+      // Map Supabase data to our interfaces
+      const mappedCourses: Course[] = coursesData.map(course => ({
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        category: course.category,
+        thumbnail: course.thumbnail,
+        instructor: course.instructor,
+        duration: course.duration,
+        level: course.level as 'beginner' | 'intermediate' | 'advanced',
+        rating: course.rating || 0,
+        enrolledCount: course.enrolled_count || 0,
+        featured: course.featured || false,
+        createdAt: course.created_at,
+        updatedAt: course.updated_at
+      }));
+      
+      setCourses(mappedCourses);
+      
+      // Fetch videos (only if we have courses)
+      console.log("Fetching videos data from Supabase...");
+      const { data: videosData, error: videosError } = await supabase
+        .from('videos')
+        .select('*')
+        .order('order_num', { ascending: true });
+      
+      if (videosError) {
+        throw videosError;
+      }
+      
+      const mappedVideos: Video[] = videosData.map(video => ({
+        id: video.id,
+        courseId: video.course_id,
+        title: video.title,
+        description: video.description,
+        url: video.url,
+        duration: video.duration,
+        thumbnail: video.thumbnail,
+        order: video.order_num,
+        analyzedContent: safeJsonToArray(video.analyzed_content)
+      }));
+      
+      setVideos(mappedVideos);
+      
+      // Fetch notes
+      console.log("Fetching notes data from Supabase...");
+      const { data: notesData, error: notesError } = await supabase
+        .from('notes')
+        .select('*')
+        .order('order_num', { ascending: true });
+      
+      if (notesError) {
+        throw notesError;
+      }
+      
+      const mappedNotes: Note[] = notesData.map(note => ({
+        id: note.id,
+        courseId: note.course_id,
+        title: note.title,
+        description: note.description,
+        fileUrl: note.file_url,
+        fileType: note.file_type as 'pdf' | 'doc' | 'txt',
+        order: note.order_num
+      }));
+      
+      setNotes(mappedNotes);
+      console.log("Successfully loaded all data!");
+      
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load courses data. Trying backup data...",
+        variant: "destructive",
+      });
+      
+      // Use local storage as fallback if available
+      const storedCourses = localStorage.getItem('techlearn_courses');
+      const storedVideos = localStorage.getItem('techlearn_videos');
+      const storedNotes = localStorage.getItem('techlearn_notes');
+      
+      if (storedCourses && storedVideos && storedNotes) {
+        setCourses(JSON.parse(storedCourses));
+        setVideos(JSON.parse(storedVideos));
+        setNotes(JSON.parse(storedNotes));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+  
+  // Refetch data function to export
+  const refetchData = useCallback(async () => {
+    await fetchCoursesData();
+  }, [fetchCoursesData]);
+  
+  // Initial data fetch
+  useEffect(() => {
+    fetchCoursesData();
+    
+    // Set up data caching
+    const handleBeforeUnload = () => {
+      localStorage.setItem('techlearn_courses', JSON.stringify(courses));
+      localStorage.setItem('techlearn_videos', JSON.stringify(videos));
+      localStorage.setItem('techlearn_notes', JSON.stringify(notes));
     };
     
-    fetchData();
-  }, [toast]);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [fetchCoursesData]);
   
   const featuredCourses = courses.filter(course => course.featured);
   
@@ -537,7 +565,8 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
         addNote,
         updateNote,
         deleteNote,
-        isLoading
+        isLoading,
+        refetchData
       }}
     >
       {children}

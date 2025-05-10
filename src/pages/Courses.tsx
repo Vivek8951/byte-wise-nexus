@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -15,83 +14,69 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { BackButton } from "@/components/ui/back-button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Courses() {
   const { courses, isLoading } = useCourses();
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCourses, setFilteredCourses] = useState(courses);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("newest");
   
+  // Set page title
   useEffect(() => {
     document.title = "Courses - TechLearn";
-    
-    // Get initial filters from URL params
-    const level = searchParams.get("level");
-    if (level) {
-      setSelectedLevel(level);
-    }
-  }, [searchParams]);
+  }, []);
   
+  // Apply filters whenever dependencies change
   useEffect(() => {
-    // Apply filters
-    let result = [...courses];
+    // If still loading, don't filter yet
+    if (isLoading) return;
     
-    // Filter by search term
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        course => course.title.toLowerCase().includes(term) || 
-                 course.description.toLowerCase().includes(term)
-      );
-    }
+    // Start filtering with a small delay to avoid UI freezes
+    const filterTimeout = setTimeout(() => {
+      let result = [...courses];
+      
+      // Filter by search term
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        result = result.filter(
+          course => course.title.toLowerCase().includes(term) || 
+                  course.description.toLowerCase().includes(term)
+        );
+      }
+      
+      // Filter by level
+      if (selectedLevel) {
+        result = result.filter(course => course.level === selectedLevel);
+      }
+      
+      // Apply sorting
+      switch (sortBy) {
+        case "newest":
+          result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          break;
+        case "popular":
+          result.sort((a, b) => (b.enrolledCount || 0) - (a.enrolledCount || 0));
+          break;
+        case "rating":
+          result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+          break;
+        default:
+          break;
+      }
+      
+      setFilteredCourses(result);
+    }, 100);
     
-    // Filter by level
-    if (selectedLevel) {
-      result = result.filter(course => course.level === selectedLevel);
-    }
-    
-    // Apply sorting
-    switch (sortBy) {
-      case "newest":
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        break;
-      case "popular":
-        result.sort((a, b) => (b.enrolledCount || 0) - (a.enrolledCount || 0));
-        break;
-      case "rating":
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      default:
-        break;
-    }
-    
-    setFilteredCourses(result);
-  }, [courses, searchTerm, selectedLevel, sortBy]);
-  
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Update search parameters
-  };
-  
-  const applyFilters = () => {
-    // Update URL params if needed
-    if (selectedLevel) {
-      searchParams.set("level", selectedLevel);
-    } else {
-      searchParams.delete("level");
-    }
-    
-    setSearchParams(searchParams);
-  };
+    // Clean up timeout
+    return () => clearTimeout(filterTimeout);
+  }, [courses, searchTerm, selectedLevel, sortBy, isLoading]);
   
   const resetFilters = () => {
     setSelectedLevel(null);
     setSearchTerm("");
-    searchParams.delete("level");
-    setSearchParams(searchParams);
   };
   
   const levels = [
@@ -127,9 +112,28 @@ export default function Courses() {
       </div>
       
       <div className="flex flex-col gap-2">
-        <Button onClick={applyFilters} className="bg-blue-600 hover:bg-blue-700 transition-colors">Apply Filters</Button>
         <Button variant="outline" onClick={resetFilters}>Reset Filters</Button>
       </div>
+    </div>
+  );
+  
+  // Loading skeleton for courses
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {Array(6).fill(0).map((_, index) => (
+        <div key={index} className="border rounded-lg overflow-hidden">
+          <Skeleton className="h-48 w-full" />
+          <div className="p-4">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-full mb-1" />
+            <Skeleton className="h-4 w-5/6 mb-4" />
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-9 w-24" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
   
@@ -165,17 +169,15 @@ export default function Courses() {
           <div className="md:col-span-3">
             <div className="mb-6">
               <div className="flex flex-col sm:flex-row gap-4">
-                <form onSubmit={handleSearch} className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search courses..." 
-                      className="pl-10"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </form>
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search courses..." 
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Sort by" />
@@ -186,15 +188,27 @@ export default function Courses() {
                     <SelectItem value="rating">Highest Rated</SelectItem>
                   </SelectContent>
                 </Select>
+                
+                {/* Mobile filters */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="sm:hidden">
+                      <SlidersHorizontal className="h-4 w-4 mr-2" />
+                      Filters
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Filters</SheetTitle>
+                    </SheetHeader>
+                    {renderFilters()}
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
             
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Array(4).fill(0).map((_, index) => (
-                  <div key={index} className="h-80 rounded-lg bg-muted animate-pulse" />
-                ))}
-              </div>
+              renderSkeletons()
             ) : filteredCourses.length > 0 ? (
               <>
                 <p className="text-sm text-muted-foreground mb-4">

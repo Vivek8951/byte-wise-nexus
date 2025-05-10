@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CourseCardProps {
   course: Course;
@@ -54,13 +55,20 @@ export function CourseCard({ course }: CourseCardProps) {
 
   return (
     <Link to={`/courses/${course.id}`} className="group">
-      <div className="bg-card border rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/30">
+      <div className="bg-card border rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/30 h-full flex flex-col">
         <div className="relative">
-          <img 
-            src={course.thumbnail || '/placeholder.svg'} 
-            alt={course.title}
-            className="w-full aspect-video object-cover object-center"
-          />
+          {course.thumbnail ? (
+            <img 
+              src={course.thumbnail} 
+              alt={course.title}
+              className="w-full aspect-video object-cover object-center"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full aspect-video bg-muted flex items-center justify-center">
+              <span className="text-muted-foreground">No thumbnail</span>
+            </div>
+          )}
           <div className="absolute top-2 right-2">
             <Badge variant="outline" className={`${getLevelColor(course.level)}`}>
               {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
@@ -68,7 +76,7 @@ export function CourseCard({ course }: CourseCardProps) {
           </div>
         </div>
         
-        <div className="p-4 text-left">
+        <div className="p-4 text-left flex-1 flex flex-col">
           <div className="flex items-center justify-between mb-2">
             <Badge variant="outline" className="bg-card">
               {course.category}
@@ -100,30 +108,58 @@ export function CourseCard({ course }: CourseCardProps) {
             {course.description}
           </p>
           
-          <div className="flex items-center justify-between text-sm">
-            <div className="font-medium">
-              {course.instructor}
+          <div className="mt-auto">
+            <div className="flex items-center justify-between text-sm mb-4">
+              <div className="font-medium">
+                {course.instructor}
+              </div>
+              <div className="text-muted-foreground">
+                {course.duration}
+              </div>
             </div>
-            <div className="text-muted-foreground">
-              {course.duration}
+            
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                {course.enrolledCount || 0} students enrolled
+              </div>
+              <Button 
+                size="sm" 
+                onClick={handleEnrollClick}
+                className="transition-all"
+                disabled={isAuthenticated && user?.role === 'admin'}
+              >
+                {isAuthenticated && user?.role === 'admin' ? 'Cannot Enroll' : 'Enroll Now'}
+              </Button>
             </div>
-          </div>
-          
-          <div className="mt-4 flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              {course.enrolledCount || 0} students enrolled
-            </div>
-            <Button 
-              size="sm" 
-              onClick={handleEnrollClick}
-              className="transition-all"
-              disabled={isAuthenticated && user?.role === 'admin'}
-            >
-              {isAuthenticated && user?.role === 'admin' ? 'Cannot Enroll' : 'Enroll Now'}
-            </Button>
           </div>
         </div>
       </div>
     </Link>
+  );
+}
+
+// Add a skeleton loader version of the card for better loading states
+export function CourseCardSkeleton() {
+  return (
+    <div className="bg-card border rounded-lg overflow-hidden h-full">
+      <Skeleton className="w-full aspect-video" />
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-5 w-10" />
+        </div>
+        <Skeleton className="h-6 w-3/4 mb-2" />
+        <Skeleton className="h-4 w-full mb-1" />
+        <Skeleton className="h-4 w-5/6 mb-4" />
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+      </div>
+    </div>
   );
 }
