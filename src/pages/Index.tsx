@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Code, Database, Network, Server, Cpu, Layout, BookOpen, Award, Users, Clock, CheckCircle } from "lucide-react";
@@ -276,7 +275,7 @@ export default function Index() {
                   <p className="italic text-gray-600 dark:text-gray-300">"{testimonial.content}"</p>
                   <div className="flex mt-4">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="text-yellow-400" size={16} />
+                      <Star key={i} className="text-yellow-400 h-4 w-4" />
                     ))}
                   </div>
                 </div>
@@ -315,13 +314,12 @@ export default function Index() {
   );
 }
 
+// Fixed Star SVG component that uses width and height instead of size
 function Star(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
       xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
       viewBox="0 0 24 24"
       fill="currentColor"
       stroke="currentColor"
