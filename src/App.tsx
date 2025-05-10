@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 import { AuthProvider } from "./context/AuthContext";
@@ -84,16 +84,17 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               
-              {/* Scroll to top button */}
+              {/* Scroll to top button - enhanced */}
               {showScrollTop && (
                 <Button
                   variant="outline"
                   size="icon"
-                  className="fixed bottom-6 right-6 h-10 w-10 rounded-full shadow-md border bg-background/80 backdrop-blur-sm z-50 animate-fade-in hover:scale-110 transition-transform"
+                  className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg border bg-white/80 dark:bg-gray-800/80 backdrop-blur-md z-50 hover:scale-110 transition-all duration-300 animate-fade-in"
                   onClick={scrollToTop}
                   aria-label="Scroll to top"
                 >
-                  <ArrowUp className="h-5 w-5" />
+                  <ArrowUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <span className="sr-only">Scroll to top</span>
                 </Button>
               )}
             </ChatbotProvider>
