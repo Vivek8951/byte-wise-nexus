@@ -43,11 +43,12 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
             certificatesEarned: enrollments.filter(e => e.certificateIssued).length,
           });
           
-          // Fetch certificates using the RPC function
+          // Fetch certificates directly from the table
           try {
-            const { data: certsData, error: certsError } = await supabase.rpc('get_user_certificates', {
-              p_user_id: user.id
-            });
+            const { data: certsData, error: certsError } = await supabase
+              .from('certificates')
+              .select('*')
+              .eq('user_id', user.id);
             
             if (certsError) {
               console.error("Error fetching certificates:", certsError);
@@ -55,7 +56,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
             }
             
             if (certsData) {
-              setCertificates(Array.isArray(certsData) ? certsData : []);
+              setCertificates(certsData);
             }
           } catch (certError) {
             console.error("Error fetching certificates:", certError);
