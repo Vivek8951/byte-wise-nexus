@@ -149,6 +149,14 @@ export function Navbar() {
               All Courses
             </Button>
 
+            <Button 
+              variant={isActivePath("/about") ? "secondary" : "ghost"} 
+              className="text-sm font-medium rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+              onClick={() => navigate("/about")}
+            >
+              About Us
+            </Button>
+
             {user && (
               <Button 
                 variant={isActivePath("/dashboard") || isActivePath("/admin/courses") ? "secondary" : "ghost"} 
@@ -238,6 +246,9 @@ export function Navbar() {
           <nav className="flex flex-col gap-6 text-lg">
             <Link to="/courses">
               <Button variant="ghost" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">All Courses</Button>
+            </Link>
+            <Link to="/about">
+              <Button variant="ghost" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">About Us</Button>
             </Link>
             {user && (
               <Button 
