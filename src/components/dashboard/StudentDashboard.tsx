@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Clock, Award, Play } from "lucide-react";
@@ -9,6 +8,8 @@ import { CourseCard } from "@/components/courses/CourseCard";
 import { isUserEnrolled, getUserEnrollments, enrollUserInCourse, updateCourseProgress } from "@/data/mockProgressData";
 import { toast } from "@/components/ui/sonner";
 import { User, Course } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { CertificateModal } from "@/components/courses/CertificateModal";
 
 interface StudentDashboardProps {
   user: User;
@@ -24,6 +25,9 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
     certificatesEarned: 0,
   });
   const [loading, setLoading] = useState(false);
+  const [certificates, setCertificates] = useState<any[]>([]);
+  const [selectedCertificate, setSelectedCertificate] = useState<any>(null);
+  const [showCertificate, setShowCertificate] = useState(false);
   
   useEffect(() => {
     async function fetchEnrollments() {
@@ -38,6 +42,22 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
             coursesCompleted: enrollments.filter(e => e.isCompleted).length,
             certificatesEarned: enrollments.filter(e => e.certificateIssued).length,
           });
+          
+          // Fetch certificates
+          try {
+            const { data, error } = await supabase
+              .from('certificates')
+              .select('*')
+              .eq('user_id', user.id);
+            
+            if (error) throw error;
+            
+            if (data) {
+              setCertificates(data);
+            }
+          } catch (certError) {
+            console.error("Error fetching certificates:", certError);
+          }
         } catch (error) {
           console.error("Error fetching enrollments:", error);
           setEnrolledCourseIds([]);
@@ -103,6 +123,11 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
     }
   };
   
+  const viewCertificate = (certificate: any) => {
+    setSelectedCertificate(certificate.certificate_data);
+    setShowCertificate(true);
+  };
+  
   return (
     <>
       <div className="flex items-center mb-8">
@@ -147,7 +172,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-purple-300 mb-1">Certificates</p>
-                <h3 className="text-2xl font-bold text-white">{dashboardStats.certificatesEarned}</h3>
+                <h3 className="text-2xl font-bold text-white">{certificates.length}</h3>
               </div>
               <div className="bg-purple-900/50 p-2 rounded-full">
                 <Award className="h-5 w-5 text-purple-400" />
@@ -161,6 +186,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         <TabsList className="bg-slate-800 dark:bg-slate-800 p-1 rounded-md">
           <TabsTrigger value="enrolled" className="data-[state=active]:bg-blue-600 text-white">My Courses</TabsTrigger>
           <TabsTrigger value="available" className="data-[state=active]:bg-blue-600 text-white">Available Courses</TabsTrigger>
+          <TabsTrigger value="certificates" className="data-[state=active]:bg-blue-600 text-white">My Certificates</TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-blue-600 text-white">Account Settings</TabsTrigger>
         </TabsList>
         
@@ -278,6 +304,44 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
           </div>
         </TabsContent>
         
+        <TabsContent value="certificates" className="mt-6">
+          {certificates.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {certificates.map((cert) => (
+                <Card 
+                  key={cert.id} 
+                  className="overflow-hidden bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+                >
+                  <div className="p-6 flex flex-col items-center text-center">
+                    <div className="mb-4">
+                      <Award className="h-12 w-12 text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{cert.certificate_data?.courseTitle}</h3>
+                    <p className="text-gray-300 mb-4">Completed on: {cert.certificate_data?.completionDate}</p>
+                    <Button 
+                      onClick={() => viewCertificate(cert)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      View Certificate
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-lg">
+              <Award className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2 text-white">No certificates yet</h3>
+              <p className="text-gray-400 mb-4 max-w-md mx-auto">
+                Complete courses to earn certificates that showcase your achievements.
+              </p>
+              <Button onClick={() => navigate("/courses")} className="bg-blue-600 hover:bg-blue-700">
+                Explore Courses
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+        
         <TabsContent value="settings" className="mt-6">
           <Card className="bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white">
             <CardHeader>
@@ -326,6 +390,13 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Certificate Modal */}
+      <CertificateModal 
+        isOpen={showCertificate}
+        onClose={() => setShowCertificate(false)}
+        certificateData={selectedCertificate}
+      />
     </>
   );
 }

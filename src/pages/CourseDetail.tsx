@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -17,13 +18,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { SimpleVideoPlayer } from "@/components/courses";
 import { processVideo } from "@/utils/supabaseStorage";
 import { updateCourseProgress, getUserCourseProgress } from "@/data/mockProgressData";
+import { generateCertificate, getCertificate } from "@/utils/certificateUtils";
+import { CertificateModal } from "@/components/courses/CertificateModal";
+import { toast } from "@/components/ui/sonner";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const { getCourse } = useCourses();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [course, setCourse] = useState<any>(null);
   const [videos, setVideos] = useState<any[]>([]);
@@ -35,6 +38,8 @@ export default function CourseDetail() {
   const [progress, setProgress] = useState(0);
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
+  const [certificateData, setCertificateData] = useState<any>(null);
+  const [showCertificate, setShowCertificate] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -94,6 +99,12 @@ export default function CourseDetail() {
             // Initialize with default progress
             setProgress(0);
           }
+          
+          // Check if user has a certificate
+          const certificate = await getCertificate(user.id, id);
+          if (certificate) {
+            setCertificateData(certificate);
+          }
         }
 
       } catch (error: any) {
@@ -147,10 +158,17 @@ export default function CourseDetail() {
       });
       
       setProgress(100);
-      toast({
-        title: "Course Completed!",
-        description: "Congratulations! You've completed this course.",
-      });
+      
+      // Generate certificate
+      const certificate = await generateCertificate(user.id, id);
+      if (certificate) {
+        setCertificateData(certificate);
+        // Show certificate
+        setShowCertificate(true);
+        toast.success("Congratulations! You've completed this course and earned a certificate!");
+      } else {
+        toast.error("Course completed but there was an issue generating your certificate.");
+      }
     } catch (error) {
       console.error('Error marking course as complete:', error);
       toast({
@@ -161,6 +179,10 @@ export default function CourseDetail() {
     } finally {
       setIsCompletingCourse(false);
     }
+  };
+
+  const viewCertificate = () => {
+    setShowCertificate(true);
   };
 
   const processSelectedVideo = async () => {
@@ -439,14 +461,22 @@ export default function CourseDetail() {
               <Button 
                 variant="outline" 
                 className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/20" 
-                disabled={progress < 100}
+                disabled={progress < 100 || !certificateData}
+                onClick={viewCertificate}
               >
-                {progress < 100 ? 'Complete Course to Earn' : 'Download Certificate'}
+                {progress < 100 ? 'Complete Course to Earn' : certificateData ? 'View Certificate' : 'Processing Certificate...'}
               </Button>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Certificate Modal */}
+      <CertificateModal 
+        isOpen={showCertificate}
+        onClose={() => setShowCertificate(false)}
+        certificateData={certificateData}
+      />
     </div>
   );
 }
