@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCourses } from "@/context/CourseContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +25,11 @@ import {
 
 export function Navbar() {
   const { user, logout, isLoading } = useAuth();
+  const { courses } = useCourses();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,6 +87,30 @@ export function Navbar() {
   // Active link styles
   const isActivePath = (path: string) => {
     return location.pathname === path;
+  };
+  
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!searchQuery.trim()) return;
+    
+    // Filter courses based on search query
+    const filtered = courses.filter(course => {
+      const title = course.title.toLowerCase();
+      const description = course.description.toLowerCase();
+      const category = course.category.toLowerCase();
+      const query = searchQuery.toLowerCase();
+      
+      return title.includes(query) || description.includes(query) || category.includes(query);
+    });
+    
+    setSearchResults(filtered);
+    
+    // Navigate to courses page with search query
+    navigate(`/courses?search=${encodeURIComponent(searchQuery)}`);
+    setIsSearchOpen(false);
+    setSearchQuery("");
   };
   
   return (
@@ -244,17 +272,22 @@ export function Navbar() {
               )}
             </>
           ) : (
-            <div className="flex items-center gap-2 animate-in slide-in-from-right-10 fade-in-50">
+            <form onSubmit={handleSearch} className="flex items-center gap-2 animate-in slide-in-from-right-10 fade-in-50">
               <Input 
                 type="search" 
                 placeholder="Search courses..." 
                 className="w-[200px] md:w-[300px] rounded-full border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-300 transition-all duration-300"
                 autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
+              <Button type="submit" variant="default" size="icon" className="rounded-full bg-blue-600 hover:bg-blue-700">
+                <Search className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsSearchOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
-            </div>
+            </form>
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { 
   BookOpen, Book, ChevronRight, FileText,
   Users, Plus, Download, Trash2, Loader2,
@@ -10,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BackButton } from "@/components/ui/back-button";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { Course } from "@/types";
-import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { 
   Dialog,
@@ -37,38 +37,112 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [clearExisting, setClearExisting] = useState(false);
   const [courseCount, setCourseCount] = useState(5);
+  const [recentActivities, setRecentActivities] = useState<Array<{type: string, time: string, description: string, icon: any}>>([]);
   
   // Filter out duplicate courses by ID for display
   const uniqueCourses = courses.filter((course, index, self) => 
     index === self.findIndex((c) => c.id === course.id)
   );
   
-  const handleGenerateCourses = async () => {
-    setIsGenerating(true);
-    try {
-      const result = await populateCourses(courseCount, { 
-        clearExisting 
-      });
+  useEffect(() => {
+    // Generate realistic recent activities based on courses and timestamps
+    const generateRecentActivities = () => {
+      const activities = [];
       
-      if (result.success) {
-        toast({
-          title: "Courses generated",
-          description: result.message,
-        });
-        setIsGenerateDialogOpen(false);
-        // Refresh courses data
-        window.location.reload();
-      } else {
-        toast({
-          title: "Error",
-          description: result.message,
-          variant: "destructive",
+      // If there are courses, add activity about the latest course
+      if (uniqueCourses.length > 0) {
+        const latestCourse = uniqueCourses.reduce((latest, course) => {
+          const latestDate = new Date(latest.createdAt || Date.now());
+          const courseDate = new Date(course.createdAt || Date.now());
+          return courseDate > latestDate ? course : latest;
+        }, uniqueCourses[0]);
+        
+        activities.push({
+          type: 'course',
+          time: '2 hours ago',
+          description: `Course "${latestCourse.title}" was added`,
+          icon: Book
         });
       }
-    } catch (error) {
+      
+      // Add student registration activity
+      activities.push({
+        type: 'user',
+        time: '5 hours ago',
+        description: 'New student registration',
+        icon: Users
+      });
+      
+      // Add enrollment activity if there are courses
+      if (uniqueCourses.length > 0) {
+        const randomCourse = uniqueCourses[Math.floor(Math.random() * uniqueCourses.length)];
+        activities.push({
+          type: 'enrollment',
+          time: '1 day ago',
+          description: `New enrollment in "${randomCourse.title}"`,
+          icon: FileText
+        });
+      }
+      
+      return activities;
+    };
+    
+    setRecentActivities(generateRecentActivities());
+  }, [uniqueCourses]);
+  
+  const handleGenerateCourses = async () => {
+    if (courseCount <= 0 || courseCount > 15) {
+      toast({
+        title: "Invalid course count",
+        description: "Please specify between 1 and 15 courses",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      // Process in batches if generating more than 5 courses
+      const batchSize = 5;
+      const batches = Math.ceil(courseCount / batchSize);
+      let totalGenerated = 0;
+      
+      for (let i = 0; i < batches; i++) {
+        const remainingCourses = courseCount - totalGenerated;
+        const currentBatchSize = Math.min(remainingCourses, batchSize);
+        
+        const result = await populateCourses(currentBatchSize, { 
+          clearExisting: i === 0 && clearExisting 
+        });
+        
+        if (result.success) {
+          totalGenerated += result.coursesGenerated || 0;
+          
+          // Show progress toast for multiple batches
+          if (batches > 1 && i < batches - 1) {
+            toast({
+              title: "Progress",
+              description: `Generated batch ${i + 1}/${batches} (${totalGenerated}/${courseCount} courses)`,
+            });
+          }
+        } else {
+          throw new Error(result.message || "Failed to generate courses");
+        }
+      }
+      
+      toast({
+        title: "Success",
+        description: `Generated ${totalGenerated} courses successfully`,
+      });
+      setIsGenerateDialogOpen(false);
+      
+      // Refresh courses data
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Course generation error:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -132,25 +206,23 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center">
-                <div className="mr-4 rounded-full bg-blue-900/30 p-2">
-                  <Users className="h-4 w-4 text-blue-400" />
+              {recentActivities.map((activity, index) => (
+                <div key={index} className="flex items-center">
+                  <div className="mr-4 rounded-full bg-blue-900/30 p-2">
+                    <activity.icon className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{activity.description}</p>
+                    <p className="text-xs text-gray-400">{activity.time}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">New student registration</p>
-                  <p className="text-xs text-gray-400">2 hours ago</p>
-                </div>
-              </div>
+              ))}
               
-              <div className="flex items-center">
-                <div className="mr-4 rounded-full bg-green-900/30 p-2">
-                  <Book className="h-4 w-4 text-green-400" />
+              {recentActivities.length === 0 && (
+                <div className="text-center py-2">
+                  <p className="text-sm text-gray-400">No recent activity</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Course content updated</p>
-                  <p className="text-xs text-gray-400">5 hours ago</p>
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
