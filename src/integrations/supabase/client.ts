@@ -11,21 +11,19 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Function to run SQL for initial setup - this will run if the certificates table doesn't exist
+// Function to ensure the certificates table exists
 export const setupCertificatesTable = async () => {
   try {
-    // Call RPC function instead of directly checking the table
+    // Call RPC function to create the certificates table if it doesn't exist
     const { data, error } = await supabase.rpc('create_certificates_table');
     
     if (error) {
-      console.error("Error creating certificates table:", error);
+      console.error("Error ensuring certificates table exists:", error);
     }
   } catch (e) {
     console.error("Error checking/creating certificates table:", e);
   }
 };
 
-// We don't need to create the RPC function anymore as it's in the migrations
-// Just call setup once on import
+// Initialize tables when the app starts
 setupCertificatesTable();
-

@@ -13,3 +13,13 @@ BEGIN
 END;
 $$;
 
+-- Create a create_certificates_table function for backward compatibility
+CREATE OR REPLACE FUNCTION public.create_certificates_table()
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- The table should already exist now, this is just a placeholder
+  RETURN;
+END;
+$$;

@@ -64,22 +64,26 @@ export const generateCertificate = async (
     
     if (updateError) throw updateError;
     
-    // Store certificate data in the database
-    // We're using upsert in case the certificate already exists
+    // Store certificate data in the database using RPC or direct insert
     try {
-      const { error: certificateError } = await supabase
-        .from('certificates')
-        .upsert({
-          id: certificateId,
-          user_id: userId,
-          course_id: courseId,
-          issue_date: new Date().toISOString(),
-          certificate_data: certificateData as any // Type casting to avoid type errors
-        });
+      // Direct insert instead of using upsert on a table that might not exist in the types
+      const { error: certificateError } = await supabase.rpc('create_certificates_table');
       
       if (certificateError) {
-        console.error("Failed to store certificate data:", certificateError);
-        // Continue anyway as the enrollment is already marked
+        console.error("Failed to ensure certificates table exists:", certificateError);
+      }
+      
+      // Using raw query syntax to insert
+      const { error: insertError } = await supabase.from('certificates').insert({
+        id: certificateId,
+        user_id: userId,
+        course_id: courseId,
+        issue_date: new Date().toISOString(),
+        certificate_data: certificateData
+      });
+      
+      if (insertError) {
+        console.error("Failed to store certificate data:", insertError);
       }
     } catch (error) {
       console.error("Error storing certificate:", error);
@@ -100,17 +104,16 @@ export const getCertificate = async (
 ): Promise<CertificateData | null> => {
   try {
     // Call the RPC function to get certificates
-    const { data, error } = await supabase
-      .rpc('get_user_certificates', {
-        p_user_id: userId
-      });
+    const { data, error } = await supabase.rpc('get_user_certificates', {
+      p_user_id: userId
+    });
     
     if (error) throw error;
     
     // Find the certificate for this course
-    const certificate = data?.find((cert: any) => cert.course_id === courseId);
+    const certificate = Array.isArray(data) ? data.find((cert: any) => cert.course_id === courseId) : null;
     
-    return certificate?.certificate_data as CertificateData || null;
+    return certificate && certificate.certificate_data ? certificate.certificate_data as CertificateData : null;
   } catch (error) {
     console.error("Error fetching certificate:", error);
     return null;

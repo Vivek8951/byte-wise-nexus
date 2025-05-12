@@ -43,16 +43,19 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
             certificatesEarned: enrollments.filter(e => e.certificateIssued).length,
           });
           
-          // Fetch certificates
+          // Fetch certificates using the RPC function
           try {
-            const { data, error } = await supabase.rpc('get_user_certificates', {
+            const { data: certsData, error: certsError } = await supabase.rpc('get_user_certificates', {
               p_user_id: user.id
             });
             
-            if (error) throw error;
+            if (certsError) {
+              console.error("Error fetching certificates:", certsError);
+              return;
+            }
             
-            if (data) {
-              setCertificates(data);
+            if (certsData) {
+              setCertificates(Array.isArray(certsData) ? certsData : []);
             }
           } catch (certError) {
             console.error("Error fetching certificates:", certError);
@@ -123,8 +126,12 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
   };
   
   const viewCertificate = (certificate: any) => {
-    setSelectedCertificate(certificate.certificate_data);
-    setShowCertificate(true);
+    if (certificate && certificate.certificate_data) {
+      setSelectedCertificate(certificate.certificate_data);
+      setShowCertificate(true);
+    } else {
+      toast.error("Certificate data not available");
+    }
   };
   
   return (
@@ -304,7 +311,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         </TabsContent>
         
         <TabsContent value="certificates" className="mt-6">
-          {certificates.length > 0 ? (
+          {certificates && certificates.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {certificates.map((cert) => (
                 <Card 
@@ -315,8 +322,12 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
                     <div className="mb-4">
                       <Award className="h-12 w-12 text-purple-400" />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">{cert.certificate_data?.courseTitle}</h3>
-                    <p className="text-gray-300 mb-4">Completed on: {cert.certificate_data?.completionDate}</p>
+                    <h3 className="text-xl font-bold mb-2">
+                      {cert.certificate_data?.courseTitle || "Course Certificate"}
+                    </h3>
+                    <p className="text-gray-300 mb-4">
+                      Completed on: {cert.certificate_data?.completionDate || "N/A"}
+                    </p>
                     <Button 
                       onClick={() => viewCertificate(cert)}
                       className="bg-purple-600 hover:bg-purple-700 text-white"

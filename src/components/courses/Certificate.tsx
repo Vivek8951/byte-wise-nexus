@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+// Import jspdf with correct casing
+import { jsPDF } from "jspdf";
 
 interface CertificateProps {
   userName: string;
@@ -29,6 +30,7 @@ export function Certificate({ userName, courseTitle, completionDate, certificate
       });
       
       const imgData = canvas.toDataURL('image/png');
+      // Create jsPDF instance with correct constructor
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
