@@ -12,11 +12,13 @@ export interface CertificateData {
   courseTitle: string;
   completionDate: string;
   certificateId: string;
+  appName?: string;
 }
 
 export const generateCertificate = async (
   userId: string,
   courseId: string,
+  appName: string = "EduLMS"
 ): Promise<CertificateData | null> => {
   try {
     // Fetch user details
@@ -51,6 +53,7 @@ export const generateCertificate = async (
       courseTitle: courseData.title,
       completionDate,
       certificateId,
+      appName
     };
     
     // Update the enrollment record to mark certificate as issued

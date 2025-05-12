@@ -407,6 +407,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         isOpen={showCertificate}
         onClose={() => setShowCertificate(false)}
         certificateData={selectedCertificate}
+        appName="EduLMS"
       />
     </>
   );

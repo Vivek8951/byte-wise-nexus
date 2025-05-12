@@ -13,9 +13,16 @@ interface CertificateProps {
   courseTitle: string;
   completionDate: string;
   certificateId: string;
+  appName?: string;
 }
 
-export function Certificate({ userName, courseTitle, completionDate, certificateId }: CertificateProps) {
+export function Certificate({ 
+  userName, 
+  courseTitle, 
+  completionDate, 
+  certificateId,
+  appName = "EduLMS" // Default app name if not provided
+}: CertificateProps) {
   const certificateRef = useRef<HTMLDivElement>(null);
   
   const downloadCertificate = async () => {
@@ -30,7 +37,6 @@ export function Certificate({ userName, courseTitle, completionDate, certificate
       });
       
       const imgData = canvas.toDataURL('image/png');
-      // Create jsPDF instance with correct constructor
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
@@ -60,7 +66,7 @@ export function Certificate({ userName, courseTitle, completionDate, certificate
                 <div className="flex justify-center mb-4">
                   <Award className="h-16 w-16 text-blue-600" />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">Certificate of Completion</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-1">{appName} - Certificate of Completion</h1>
                 <p className="text-gray-600">This certifies that</p>
               </div>
               
@@ -78,7 +84,7 @@ export function Certificate({ userName, courseTitle, completionDate, certificate
                   <p className="text-sm text-gray-600">Certificate ID: {certificateId}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">Digital Certificate</p>
+                  <p className="text-sm text-gray-600">{appName} Digital Certificate</p>
                 </div>
               </div>
             </div>

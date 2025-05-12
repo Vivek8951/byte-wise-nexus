@@ -38,6 +38,7 @@ export default function CourseDetail() {
   const [materials, setMaterials] = useState<any[]>([]);
   const [certificateData, setCertificateData] = useState<any>(null);
   const [showCertificate, setShowCertificate] = useState(false);
+  const [isProcessingCertificate, setIsProcessingCertificate] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -145,6 +146,9 @@ export default function CourseDetail() {
     if (!user || !id) return;
     
     setIsCompletingCourse(true);
+    setIsProcessingCertificate(true);
+    setShowCertificate(true); // Show certificate modal with processing state
+    
     try {
       await updateCourseProgress(user.id, id, { 
         completedVideos: videos.map(v => v.id),
@@ -154,20 +158,21 @@ export default function CourseDetail() {
       setProgress(100);
       
       // Generate certificate
-      const certificate = await generateCertificate(user.id, id);
+      const certificate = await generateCertificate(user.id, id, "EduLMS");
       if (certificate) {
         setCertificateData(certificate);
-        // Show certificate
-        setShowCertificate(true);
         toast.success("Congratulations! You've completed this course and earned a certificate!");
       } else {
         toast.error("Course completed but there was an issue generating your certificate.");
+        setShowCertificate(false); // Hide modal if there was an error
       }
     } catch (error) {
       console.error('Error marking course as complete:', error);
       toast.error("Failed to update course progress");
+      setShowCertificate(false); // Hide modal if there was an error
     } finally {
       setIsCompletingCourse(false);
+      setIsProcessingCertificate(false);
     }
   };
 
@@ -455,6 +460,8 @@ export default function CourseDetail() {
         isOpen={showCertificate}
         onClose={() => setShowCertificate(false)}
         certificateData={certificateData}
+        isProcessing={isProcessingCertificate}
+        appName="EduLMS"
       />
     </div>
   );
