@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Send, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoAnalysisChatbotProps {
   videoId: string;
@@ -29,20 +30,26 @@ export function VideoAnalysisChatbot({ videoId, transcript, summary }: VideoAnal
     setIsLoading(true);
     
     try {
-      // Here you would normally call an API to get AI responses about the video
-      // Using the videoId, transcript, and summary to provide context
+      const context = `This is a conversation about a video with ID: ${videoId}.`;
+      const fullContext = transcript 
+        ? `${context} The video transcript is: ${transcript.substring(0, 500)}...` 
+        : summary 
+        ? `${context} The video summary is: ${summary}` 
+        : context;
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the Supabase edge function with Hugging Face integration
+      const { data, error } = await supabase.functions.invoke("text-generation", {
+        body: { 
+          prompt: userMessage,
+          context: fullContext,
+          previousMessages: messages.slice(-5),
+          maxTokens: 800
+        }
+      });
       
-      // Generate a simple response based on the summary or transcript
-      let aiResponse = "I'm analyzing the video content...";
+      if (error) throw new Error(error.message);
       
-      if (summary) {
-        aiResponse = `Based on this video's content: ${summary.substring(0, 150)}... What else would you like to know?`;
-      } else if (transcript) {
-        aiResponse = `I've analyzed the video transcript. How can I help you understand this content better?`;
-      }
+      const aiResponse = data.generatedText || "I'm sorry, I couldn't analyze the video content properly.";
       
       // Add AI response to chat
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
@@ -53,6 +60,12 @@ export function VideoAnalysisChatbot({ videoId, transcript, summary }: VideoAnal
         description: "Failed to get response from AI. Please try again.",
         variant: "destructive",
       });
+      
+      // Add error message to chat
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "Sorry, I encountered an error while analyzing the video. Please try again." 
+      }]);
     } finally {
       setIsLoading(false);
     }

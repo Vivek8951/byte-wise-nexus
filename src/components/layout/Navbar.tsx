@@ -1,13 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, Search, X, Book, Bell, ChevronDown, LogOut, User as UserIcon, Settings, Layers } from "lucide-react";
+import { Menu, Bell, ChevronDown, LogOut, User as UserIcon, Settings, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useCourses } from "@/context/CourseContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,11 +23,7 @@ import {
 
 export function Navbar() {
   const { user, logout, isLoading } = useAuth();
-  const { courses } = useCourses();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,30 +83,6 @@ export function Navbar() {
     return location.pathname === path;
   };
   
-  // Handle search
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!searchQuery.trim()) return;
-    
-    // Filter courses based on search query
-    const filtered = courses.filter(course => {
-      const title = course.title.toLowerCase();
-      const description = course.description.toLowerCase();
-      const category = course.category.toLowerCase();
-      const query = searchQuery.toLowerCase();
-      
-      return title.includes(query) || description.includes(query) || category.includes(query);
-    });
-    
-    setSearchResults(filtered);
-    
-    // Navigate to courses page with search query
-    navigate(`/courses?search=${encodeURIComponent(searchQuery)}`);
-    setIsSearchOpen(false);
-    setSearchQuery("");
-  };
-  
   return (
     <header 
       className={`sticky top-0 z-40 w-full border-b transition-all duration-500 ${
@@ -135,7 +105,7 @@ export function Navbar() {
             to={user ? (user.role === 'admin' ? "/admin/courses" : "/dashboard") : "/"}
             className="flex items-center gap-2 font-bold text-xl text-[#0056D2] hover:scale-105 transition-transform duration-300"
           >
-            <Book className="h-6 w-6 animate-pulse" />
+            <Layers className="h-6 w-6 animate-pulse" />
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">TechLearn</span>
           </Link>
           
@@ -192,102 +162,72 @@ export function Navbar() {
         </div>
         
         <div className="flex items-center gap-3">
-          {!isSearchOpen ? (
-            <>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="rounded-full hover:scale-110 transition-transform duration-300"
-                onClick={() => setIsSearchOpen(true)}
-              >
-                <Search className="h-5 w-5" />
-                <span className="sr-only">Search</span>
-              </Button>
-              <ThemeToggle />
+          <ThemeToggle />
+          
+          {user ? (
+            <div className="flex items-center gap-3">
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-full hover:scale-110 transition-transform duration-300 relative"
+                    >
+                      <Bell className="h-5 w-5" />
+                      <span className="sr-only">Notifications</span>
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-pulse">3</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Notifications</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               
-              {user ? (
-                <div className="flex items-center gap-3">
-                  <TooltipProvider delayDuration={300}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="rounded-full hover:scale-110 transition-transform duration-300 relative"
-                        >
-                          <Bell className="h-5 w-5" />
-                          <span className="sr-only">Notifications</span>
-                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-pulse">3</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Notifications</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost"
-                        size="icon"
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90 hover:scale-110 transition-all duration-300"
-                      >
-                        {user.name.charAt(0).toUpperCase()}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-5">
-                      <DropdownMenuLabel className="flex items-center gap-2">
-                        <span className="font-normal text-sm text-muted-foreground">Signed in as</span>
-                        <span className="font-medium">{user.name}</span>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={goToDashboard} className="flex items-center gap-2 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
-                        {user.role === 'admin' ? <Layers className="h-4 w-4" /> : <UserIcon className="h-4 w-4" />}
-                        <span>{user.role === 'admin' ? 'Admin Dashboard' : 'My Dashboard'}</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="flex items-center gap-2 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
-                        <Settings className="h-4 w-4" />
-                        <span>Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={handleLogout} 
-                        disabled={isLoading}
-                        className="flex items-center gap-2 text-red-600 dark:text-red-400 cursor-pointer transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        <span>{isLoading ? 'Logging out...' : 'Log out'}</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Link to="/login">
-                    <Button variant="ghost" className="hover:scale-105 transition-transform duration-300 rounded-full">Login</Button>
-                  </Link>
-                  <Link to="/register" className="hidden md:inline-flex">
-                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 transition-all duration-300 text-white rounded-full shadow-md hover:shadow-lg">Sign Up</Button>
-                  </Link>
-                </div>
-              )}
-            </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90 hover:scale-110 transition-all duration-300"
+                  >
+                    {user.name.charAt(0).toUpperCase()}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-5">
+                  <DropdownMenuLabel className="flex items-center gap-2">
+                    <span className="font-normal text-sm text-muted-foreground">Signed in as</span>
+                    <span className="font-medium">{user.name}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={goToDashboard} className="flex items-center gap-2 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
+                    {user.role === 'admin' ? <Layers className="h-4 w-4" /> : <UserIcon className="h-4 w-4" />}
+                    <span>{user.role === 'admin' ? 'Admin Dashboard' : 'My Dashboard'}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleLogout} 
+                    disabled={isLoading}
+                    className="flex items-center gap-2 text-red-600 dark:text-red-400 cursor-pointer transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>{isLoading ? 'Logging out...' : 'Log out'}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
-            <form onSubmit={handleSearch} className="flex items-center gap-2 animate-in slide-in-from-right-10 fade-in-50">
-              <Input 
-                type="search" 
-                placeholder="Search courses..." 
-                className="w-[200px] md:w-[300px] rounded-full border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-300 transition-all duration-300"
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Button type="submit" variant="default" size="icon" className="rounded-full bg-blue-600 hover:bg-blue-700">
-                <Search className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsSearchOpen(false)}>
-                <X className="h-5 w-5" />
-              </Button>
-            </form>
+            <div className="flex items-center gap-2">
+              <Link to="/login">
+                <Button variant="ghost" className="hover:scale-105 transition-transform duration-300 rounded-full">Login</Button>
+              </Link>
+              <Link to="/register" className="hidden md:inline-flex">
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 transition-all duration-300 text-white rounded-full shadow-md hover:shadow-lg">Sign Up</Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>

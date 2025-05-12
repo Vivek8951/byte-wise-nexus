@@ -147,9 +147,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     try {
       // Determine if request is for text or image generation
       const isImageRequest = content.toLowerCase().includes('diagram') || 
-                            content.toLowerCase().includes('graph') || 
-                            content.toLowerCase().includes('picture') ||
-                            content.toLowerCase().includes('image');
+                             content.toLowerCase().includes('graph') || 
+                             content.toLowerCase().includes('picture') ||
+                             content.toLowerCase().includes('image');
       
       if (isImageRequest) {
         // Generate image description
@@ -165,7 +165,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         }
         
         const imageDesc = imageDescData?.generatedText || 
-                        "I've prepared a visual representation based on your request.";
+                         "I've prepared a visual representation based on your request.";
         
         // Since we can't generate images directly, use Unsplash for a relevant image
         const botMessage: ChatMessage = {

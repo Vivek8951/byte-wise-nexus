@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, Send, Image, Mic, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
-// Working Gemini API key
-const DEFAULT_API_KEY = "AIzaSyAQXlW-S2tsxU5tfa6DBqnrxGC_lM_vJsk";
-
 export function Chatbot() {
   const { messages, sendMessage, isLoading, isOpen, toggleChatbot, clearChat, apiKey, setApiKey } = useChatbot();
   const [inputValue, setInputValue] = useState("");
-  const [apiKeyInput, setApiKeyInput] = useState(apiKey || DEFAULT_API_KEY);
+  const [apiKeyInput, setApiKeyInput] = useState(apiKey || "");
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -28,13 +26,6 @@ export function Chatbot() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
-  
-  // Ensure API key is set when component mounts
-  useEffect(() => {
-    if (!apiKey) {
-      setApiKey(DEFAULT_API_KEY);
-    }
-  }, [apiKey, setApiKey]);
   
   const handleSendMessage = () => {
     if (inputValue.trim() && !isLoading) {
@@ -52,18 +43,11 @@ export function Chatbot() {
 
   const saveApiKey = () => {
     setApiKey(apiKeyInput);
-    localStorage.setItem('gemini_api_key', apiKeyInput);
+    localStorage.setItem('huggingface_api_key', apiKeyInput);
     setApiKeyDialogOpen(false);
     toast({
       title: "API Key Saved",
-      description: "Your Gemini API key has been updated successfully.",
-    });
-  };
-
-  const resetToDefaultKey = () => {
-    setApiKeyInput(DEFAULT_API_KEY);
-    toast({
-      description: "Reset to default API key",
+      description: "Your Hugging Face API key has been updated successfully.",
     });
   };
   
@@ -220,7 +204,7 @@ export function Chatbot() {
           <DialogHeader>
             <DialogTitle>AI Assistant Settings</DialogTitle>
             <DialogDescription>
-              Gemini API key is pre-configured. You can change it if needed.
+              Enter your Hugging Face API key to enable AI features.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -233,13 +217,13 @@ export function Chatbot() {
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="AIza..."
+                placeholder="hf_..."
                 className="col-span-3"
               />
             </div>
           </div>
           <DialogFooter className="flex justify-between">
-            <Button variant="outline" onClick={resetToDefaultKey}>Reset to Default</Button>
+            <Button variant="outline" onClick={() => setApiKeyDialogOpen(false)}>Cancel</Button>
             <Button onClick={saveApiKey}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
