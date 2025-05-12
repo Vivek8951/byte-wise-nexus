@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/sonner";
 import { BackButton } from "@/components/ui/back-button";
 import { getQuiz } from "@/data/mockQuizData";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,6 @@ import { processVideo } from "@/utils/supabaseStorage";
 import { updateCourseProgress, getUserCourseProgress } from "@/data/mockProgressData";
 import { generateCertificate, getCertificate } from "@/utils/certificateUtils";
 import { CertificateModal } from "@/components/courses/CertificateModal";
-import { toast } from "@/components/ui/sonner";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -46,7 +45,7 @@ export default function CourseDetail() {
     async function fetchCourseData() {
       setIsLoading(true);
       try {
-        // Fetch course details
+        // Fetch course details, videos, quizzes, materials, progress, and certificate
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
           .select('*')
@@ -108,18 +107,14 @@ export default function CourseDetail() {
 
       } catch (error: any) {
         console.error('Error fetching course data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load course data",
-          variant: "destructive",
-        });
+        toast.error("Failed to load course data");
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchCourseData();
-  }, [id, toast, user]);
+  }, [id, user]);
 
   const handleVideoSelect = async (video: any) => {
     setSelectedVideo(video);
@@ -208,24 +203,13 @@ export default function CourseDetail() {
             : v
         ));
 
-        toast({
-          title: "Success",
-          description: "Video processing completed",
-        });
+        toast.success("Video processing completed");
       } else {
-        toast({
-          title: "Processing Failed",
-          description: result.message || "Failed to process video",
-          variant: "destructive",
-        });
+        toast.error(result.message || "Failed to process video");
       }
     } catch (error: any) {
       console.error('Error processing video:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred");
     } finally {
       setIsProcessing(false);
       setLoadingVideoId(null);

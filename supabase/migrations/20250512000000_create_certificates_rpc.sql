@@ -12,3 +12,4 @@ BEGIN
   WHERE user_id = p_user_id;
 END;
 $$;
+

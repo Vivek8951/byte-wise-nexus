@@ -74,7 +74,7 @@ export const generateCertificate = async (
           user_id: userId,
           course_id: courseId,
           issue_date: new Date().toISOString(),
-          certificate_data: certificateData
+          certificate_data: certificateData as any // Type casting to avoid type errors
         });
       
       if (certificateError) {
@@ -99,16 +99,18 @@ export const getCertificate = async (
   courseId: string
 ): Promise<CertificateData | null> => {
   try {
+    // Call the RPC function to get certificates
     const { data, error } = await supabase
-      .from('certificates')
-      .select('certificate_data')
-      .eq('user_id', userId)
-      .eq('course_id', courseId)
-      .maybeSingle();
+      .rpc('get_user_certificates', {
+        p_user_id: userId
+      });
     
     if (error) throw error;
     
-    return data?.certificate_data as CertificateData || null;
+    // Find the certificate for this course
+    const certificate = data?.find((cert: any) => cert.course_id === courseId);
+    
+    return certificate?.certificate_data as CertificateData || null;
   } catch (error) {
     console.error("Error fetching certificate:", error);
     return null;

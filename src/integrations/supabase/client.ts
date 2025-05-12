@@ -25,18 +25,7 @@ export const setupCertificatesTable = async () => {
   }
 };
 
-// Create a custom RPC function to get certificates
-// This is a workaround for TypeScript issues
-// We'll create this function using SQL migration
-export const createCertificatesRpcFunction = async () => {
-  try {
-    const { data, error } = await supabase.rpc('create_certificates_rpc_function');
-    if (error) console.error("Error creating RPC function:", error);
-  } catch (e) {
-    console.error("Error creating RPC function:", e);
-  }
-};
-
-// Run table setup once on import
+// We don't need to create the RPC function anymore as it's in the migrations
+// Just call setup once on import
 setupCertificatesTable();
-createCertificatesRpcFunction();
+
