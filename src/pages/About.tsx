@@ -33,33 +33,6 @@ export default function About() {
     return () => window.removeEventListener('scroll', animateElements);
   }, []);
   
-  const teamMembers = [
-    {
-      name: "Dr. Sarah Chen",
-      role: "Founder & CEO",
-      bio: "Former professor of Computer Science with 15 years of experience teaching at leading universities.",
-      image: "https://randomuser.me/api/portraits/women/32.jpg"
-    },
-    {
-      name: "Michael Rodriguez",
-      role: "Chief Technology Officer",
-      bio: "Previously led engineering teams at major tech companies with expertise in educational technology.",
-      image: "https://randomuser.me/api/portraits/men/42.jpg"
-    },
-    {
-      name: "Dr. James Wilson",
-      role: "Head of Curriculum",
-      bio: "PhD in Computer Science with research focus on effective teaching methodologies for technical subjects.",
-      image: "https://randomuser.me/api/portraits/men/22.jpg"
-    },
-    {
-      name: "Priya Patel",
-      role: "Lead Instructor",
-      bio: "Software engineer with over a decade of industry experience and passion for teaching.",
-      image: "https://randomuser.me/api/portraits/women/44.jpg"
-    }
-  ];
-  
   const values = [
     {
       icon: BookOpen,
@@ -166,42 +139,6 @@ export default function About() {
                   <p className="text-gray-600 dark:text-gray-300">
                     {value.description}
                   </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        
-        {/* Team Section */}
-        <section className="py-20 bg-white dark:bg-gray-900">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16 animate-on-scroll opacity-0">
-              <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Meet Our Team</h2>
-              <p className="text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-                Our diverse team of educators, technologists, and industry experts are committed to providing 
-                the best learning experience for our students.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {teamMembers.map((member, index) => (
-                <div 
-                  key={member.name} 
-                  className="bg-white dark:bg-gray-700 rounded-xl shadow hover:shadow-xl transition-all duration-300 overflow-hidden animate-on-scroll opacity-0"
-                  style={{ animationDelay: `${index * 150}ms` }}
-                >
-                  <img 
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-60 object-cover"
-                  />
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-1">{member.name}</h3>
-                    <p className="text-blue-600 dark:text-blue-400 mb-3">{member.role}</p>
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {member.bio}
-                    </p>
-                  </div>
                 </div>
               ))}
             </div>
