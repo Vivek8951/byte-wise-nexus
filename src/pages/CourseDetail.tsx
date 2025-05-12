@@ -158,19 +158,27 @@ export default function CourseDetail() {
       setProgress(100);
       
       // Generate certificate
-      const certificate = await generateCertificate(user.id, id, "EduLMS");
+      const certificate = await generateCertificate(user.id, id, "Tech Learn");
       
       // Add a small delay to ensure UI shows the certificate
       setTimeout(() => {
         if (certificate) {
           setCertificateData(certificate);
           toast.success("Congratulations! You've completed this course and earned a certificate!");
+          
+          // Auto-download the certificate after a short delay
+          setTimeout(() => {
+            const downloadBtn = document.querySelector('.certificate-download-btn') as HTMLButtonElement;
+            if (downloadBtn) {
+              downloadBtn.click();
+            }
+          }, 1000);
         } else {
           toast.error("Course completed but there was an issue generating your certificate.");
           setShowCertificate(false); // Hide modal if there was an error
         }
         setIsProcessingCertificate(false);
-      }, 1500); // Slight delay to ensure the certificate is loaded
+      }, 1000); // Short delay to ensure the certificate is loaded
       
     } catch (error) {
       console.error('Error marking course as complete:', error);
@@ -467,7 +475,7 @@ export default function CourseDetail() {
         onClose={() => setShowCertificate(false)}
         certificateData={certificateData}
         isProcessing={isProcessingCertificate}
-        appName="EduLMS"
+        appName="Tech Learn"
       />
     </div>
   );

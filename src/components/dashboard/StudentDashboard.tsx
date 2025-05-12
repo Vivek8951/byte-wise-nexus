@@ -128,8 +128,20 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
   
   const viewCertificate = (certificate: any) => {
     if (certificate && certificate.certificate_data) {
-      setSelectedCertificate(certificate.certificate_data);
+      // Ensure the certificate data includes the correct app name
+      let certData = certificate.certificate_data;
+      certData.appName = "Tech Learn"; // Override app name to ensure consistency
+      
+      setSelectedCertificate(certData);
       setShowCertificate(true);
+      
+      // Auto-download the certificate after a short delay
+      setTimeout(() => {
+        const downloadBtn = document.querySelector('.certificate-download-btn') as HTMLButtonElement;
+        if (downloadBtn) {
+          downloadBtn.click();
+        }
+      }, 1000);
     } else {
       toast.error("Certificate data not available");
     }
@@ -407,7 +419,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
         isOpen={showCertificate}
         onClose={() => setShowCertificate(false)}
         certificateData={selectedCertificate}
-        appName="EduLMS"
+        appName="Tech Learn"
       />
     </>
   );

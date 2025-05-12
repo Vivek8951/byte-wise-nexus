@@ -1,12 +1,13 @@
 
-import { useRef } from "react";
-import { Award, Download } from "lucide-react";
+import { useRef, useEffect } from "react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { toast } from "@/components/ui/sonner";
+import { format } from "date-fns";
 
 interface CertificateProps {
   userName: string;
@@ -21,15 +22,16 @@ export function Certificate({
   courseTitle, 
   completionDate, 
   certificateId,
-  appName = "EduLMS" // Default app name if not provided
+  appName = "Tech Learn" // Updated default app name
 }: CertificateProps) {
   const certificateRef = useRef<HTMLDivElement>(null);
+  const currentDate = format(new Date(), "MMMM dd, yyyy");
   
   const downloadCertificate = async () => {
     if (!certificateRef.current) return;
     
     try {
-      toast.info("Preparing certificate for download...");
+      toast.info("Preparing your certificate...");
       
       const canvas = await html2canvas(certificateRef.current, { 
         scale: 2,
@@ -64,32 +66,37 @@ export function Certificate({
         <CardContent className="p-0">
           <div 
             ref={certificateRef}
-            className="p-8 min-h-[500px] bg-gradient-to-br from-white to-gray-50 flex flex-col items-center justify-center"
+            className="p-8 min-h-[500px] bg-gradient-to-br from-blue-50 to-white flex flex-col items-center justify-center"
           >
-            <div className="border-8 border-double border-gray-800 w-full h-full p-8">
-              <div className="text-center mb-6">
-                <div className="flex justify-center mb-4">
-                  <Award className="h-16 w-16 text-blue-600" />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">{appName} - Certificate of Completion</h1>
-                <p className="text-gray-600">This certifies that</p>
+            <div className="w-full h-full p-8 text-center">
+              {/* Header with logo and app name */}
+              <div className="flex justify-between items-center mb-6">
+                <div className="text-xl font-bold text-blue-800">{appName}</div>
+                <div className="text-right text-gray-500">Issue Date: {currentDate}</div>
               </div>
               
-              <div className="text-center my-8">
-                <h2 className="text-4xl font-bold text-blue-800 mb-6">{userName}</h2>
-                <p className="text-lg text-gray-700 mb-1">has successfully completed the course</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-3 mb-6">"{courseTitle}"</h3>
+              {/* Certificate title */}
+              <h1 className="text-4xl font-bold text-blue-900 mb-2 mt-6">Certificate of Completion</h1>
+              <div className="w-32 h-1 bg-blue-700 mx-auto mb-8"></div>
+              
+              {/* Certificate body */}
+              <div className="my-10">
+                <p className="text-lg text-gray-700 mb-4">This is to certify that</p>
+                <h2 className="text-3xl font-bold text-blue-800 mb-6 font-serif">{userName}</h2>
+                <p className="text-lg text-gray-700 mb-4">has successfully completed the course</p>
+                <h3 className="text-2xl font-bold text-blue-900 mb-6 px-10">"{courseTitle}"</h3>
                 <p className="text-lg text-gray-700">on {completionDate}</p>
               </div>
               
               <Separator className="my-6 bg-gray-300" />
               
-              <div className="flex justify-between items-center">
+              {/* Footer */}
+              <div className="flex justify-between items-center mt-8">
                 <div className="text-left">
                   <p className="text-sm text-gray-600">Certificate ID: {certificateId}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">{appName} Digital Certificate</p>
+                  <p className="text-sm text-gray-600">{appName} Certificate</p>
                 </div>
               </div>
             </div>
@@ -99,7 +106,7 @@ export function Certificate({
       
       <Button 
         onClick={downloadCertificate} 
-        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700"
+        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 certificate-download-btn"
       >
         <Download className="h-4 w-4" />
         Download Certificate

@@ -18,7 +18,7 @@ export interface CertificateData {
 export const generateCertificate = async (
   userId: string,
   courseId: string,
-  appName: string = "EduLMS"
+  appName: string = "Tech Learn" // Updated default app name
 ): Promise<CertificateData | null> => {
   try {
     // Fetch user details
@@ -42,7 +42,7 @@ export const generateCertificate = async (
     // Generate a unique certificate ID
     const certificateId = `CERT-${userId.substring(0, 4)}-${courseId.substring(0, 4)}-${Date.now().toString(36)}`;
     
-    // Create completion date in readable format
+    // Create completion date in readable format - use current date
     const completionDate = format(new Date(), "MMMM dd, yyyy");
     
     // Create certificate data
@@ -68,7 +68,7 @@ export const generateCertificate = async (
     
     if (updateError) throw updateError;
     
-    // Store certificate data in the database using direct insert
+    // Store certificate data in the database
     try {
       const { error: insertError } = await supabase.from('certificates').insert({
         id: certificateId,

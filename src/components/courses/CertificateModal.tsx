@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Certificate } from "./Certificate";
 import { CheckCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -24,19 +24,28 @@ export function CertificateModal({
   onClose, 
   certificateData, 
   isProcessing = false,
-  appName = "EduLMS" 
+  appName = "Tech Learn" // Updated default app name
 }: CertificateModalProps) {
   
-  // Force isProcessing to false after 5 seconds to prevent getting stuck
+  // Force certificate to show after 2 seconds regardless of processing state
   const [forceShowCertificate, setForceShowCertificate] = useState(false);
   
-  // If processing takes more than 5 seconds, show the certificate anyway
-  if (isProcessing && !forceShowCertificate) {
-    setTimeout(() => {
-      setForceShowCertificate(true);
-    }, 5000);
-  }
+  // Reset force state when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      // If processing, wait 2 seconds then force show
+      if (isProcessing) {
+        const timer = setTimeout(() => {
+          setForceShowCertificate(true);
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setForceShowCertificate(false);
+    }
+  }, [isOpen, isProcessing]);
   
+  // Show certificate if we have data and not processing or force show is true
   const showCertificate = certificateData && (!isProcessing || forceShowCertificate);
   
   return (
@@ -44,7 +53,7 @@ export function CertificateModal({
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {isProcessing && !forceShowCertificate ? "Processing Certificate..." : "Your Certificate"}
+            {isProcessing && !forceShowCertificate ? "Preparing Your Certificate..." : "Your Certificate"}
           </DialogTitle>
         </DialogHeader>
         
@@ -54,12 +63,12 @@ export function CertificateModal({
               <CheckCircle className="h-16 w-16 text-blue-400 animate-pulse" />
               <h3 className="text-xl font-medium">Get Certified</h3>
               <p className="text-center text-gray-300">
-                Complete this course to earn a certificate
+                Your certificate is being prepared...
               </p>
               <div className="w-full max-w-xs bg-gray-800 rounded-full h-2 mt-4">
                 <div className="animate-pulse bg-blue-600 h-2 rounded-full w-2/3"></div>
               </div>
-              <p className="text-sm text-blue-300">Processing Certificate...</p>
+              <p className="text-sm text-blue-300">Almost ready...</p>
             </div>
           ) : showCertificate ? (
             <Certificate 
