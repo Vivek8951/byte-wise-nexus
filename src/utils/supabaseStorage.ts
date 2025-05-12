@@ -1,8 +1,8 @@
-import { Course, Video, Note } from "@/types";
-import { getSupabase } from "./supabase";
+
+import { Course, Video, Note, VideoDownloadInfo } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 export const uploadContent = async (file: File, storagePath: string): Promise<{ data: { path: string } | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .storage
     .from('content')
@@ -14,8 +14,36 @@ export const uploadContent = async (file: File, storagePath: string): Promise<{ 
   return { data, error };
 }
 
+// Function that was missing - used in VideoUploader.tsx
+export const uploadFile = async (file: File, bucketName: string, filePath: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .storage
+      .from(bucketName)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+    
+    if (error) {
+      console.error('Error uploading file:', error);
+      return null;
+    }
+    
+    // Get the public URL
+    const { data: urlData } = supabase
+      .storage
+      .from(bucketName)
+      .getPublicUrl(filePath);
+      
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('Unexpected error uploading file:', error);
+    return null;
+  }
+}
+
 export const deleteContent = async (filePath: string): Promise<{ data: any | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .storage
     .from('content')
@@ -25,7 +53,6 @@ export const deleteContent = async (filePath: string): Promise<{ data: any | nul
 }
 
 export const getPublicUrl = (storagePath: string): string => {
-  const supabase = getSupabase();
   const { data } = supabase
     .storage
     .from('content')
@@ -35,7 +62,6 @@ export const getPublicUrl = (storagePath: string): string => {
 }
 
 export const createCourse = async (course: Omit<Course, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ data: Course | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('courses')
     .insert([course])
@@ -46,7 +72,6 @@ export const createCourse = async (course: Omit<Course, 'id' | 'createdAt' | 'up
 }
 
 export const updateCourse = async (id: string, course: Partial<Course>): Promise<{ data: Course | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('courses')
     .update(course)
@@ -58,7 +83,6 @@ export const updateCourse = async (id: string, course: Partial<Course>): Promise
 }
 
 export const deleteCourse = async (id: string): Promise<{ data: any | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('courses')
     .delete()
@@ -67,8 +91,96 @@ export const deleteCourse = async (id: string): Promise<{ data: any | null, erro
   return { data, error };
 }
 
+// Function that was missing - used in VideoPlayerWithAnalysis.tsx
+export const processVideo = async (videoId: string, courseId: string): Promise<{
+  success: boolean;
+  message?: string;
+  data?: {
+    videoUrl?: string;
+    title?: string;
+    description?: string;
+    thumbnail?: string;
+    analyzedContent?: any[];
+    downloadInfo?: VideoDownloadInfo;
+  };
+}> => {
+  try {
+    const { data, error } = await supabase.functions.invoke("process-video", {
+      body: { videoId, courseId },
+    });
+
+    if (error) {
+      console.error("Error processing video:", error);
+      return {
+        success: false,
+        message: `Error processing video: ${error.message || "Unknown error"}`
+      };
+    }
+
+    return {
+      success: true,
+      data: data || {}
+    };
+  } catch (error: any) {
+    console.error("Unexpected error processing video:", error);
+    return {
+      success: false,
+      message: `Unexpected error: ${error.message || "Unknown error"}`
+    };
+  }
+}
+
+// Function that was missing - used in VideoPlayerWithAnalysis.tsx
+export const getVideoForCourse = async (videoId: string, courseId: string): Promise<{
+  success: boolean;
+  message?: string;
+  videoUrl?: string;
+  title?: string;
+  description?: string;
+  thumbnail?: string;
+  downloadInfo?: any;
+}> => {
+  try {
+    const { data, error } = await supabase
+      .from('videos')
+      .select('*')
+      .eq('id', videoId)
+      .eq('course_id', courseId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error fetching video:", error);
+      return {
+        success: false,
+        message: `Database error: ${error.message}`
+      };
+    }
+    
+    if (!data) {
+      return {
+        success: false,
+        message: "Video not found"
+      };
+    }
+    
+    return {
+      success: true,
+      videoUrl: data.url,
+      title: data.title,
+      description: data.description,
+      thumbnail: data.thumbnail,
+      downloadInfo: data.download_info
+    };
+  } catch (error: any) {
+    console.error("Unexpected error getting video:", error);
+    return {
+      success: false,
+      message: `Unexpected error: ${error.message}`
+    };
+  }
+}
+
 export const getVideoByCourseId = async (courseId: string): Promise<Video[]> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('videos')
     .select('*')
@@ -84,7 +196,6 @@ export const getVideoByCourseId = async (courseId: string): Promise<Video[]> => 
 }
 
 export const addVideo = async (video: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ data: Video | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('videos')
     .insert([video])
@@ -95,7 +206,6 @@ export const addVideo = async (video: Omit<Video, 'id' | 'createdAt' | 'updatedA
 }
 
 export const updateVideo = async (id: string, video: Partial<Video>): Promise<{ data: Video | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('videos')
     .update(video)
@@ -107,7 +217,6 @@ export const updateVideo = async (id: string, video: Partial<Video>): Promise<{ 
 }
 
 export const deleteVideo = async (id: string): Promise<void> => {
-  const supabase = getSupabase();
   const { error } = await supabase
     .from('videos')
     .delete()
@@ -119,7 +228,6 @@ export const deleteVideo = async (id: string): Promise<void> => {
 }
 
 export const getNoteByCourseId = async (courseId: string): Promise<Note[]> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('notes')
     .select('*')
@@ -135,7 +243,6 @@ export const getNoteByCourseId = async (courseId: string): Promise<Note[]> => {
 }
 
 export const addNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ data: Note | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('notes')
     .insert([note])
@@ -146,7 +253,6 @@ export const addNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>
 }
 
 export const updateNote = async (id: string, note: Partial<Note>): Promise<{ data: Note | null, error: any }> => {
-  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('notes')
     .update(note)
@@ -158,7 +264,6 @@ export const updateNote = async (id: string, note: Partial<Note>): Promise<{ dat
 }
 
 export const deleteNote = async (id: string): Promise<void> => {
-  const supabase = getSupabase();
   const { error } = await supabase
     .from('notes')
     .delete()
@@ -173,7 +278,6 @@ export const populateCourses = async (
   courseCount = 5, 
   options: { clearExisting?: boolean } = {}
 ): Promise<{ success: boolean; message: string; coursesGenerated?: number }> => {
-  const supabase = getSupabase();
   const { clearExisting = false } = options;
   
   // Validate input
@@ -245,4 +349,4 @@ export const populateCourses = async (
       message: `Error generating courses: ${error.message}`,
     };
   }
-};
+}
