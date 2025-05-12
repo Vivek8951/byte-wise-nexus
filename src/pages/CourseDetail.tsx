@@ -170,7 +170,7 @@ export default function CourseDetail() {
           setShowCertificate(false); // Hide modal if there was an error
         }
         setIsProcessingCertificate(false);
-      }, 1000);
+      }, 1500); // Slight delay to ensure the certificate is loaded
       
     } catch (error) {
       console.error('Error marking course as complete:', error);

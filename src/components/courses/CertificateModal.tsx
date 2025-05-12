@@ -1,7 +1,9 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Certificate } from "./Certificate";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -25,17 +27,29 @@ export function CertificateModal({
   appName = "EduLMS" 
 }: CertificateModalProps) {
   
+  // Force isProcessing to false after 5 seconds to prevent getting stuck
+  const [forceShowCertificate, setForceShowCertificate] = useState(false);
+  
+  // If processing takes more than 5 seconds, show the certificate anyway
+  if (isProcessing && !forceShowCertificate) {
+    setTimeout(() => {
+      setForceShowCertificate(true);
+    }, 5000);
+  }
+  
+  const showCertificate = certificateData && (!isProcessing || forceShowCertificate);
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {isProcessing ? "Processing Certificate..." : "Your Certificate"}
+            {isProcessing && !forceShowCertificate ? "Processing Certificate..." : "Your Certificate"}
           </DialogTitle>
         </DialogHeader>
         
         <div className="py-4">
-          {isProcessing ? (
+          {isProcessing && !forceShowCertificate ? (
             <div className="flex flex-col items-center justify-center p-12 space-y-4 bg-gradient-to-b from-gray-900 to-gray-950 text-white rounded-lg">
               <CheckCircle className="h-16 w-16 text-blue-400 animate-pulse" />
               <h3 className="text-xl font-medium">Get Certified</h3>
@@ -47,7 +61,7 @@ export function CertificateModal({
               </div>
               <p className="text-sm text-blue-300">Processing Certificate...</p>
             </div>
-          ) : certificateData ? (
+          ) : showCertificate ? (
             <Certificate 
               userName={certificateData.userName}
               courseTitle={certificateData.courseTitle}

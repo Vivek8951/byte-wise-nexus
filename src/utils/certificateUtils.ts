@@ -70,7 +70,6 @@ export const generateCertificate = async (
     
     // Store certificate data in the database using direct insert
     try {
-      // Direct insert instead of using upsert on a table that might not exist in the types
       const { error: insertError } = await supabase.from('certificates').insert({
         id: certificateId,
         user_id: userId,
@@ -100,7 +99,7 @@ export const getCertificate = async (
   courseId: string
 ): Promise<CertificateData | null> => {
   try {
-    // Query the certificates table directly instead of using RPC
+    // Query the certificates table directly
     const { data, error } = await supabase
       .from('certificates')
       .select('certificate_data')
