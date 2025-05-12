@@ -248,42 +248,6 @@ export default function Index() {
           </div>
         </section>
         
-        {/* Testimonial Section */}
-        <section className="py-20 bg-slate-50 dark:bg-gray-800">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12 animate-on-scroll opacity-0">
-              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">What Our Students Say</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Hear from students who have transformed their careers with TechLearn
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {testimonials.map((testimonial, index) => (
-                <div key={index} className="bg-white dark:bg-gray-700 p-8 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 animate-on-scroll opacity-0" style={{animationDelay: `${index * 150}ms`}}>
-                  <div className="flex items-center mb-4">
-                    <img 
-                      src={testimonial.image}
-                      alt={testimonial.name}
-                      className="w-14 h-14 rounded-full mr-4 border-2 border-blue-500"
-                    />
-                    <div>
-                      <h4 className="font-bold">{testimonial.name}</h4>
-                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                    </div>
-                  </div>
-                  <p className="italic text-gray-600 dark:text-gray-300">"{testimonial.content}"</p>
-                  <div className="flex mt-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="text-yellow-400 h-4 w-4" />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        
         {/* CTA Section */}
         <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="container mx-auto px-4">
