@@ -159,20 +159,26 @@ export default function CourseDetail() {
       
       // Generate certificate
       const certificate = await generateCertificate(user.id, id, "EduLMS");
-      if (certificate) {
-        setCertificateData(certificate);
-        toast.success("Congratulations! You've completed this course and earned a certificate!");
-      } else {
-        toast.error("Course completed but there was an issue generating your certificate.");
-        setShowCertificate(false); // Hide modal if there was an error
-      }
+      
+      // Add a small delay to ensure UI shows the certificate
+      setTimeout(() => {
+        if (certificate) {
+          setCertificateData(certificate);
+          toast.success("Congratulations! You've completed this course and earned a certificate!");
+        } else {
+          toast.error("Course completed but there was an issue generating your certificate.");
+          setShowCertificate(false); // Hide modal if there was an error
+        }
+        setIsProcessingCertificate(false);
+      }, 1000);
+      
     } catch (error) {
       console.error('Error marking course as complete:', error);
       toast.error("Failed to update course progress");
       setShowCertificate(false); // Hide modal if there was an error
+      setIsProcessingCertificate(false);
     } finally {
       setIsCompletingCourse(false);
-      setIsProcessingCertificate(false);
     }
   };
 

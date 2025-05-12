@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import html2canvas from "html2canvas";
-// Import jspdf correctly
+// Import jsPDF correctly with the proper casing
 import { jsPDF } from "jspdf";
 
 interface CertificateProps {

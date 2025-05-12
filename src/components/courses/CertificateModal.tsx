@@ -11,6 +11,7 @@ interface CertificateModalProps {
     courseTitle: string;
     completionDate: string;
     certificateId: string;
+    appName?: string;
   } | null;
   isProcessing?: boolean;
   appName?: string;
