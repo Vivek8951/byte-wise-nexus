@@ -24,6 +24,7 @@ import {
 import { populateCourses } from "@/utils/supabaseStorage";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface AdminDashboardProps {
   courses: Course[];
@@ -35,6 +36,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [clearExisting, setClearExisting] = useState(false);
+  const [courseCount, setCourseCount] = useState(5);
   
   // Filter out duplicate courses by ID for display
   const uniqueCourses = courses.filter((course, index, self) => 
@@ -44,7 +46,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const handleGenerateCourses = async () => {
     setIsGenerating(true);
     try {
-      const result = await populateCourses(5, { 
+      const result = await populateCourses(courseCount, { 
         clearExisting 
       });
       
@@ -220,6 +222,25 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="courseCount" className="text-right text-gray-300">
+                Number of courses
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="courseCount"
+                  type="number"
+                  min="1"
+                  max="15"
+                  value={courseCount}
+                  onChange={(e) => setCourseCount(parseInt(e.target.value) || 5)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Maximum 15 courses per generation
+                </p>
+              </div>
+            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="clearExisting" className="text-right text-gray-300">
                 Clear existing

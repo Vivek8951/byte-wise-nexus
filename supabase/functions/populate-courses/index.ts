@@ -211,6 +211,10 @@ serve(async (req) => {
     console.log(`Received request to generate ${count} courses`);
     console.log(`Clear existing courses: ${clearExisting}`);
     
+    // Ensure count is within reasonable limits
+    const coursesToGenerate = Math.min(Math.max(parseInt(count.toString()) || 5, 1), 15);
+    console.log(`Will generate ${coursesToGenerate} courses`);
+    
     // Clear all existing courses if requested
     if (clearExisting) {
       // Delete all videos and notes (will cascade due to foreign key constraints)
@@ -233,9 +237,11 @@ serve(async (req) => {
       if (deleteCoursesError) {
         throw new Error(`Error deleting existing courses: ${deleteCoursesError.message}`);
       }
+      
+      console.log("Deleted existing courses successfully");
     }
     
-    console.log(`Generating ${count} courses with AI`);
+    console.log(`Generating ${coursesToGenerate} courses with AI`);
     
     // Get existing course titles to avoid duplicates
     const { data: existingCourses, error: fetchError } = await supabase
@@ -248,147 +254,167 @@ serve(async (req) => {
     
     const existingTitles = new Set(existingCourses?.map(course => course.title.toLowerCase()) || []);
     
-    // Generate AI courses
-    const aiCoursesPromises = [];
-    // Select random categories without repeating
-    const shuffledCategories = [...courseCategories].sort(() => 0.5 - Math.random());
-    const selectedCategories = shuffledCategories.slice(0, count);
+    // Generate AI courses in batches to improve reliability
+    const batchSize = 5;
+    const batches = Math.ceil(coursesToGenerate / batchSize);
+    let totalCoursesGenerated = 0;
     
-    for (const category of selectedCategories) {
-      aiCoursesPromises.push(generateCourseWithAI(category));
-    }
-    
-    const aiCourses = await Promise.all(aiCoursesPromises);
-    
-    // Filter out courses that already exist
-    const uniqueCourses = aiCourses.filter(course => 
-      !existingTitles.has(course.title.toLowerCase())
-    );
-    
-    // Add courses to database with YouTube content
-    for (const course of uniqueCourses) {
-      // Search YouTube for related videos and get a thumbnail
-      console.log(`Searching YouTube for: ${course.title} ${course.category}`);
-      const { videoIds, thumbnail } = await searchYouTubeForCourse(course);
+    for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+      const batchCoursesToGenerate = Math.min(batchSize, coursesToGenerate - totalCoursesGenerated);
+      if (batchCoursesToGenerate <= 0) break;
       
-      // Add the course
-      const { data: newCourse, error: courseError } = await supabase
-        .from('courses')
-        .insert({
-          title: course.title,
-          description: course.description,
-          instructor: course.instructor,
-          category: course.category,
-          level: course.level,
-          duration: course.duration,
-          thumbnail: thumbnail, // Use YouTube thumbnail
-          featured: Math.random() > 0.7, // 30% chance to be featured
-        })
-        .select()
-        .single();
+      console.log(`Generating batch ${batchIndex + 1} with ${batchCoursesToGenerate} courses`);
       
-      if (courseError || !newCourse) {
-        console.error("Error adding course:", courseError);
-        continue; // Skip to next course if there's an error
-      }
+      // Select random categories without repeating
+      const shuffledCategories = [...courseCategories].sort(() => 0.5 - Math.random());
+      const selectedCategories = shuffledCategories.slice(0, batchCoursesToGenerate);
       
-      // Add videos using YouTube data
-      for (let i = 0; i < Math.min(videoIds.length, 3); i++) {
-        const videoId = videoIds[i];
-        const videoUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+      // Generate courses for this batch
+      const aiCoursesPromises = selectedCategories.map(category => generateCourseWithAI(category));
+      const batchAiCourses = await Promise.all(aiCoursesPromises);
+      
+      // Filter out courses that already exist
+      const batchUniqueCourses = batchAiCourses.filter(course => 
+        !existingTitles.has(course.title.toLowerCase())
+      );
+      
+      // Add courses to database with YouTube content
+      for (const course of batchUniqueCourses) {
+        // Add course titles to the existing set to avoid duplicates in future batches
+        existingTitles.add(course.title.toLowerCase());
         
-        // Get video details from YouTube API
-        let videoTitle = `${course.title} - Part ${i + 1}`;
-        let videoDescription = `Video lesson for ${course.title}`;
-        let videoDuration = `${5 + Math.floor(Math.random() * 20)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
-        let videoThumbnail = thumbnail;
+        // Search YouTube for related videos and get a thumbnail
+        console.log(`Searching YouTube for: ${course.title} ${course.category}`);
+        const { videoIds, thumbnail } = await searchYouTubeForCourse(course);
         
-        if (youtubeApiKey) {
-          try {
-            const videoDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${youtubeApiKey}`;
-            const detailsResponse = await fetch(videoDetailsUrl);
-            
-            if (detailsResponse.ok) {
-              const videoDetails = await detailsResponse.json();
-              if (videoDetails.items && videoDetails.items.length > 0) {
-                videoTitle = videoDetails.items[0].snippet.title;
-                videoDescription = videoDetails.items[0].snippet.description.slice(0, 255); // Limit description length
-                videoThumbnail = videoDetails.items[0].snippet.thumbnails.high?.url || thumbnail;
-                
-                // Parse duration from PT1H2M3S format to hours:minutes:seconds
-                const duration = videoDetails.items[0].contentDetails.duration;
-                const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-                if (match) {
-                  const hours = match[1] ? parseInt(match[1]) : 0;
-                  const minutes = match[2] ? parseInt(match[2]) : 0;
-                  const seconds = match[3] ? parseInt(match[3]) : 0;
+        // Add the course
+        const { data: newCourse, error: courseError } = await supabase
+          .from('courses')
+          .insert({
+            title: course.title,
+            description: course.description,
+            instructor: course.instructor,
+            category: course.category,
+            level: course.level,
+            duration: course.duration,
+            thumbnail: thumbnail, // Use YouTube thumbnail
+            featured: Math.random() > 0.7, // 30% chance to be featured
+          })
+          .select()
+          .single();
+        
+        if (courseError || !newCourse) {
+          console.error("Error adding course:", courseError);
+          continue; // Skip to next course if there's an error
+        }
+        
+        // Add videos using YouTube data
+        for (let i = 0; i < Math.min(videoIds.length, 3); i++) {
+          const videoId = videoIds[i];
+          const videoUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+          
+          // Get video details from YouTube API
+          let videoTitle = `${course.title} - Part ${i + 1}`;
+          let videoDescription = `Video lesson for ${course.title}`;
+          let videoDuration = `${5 + Math.floor(Math.random() * 20)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
+          let videoThumbnail = thumbnail;
+          
+          if (youtubeApiKey) {
+            try {
+              const videoDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${youtubeApiKey}`;
+              const detailsResponse = await fetch(videoDetailsUrl);
+              
+              if (detailsResponse.ok) {
+                const videoDetails = await detailsResponse.json();
+                if (videoDetails.items && videoDetails.items.length > 0) {
+                  videoTitle = videoDetails.items[0].snippet.title;
+                  videoDescription = videoDetails.items[0].snippet.description.slice(0, 255); // Limit description length
+                  videoThumbnail = videoDetails.items[0].snippet.thumbnails.high?.url || thumbnail;
                   
-                  if (hours > 0) {
-                    videoDuration = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                  } else {
-                    videoDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                  // Parse duration from PT1H2M3S format to hours:minutes:seconds
+                  const duration = videoDetails.items[0].contentDetails.duration;
+                  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+                  if (match) {
+                    const hours = match[1] ? parseInt(match[1]) : 0;
+                    const minutes = match[2] ? parseInt(match[2]) : 0;
+                    const seconds = match[3] ? parseInt(match[3]) : 0;
+                    
+                    if (hours > 0) {
+                      videoDuration = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    } else {
+                      videoDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
                   }
                 }
               }
+            } catch (error) {
+              console.error("Error fetching video details:", error);
+              // Continue with default values
             }
-          } catch (error) {
-            console.error("Error fetching video details:", error);
-            // Continue with default values
+          }
+          
+          const { error: videoError } = await supabase
+            .from('videos')
+            .insert({
+              course_id: newCourse.id,
+              title: videoTitle,
+              description: videoDescription,
+              url: videoUrl,
+              thumbnail: videoThumbnail,
+              duration: videoDuration,
+              order_num: i + 1,
+            });
+          
+          if (videoError) {
+            console.error("Error adding video:", videoError);
           }
         }
         
-        const { error: videoError } = await supabase
-          .from('videos')
-          .insert({
-            course_id: newCourse.id,
-            title: videoTitle,
-            description: videoDescription,
-            url: videoUrl,
-            thumbnail: videoThumbnail,
-            duration: videoDuration,
-            order_num: i + 1,
-          });
+        // Add a few notes/documents
+        const documentTypes = ['pdf', 'doc'];
+        const noteTitles = [
+          'Course Notes', 
+          'Study Guide', 
+          'Practice Exercises', 
+          'Reference Material',
+          'Additional Resources'
+        ];
         
-        if (videoError) {
-          console.error("Error adding video:", videoError);
+        for (let i = 0; i < 1 + Math.floor(Math.random() * 2); i++) { // 1-2 documents
+          const { error: noteError } = await supabase
+            .from('notes')
+            .insert({
+              course_id: newCourse.id,
+              title: noteTitles[i % noteTitles.length],
+              description: `Supplementary material for ${course.title}`,
+              file_url: `sample_${i + 1}.${documentTypes[i % documentTypes.length]}`,
+              file_type: documentTypes[i % documentTypes.length],
+              order_num: i + 1,
+            });
+          
+          if (noteError) {
+            console.error("Error adding note:", noteError);
+          }
         }
+        
+        totalCoursesGenerated++;
       }
       
-      // Add a few notes/documents
-      const documentTypes = ['pdf', 'doc'];
-      const noteTitles = [
-        'Course Notes', 
-        'Study Guide', 
-        'Practice Exercises', 
-        'Reference Material',
-        'Additional Resources'
-      ];
+      console.log(`Batch ${batchIndex + 1} completed, ${totalCoursesGenerated} courses generated so far`);
       
-      for (let i = 0; i < 1 + Math.floor(Math.random() * 2); i++) { // 1-2 documents
-        const { error: noteError } = await supabase
-          .from('notes')
-          .insert({
-            course_id: newCourse.id,
-            title: noteTitles[i % noteTitles.length],
-            description: `Supplementary material for ${course.title}`,
-            file_url: `sample_${i + 1}.${documentTypes[i % documentTypes.length]}`,
-            file_type: documentTypes[i % documentTypes.length],
-            order_num: i + 1,
-          });
-        
-        if (noteError) {
-          console.error("Error adding note:", noteError);
-        }
+      // Small delay between batches to avoid overwhelming the APIs
+      if (batchIndex < batches - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
-    console.log(`Successfully added ${uniqueCourses.length} courses`);
+    console.log(`Successfully added ${totalCoursesGenerated} courses`);
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully generated ${uniqueCourses.length} courses with AI`, 
-        count: uniqueCourses.length
+        message: `Successfully generated ${totalCoursesGenerated} courses with AI`, 
+        count: totalCoursesGenerated
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

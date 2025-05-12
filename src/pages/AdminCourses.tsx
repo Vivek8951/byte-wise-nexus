@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -37,6 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CourseEditor } from "@/components/admin/CourseEditor";
 import { Course, Video, Note } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -64,6 +64,9 @@ export default function AdminCourses() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isPopulating, setIsPopulating] = useState(false);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const [courseCount, setCourseCount] = useState(5);
+  const [clearExisting, setClearExisting] = useState(false);
   
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -232,12 +235,12 @@ export default function AdminCourses() {
     });
   };
   
-  // Update this function to generate exactly 5 courses
+  // Update this function to generate exactly the number of courses specified
   const handlePopulateCourses = async () => {
     setIsPopulating(true);
     try {
-      const result = await populateCourses(5, {
-        clearExisting: false
+      const result = await populateCourses(courseCount, {
+        clearExisting
       });
       
       if (result.success) {
@@ -262,6 +265,7 @@ export default function AdminCourses() {
       });
     } finally {
       setIsPopulating(false);
+      setIsGenerateDialogOpen(false);
     }
   };
   
@@ -276,7 +280,7 @@ export default function AdminCourses() {
           </div>
           <div className="flex gap-2">
             <Button 
-              onClick={handlePopulateCourses}
+              onClick={() => setIsGenerateDialogOpen(true)}
               disabled={isPopulating}
               className="group relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 animate-fade-in"
             >
@@ -446,6 +450,85 @@ export default function AdminCourses() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] animate-scale-in bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand className="h-5 w-5 text-purple-400" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-purple-400">
+                Generate Courses with AI
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Let our AI create professional courses for your platform.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="courseCount" className="text-right text-gray-300">
+                Number of courses
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="courseCount"
+                  type="number"
+                  min="1"
+                  max="15"
+                  value={courseCount}
+                  onChange={(e) => setCourseCount(parseInt(e.target.value) || 5)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Maximum 15 courses per generation
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="clearExisting" className="text-right text-gray-300">
+                Clear existing
+              </Label>
+              <div className="flex items-center space-x-2 col-span-3">
+                <Switch 
+                  id="clearExisting" 
+                  checked={clearExisting} 
+                  onCheckedChange={setClearExisting} 
+                />
+                <Label htmlFor="clearExisting" className="text-sm text-gray-400">
+                  Remove all existing courses before generating new ones
+                </Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="border-gray-600 text-white hover:bg-gray-800"
+              onClick={() => setIsGenerateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePopulateCourses} 
+              disabled={isPopulating}
+              className="relative overflow-hidden group bg-gradient-to-br from-violet-600 to-purple-700 hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-white"
+            >
+              {isPopulating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span>Generate Courses</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </>
