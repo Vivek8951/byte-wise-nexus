@@ -18,6 +18,7 @@ import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import AdminCourses from "./pages/AdminCourses";
 import AdminUsers from "./pages/AdminUsers";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -81,6 +82,7 @@ function App() {
                 <Route path="/courses/:id" element={<CourseDetail />} />
                 <Route path="/admin/courses" element={<AdminCourses />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/about" element={<About />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               
