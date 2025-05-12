@@ -135,13 +135,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
       setSelectedCertificate(certData);
       setShowCertificate(true);
       
-      // Auto-download the certificate after a short delay
-      setTimeout(() => {
-        const downloadBtn = document.querySelector('.certificate-download-btn') as HTMLButtonElement;
-        if (downloadBtn) {
-          downloadBtn.click();
-        }
-      }, 1000);
+      // Auto-download will happen via the Certificate component's useEffect
     } else {
       toast.error("Certificate data not available");
     }
@@ -345,7 +339,7 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
                       onClick={() => viewCertificate(cert)}
                       className="bg-purple-600 hover:bg-purple-700 text-white"
                     >
-                      View Certificate
+                      Download Certificate
                     </Button>
                   </div>
                 </Card>

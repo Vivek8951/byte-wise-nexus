@@ -18,7 +18,7 @@ export interface CertificateData {
 export const generateCertificate = async (
   userId: string,
   courseId: string,
-  appName: string = "Tech Learn" // Updated default app name
+  appName: string = "Tech Learn"
 ): Promise<CertificateData | null> => {
   try {
     // Fetch user details
@@ -109,10 +109,14 @@ export const getCertificate = async (
     
     if (error) throw error;
     
-    // Return certificate data if it exists
-    return data && data.certificate_data 
-      ? data.certificate_data as unknown as CertificateData
-      : null;
+    // Return certificate data if it exists, ensuring app name is correct
+    if (data && data.certificate_data) {
+      const certData = data.certificate_data as unknown as CertificateData;
+      certData.appName = "Tech Learn"; // Ensure app name is always correct
+      return certData;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error fetching certificate:", error);
     return null;

@@ -165,20 +165,12 @@ export default function CourseDetail() {
         if (certificate) {
           setCertificateData(certificate);
           toast.success("Congratulations! You've completed this course and earned a certificate!");
-          
-          // Auto-download the certificate after a short delay
-          setTimeout(() => {
-            const downloadBtn = document.querySelector('.certificate-download-btn') as HTMLButtonElement;
-            if (downloadBtn) {
-              downloadBtn.click();
-            }
-          }, 1000);
         } else {
           toast.error("Course completed but there was an issue generating your certificate.");
           setShowCertificate(false); // Hide modal if there was an error
         }
         setIsProcessingCertificate(false);
-      }, 1000); // Short delay to ensure the certificate is loaded
+      }, 1000); // Shorter delay for better UX
       
     } catch (error) {
       console.error('Error marking course as complete:', error);
@@ -191,6 +183,10 @@ export default function CourseDetail() {
   };
 
   const viewCertificate = () => {
+    if (certificateData) {
+      // Make sure certificate data includes correct app name
+      certificateData.appName = "Tech Learn";
+    }
     setShowCertificate(true);
   };
 
@@ -451,7 +447,7 @@ export default function CourseDetail() {
               </div>
             </div>
             
-            {/* Certificate card */}
+            {/* Certificate section in the sidebar */}
             <div className="rounded-lg border bg-gradient-to-b from-gray-900 to-gray-950 border-gray-800 text-white shadow p-4 text-center">
               <CheckCircle className="mx-auto h-8 w-8 text-blue-400 mb-2" />
               <h3 className="text-lg font-medium">Get Certified</h3>
@@ -459,10 +455,10 @@ export default function CourseDetail() {
               <Button 
                 variant="outline" 
                 className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/20" 
-                disabled={progress < 100 || !certificateData}
-                onClick={viewCertificate}
+                disabled={progress < 100}
+                onClick={progress === 100 ? viewCertificate : handleMarkComplete}
               >
-                {progress < 100 ? 'Complete Course to Earn' : certificateData ? 'View Certificate' : 'Processing Certificate...'}
+                {progress < 100 ? 'Complete Course & Get Certificate' : 'Download Certificate'}
               </Button>
             </div>
           </div>

@@ -24,20 +24,20 @@ export function CertificateModal({
   onClose, 
   certificateData, 
   isProcessing = false,
-  appName = "Tech Learn" // Updated default app name
+  appName = "Tech Learn" 
 }: CertificateModalProps) {
   
-  // Force certificate to show after 2 seconds regardless of processing state
+  // Force certificate to show after 1 second regardless of processing state
   const [forceShowCertificate, setForceShowCertificate] = useState(false);
   
   // Reset force state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      // If processing, wait 2 seconds then force show
+      // If processing, wait 1 second then force show
       if (isProcessing) {
         const timer = setTimeout(() => {
           setForceShowCertificate(true);
-        }, 2000);
+        }, 1000); // Reduced from 2000ms to 1000ms for faster display
         return () => clearTimeout(timer);
       }
     } else {
@@ -71,13 +71,15 @@ export function CertificateModal({
               <p className="text-sm text-blue-300">Almost ready...</p>
             </div>
           ) : showCertificate ? (
-            <Certificate 
-              userName={certificateData.userName}
-              courseTitle={certificateData.courseTitle}
-              completionDate={certificateData.completionDate}
-              certificateId={certificateData.certificateId}
-              appName={appName}
-            />
+            <>
+              <Certificate 
+                userName={certificateData.userName}
+                courseTitle={certificateData.courseTitle}
+                completionDate={certificateData.completionDate}
+                certificateId={certificateData.certificateId}
+                appName={appName}
+              />
+            </>
           ) : (
             <div className="text-center p-8">
               <p className="text-muted-foreground">Certificate data not available</p>

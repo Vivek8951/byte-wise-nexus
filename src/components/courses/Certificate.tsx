@@ -22,16 +22,25 @@ export function Certificate({
   courseTitle, 
   completionDate, 
   certificateId,
-  appName = "Tech Learn" // Updated default app name
+  appName = "Tech Learn"
 }: CertificateProps) {
   const certificateRef = useRef<HTMLDivElement>(null);
   const currentDate = format(new Date(), "MMMM dd, yyyy");
+  
+  // Auto download certificate when component mounts
+  useEffect(() => {
+    // Small delay to ensure the certificate is rendered
+    const timer = setTimeout(() => {
+      downloadCertificate();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
   
   const downloadCertificate = async () => {
     if (!certificateRef.current) return;
     
     try {
-      toast.info("Preparing your certificate...");
+      toast.info("Preparing your certificate for download...");
       
       const canvas = await html2canvas(certificateRef.current, { 
         scale: 2,
