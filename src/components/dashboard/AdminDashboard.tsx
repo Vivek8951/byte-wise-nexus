@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { 
   BookOpen, Book, ChevronRight, FileText,
   Users, Plus, Download, Trash2, Loader2,
@@ -37,58 +37,11 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [clearExisting, setClearExisting] = useState(false);
   const [courseCount, setCourseCount] = useState(5);
-  const [recentActivities, setRecentActivities] = useState<Array<{type: string, time: string, description: string, icon: any}>>([]);
   
   // Filter out duplicate courses by ID for display
   const uniqueCourses = courses.filter((course, index, self) => 
     index === self.findIndex((c) => c.id === course.id)
   );
-  
-  useEffect(() => {
-    // Generate realistic recent activities based on courses and timestamps
-    const generateRecentActivities = () => {
-      const activities = [];
-      
-      // If there are courses, add activity about the latest course
-      if (uniqueCourses.length > 0) {
-        const latestCourse = uniqueCourses.reduce((latest, course) => {
-          const latestDate = new Date(latest.createdAt || Date.now());
-          const courseDate = new Date(course.createdAt || Date.now());
-          return courseDate > latestDate ? course : latest;
-        }, uniqueCourses[0]);
-        
-        activities.push({
-          type: 'course',
-          time: '2 hours ago',
-          description: `Course "${latestCourse.title}" was added`,
-          icon: Book
-        });
-      }
-      
-      // Add student registration activity
-      activities.push({
-        type: 'user',
-        time: '5 hours ago',
-        description: 'New student registration',
-        icon: Users
-      });
-      
-      // Add enrollment activity if there are courses
-      if (uniqueCourses.length > 0) {
-        const randomCourse = uniqueCourses[Math.floor(Math.random() * uniqueCourses.length)];
-        activities.push({
-          type: 'enrollment',
-          time: '1 day ago',
-          description: `New enrollment in "${randomCourse.title}"`,
-          icon: FileText
-        });
-      }
-      
-      return activities;
-    };
-    
-    setRecentActivities(generateRecentActivities());
-  }, [uniqueCourses]);
   
   const handleGenerateCourses = async () => {
     if (courseCount <= 0 || courseCount > 15) {
@@ -160,7 +113,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Card className="bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
@@ -196,34 +149,6 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
               Manage Users
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:shadow-lg hover:shadow-primary/20 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-            <FileText className="h-4 w-4 text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center">
-                  <div className="mr-4 rounded-full bg-blue-900/30 p-2">
-                    <activity.icon className="h-4 w-4 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{activity.description}</p>
-                    <p className="text-xs text-gray-400">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-              
-              {recentActivities.length === 0 && (
-                <div className="text-center py-2">
-                  <p className="text-sm text-gray-400">No recent activity</p>
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
       </div>
