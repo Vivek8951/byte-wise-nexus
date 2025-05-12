@@ -271,7 +271,7 @@ export const getVideoByCourseId = async (courseId: string): Promise<Video[]> => 
     thumbnail: video.thumbnail || undefined,
     order: video.order_num,
     analyzedContent: video.analyzed_content as any[] || undefined,
-    download_info: video.download_info as VideoDownloadInfo || undefined
+    download_info: video.download_info as unknown as VideoDownloadInfo || undefined
   })) || [];
   
   return videos;
@@ -279,6 +279,9 @@ export const getVideoByCourseId = async (courseId: string): Promise<Video[]> => 
 
 export const addVideo = async (video: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ data: Video | null, error: any }> => {
   try {
+    // Convert our VideoDownloadInfo to Json for storage
+    const downloadInfoJson = video.download_info ? video.download_info as unknown as Json : null;
+    
     const { data, error } = await supabase
       .from('videos')
       .insert({
@@ -290,7 +293,7 @@ export const addVideo = async (video: Omit<Video, 'id' | 'createdAt' | 'updatedA
         thumbnail: video.thumbnail,
         order_num: video.order,
         analyzed_content: video.analyzedContent || null,
-        download_info: video.download_info || null
+        download_info: downloadInfoJson
       })
       .select()
       .single();
@@ -310,7 +313,7 @@ export const addVideo = async (video: Omit<Video, 'id' | 'createdAt' | 'updatedA
       thumbnail: data.thumbnail || undefined,
       order: data.order_num,
       analyzedContent: data.analyzed_content as any[] || undefined,
-      download_info: data.download_info as VideoDownloadInfo || undefined
+      download_info: data.download_info as unknown as VideoDownloadInfo || undefined
     };
     
     return { data: newVideo, error: null };
@@ -332,7 +335,7 @@ export const updateVideo = async (id: string, video: Partial<Video>): Promise<{ 
     if (video.thumbnail) supabaseData.thumbnail = video.thumbnail;
     if (video.order !== undefined) supabaseData.order_num = video.order;
     if (video.analyzedContent) supabaseData.analyzed_content = video.analyzedContent;
-    if (video.download_info) supabaseData.download_info = video.download_info;
+    if (video.download_info) supabaseData.download_info = video.download_info as unknown as Json;
     
     const { data, error } = await supabase
       .from('videos')
@@ -356,7 +359,7 @@ export const updateVideo = async (id: string, video: Partial<Video>): Promise<{ 
       thumbnail: data.thumbnail || undefined,
       order: data.order_num,
       analyzedContent: data.analyzed_content as any[] || undefined,
-      download_info: data.download_info as VideoDownloadInfo || undefined
+      download_info: data.download_info as unknown as VideoDownloadInfo || undefined
     };
     
     return { data: updatedVideo, error: null };
