@@ -66,18 +66,23 @@ export const generateCertificate = async (
     
     // Store certificate data in the database
     // We're using upsert in case the certificate already exists
-    const { error: certificateError } = await supabase
-      .from('certificates')
-      .upsert({
-        id: certificateId,
-        user_id: userId,
-        course_id: courseId,
-        issue_date: new Date().toISOString(),
-        certificate_data: certificateData
-      });
-    
-    if (certificateError) {
-      console.error("Failed to store certificate data:", certificateError);
+    try {
+      const { error: certificateError } = await supabase
+        .from('certificates')
+        .upsert({
+          id: certificateId,
+          user_id: userId,
+          course_id: courseId,
+          issue_date: new Date().toISOString(),
+          certificate_data: certificateData
+        });
+      
+      if (certificateError) {
+        console.error("Failed to store certificate data:", certificateError);
+        // Continue anyway as the enrollment is already marked
+      }
+    } catch (error) {
+      console.error("Error storing certificate:", error);
       // Continue anyway as the enrollment is already marked
     }
     
@@ -99,11 +104,11 @@ export const getCertificate = async (
       .select('certificate_data')
       .eq('user_id', userId)
       .eq('course_id', courseId)
-      .single();
+      .maybeSingle();
     
     if (error) throw error;
     
-    return data?.certificate_data;
+    return data?.certificate_data as CertificateData || null;
   } catch (error) {
     console.error("Error fetching certificate:", error);
     return null;

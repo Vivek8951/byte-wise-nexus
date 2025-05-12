@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -171,11 +170,7 @@ export default function CourseDetail() {
       }
     } catch (error) {
       console.error('Error marking course as complete:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update course progress",
-        variant: "destructive",
-      });
+      toast.error("Failed to update course progress");
     } finally {
       setIsCompletingCourse(false);
     }

@@ -31,6 +31,34 @@ async function addDownloadInfoColumn() {
   return true;
 }
 
+// Create RPC function to get certificates
+async function createCertificatesRpcFunction() {
+  try {
+    await supabase.rpc('run_sql', { 
+      sql_query: `
+        CREATE OR REPLACE FUNCTION get_user_certificates(p_user_id UUID)
+        RETURNS SETOF certificates
+        LANGUAGE plpgsql
+        SECURITY DEFINER
+        SET search_path = public
+        AS $$
+        BEGIN
+          RETURN QUERY
+          SELECT * FROM certificates
+          WHERE user_id = p_user_id;
+        END;
+        $$;
+      `
+    });
+    
+    console.log('Certificates RPC function created successfully');
+    return true;
+  } catch (error) {
+    console.error('Error creating certificates RPC function:', error);
+    return false;
+  }
+}
+
 // Execute on start
 export async function installDbFunctions() {
   try {
@@ -70,6 +98,16 @@ export async function installDbFunctions() {
           END IF;
         END;
         $$;
+        
+        CREATE OR REPLACE FUNCTION create_certificates_rpc_function()
+        RETURNS void
+        LANGUAGE plpgsql
+        AS $$
+        BEGIN
+          -- Function will be created separately
+          NULL;
+        END;
+        $$;
       `
     });
 
@@ -77,6 +115,9 @@ export async function installDbFunctions() {
     
     // Add the column
     await addDownloadInfoColumn();
+    
+    // Create certificates RPC function
+    await createCertificatesRpcFunction();
     
     return true;
   } catch (error) {

@@ -14,22 +14,29 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Function to run SQL for initial setup - this will run if the certificates table doesn't exist
 export const setupCertificatesTable = async () => {
   try {
-    // Check if certificates table exists
-    const { data, error } = await supabase
-      .from('certificates')
-      .select('id')
-      .limit(1);
+    // Call RPC function instead of directly checking the table
+    const { data, error } = await supabase.rpc('create_certificates_table');
     
-    if (error && error.code === '42P01') {
-      // Table doesn't exist, try to create it
-      console.log("Certificates table doesn't exist. Creating it...");
-      const createTableResult = await supabase.rpc('create_certificates_table');
-      console.log("Table creation result:", createTableResult);
+    if (error) {
+      console.error("Error creating certificates table:", error);
     }
   } catch (e) {
     console.error("Error checking/creating certificates table:", e);
   }
 };
 
+// Create a custom RPC function to get certificates
+// This is a workaround for TypeScript issues
+// We'll create this function using SQL migration
+export const createCertificatesRpcFunction = async () => {
+  try {
+    const { data, error } = await supabase.rpc('create_certificates_rpc_function');
+    if (error) console.error("Error creating RPC function:", error);
+  } catch (e) {
+    console.error("Error creating RPC function:", e);
+  }
+};
+
 // Run table setup once on import
 setupCertificatesTable();
+createCertificatesRpcFunction();

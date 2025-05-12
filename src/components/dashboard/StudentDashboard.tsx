@@ -45,10 +45,10 @@ export function StudentDashboard({ user, courses }: StudentDashboardProps) {
           
           // Fetch certificates
           try {
-            const { data, error } = await supabase
-              .from('certificates')
-              .select('*')
-              .eq('user_id', user.id);
+            // Use RPC call to bypass TypeScript limitation
+            const { data, error } = await supabase.rpc('get_user_certificates', {
+              p_user_id: user.id
+            });
             
             if (error) throw error;
             
