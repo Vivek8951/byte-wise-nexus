@@ -98,7 +98,7 @@ export const generateCertificate = async (
     
     if (updateError) {
       console.error("Error updating enrollment:", updateError);
-      throw updateError;
+      // Continue anyway to try to store the certificate
     }
     
     // Store certificate data in the database
@@ -113,11 +113,11 @@ export const generateCertificate = async (
       
       if (insertError) {
         console.error("Failed to store certificate data:", insertError);
-        // Continue anyway as the enrollment is already marked
+        // Continue anyway as we can still return the certificate data
       }
     } catch (error) {
       console.error("Error storing certificate:", error);
-      // Continue anyway as the enrollment is already marked
+      // Continue anyway as we can still return the certificate data
     }
     
     return certificateData;
@@ -142,7 +142,7 @@ export const getCertificate = async (
     // Query the certificates table directly
     const { data, error } = await supabase
       .from('certificates')
-      .select('certificate_data')
+      .select('certificate_data, id')
       .eq('user_id', userId)
       .eq('course_id', courseId)
       .maybeSingle();

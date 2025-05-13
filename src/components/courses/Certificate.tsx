@@ -32,7 +32,7 @@ export function Certificate({
     // Small delay to ensure the certificate is rendered
     const timer = setTimeout(() => {
       downloadCertificate();
-    }, 1000);
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
   
@@ -92,7 +92,7 @@ export function Certificate({
             <div className="w-full h-full p-8 text-center">
               {/* Header with logo and app name */}
               <div className="flex justify-between items-center mb-6">
-                <div className="text-xl font-bold text-blue-800">{appName}</div>
+                <div className="text-xl font-bold text-blue-800">Tech Learn</div>
                 <div className="text-right text-gray-500">Issue Date: {currentDate}</div>
               </div>
               
@@ -117,7 +117,7 @@ export function Certificate({
                   <p className="text-sm text-gray-600">Certificate ID: {certificateId}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">{appName} Certificate</p>
+                  <p className="text-sm text-gray-600">Tech Learn Certificate</p>
                 </div>
               </div>
             </div>

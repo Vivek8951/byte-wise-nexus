@@ -49,6 +49,8 @@ export function CertificateModal({
   // Show certificate if we have data and not processing or force show is true
   const showCertificate = certificateData && (!isProcessing || forceShowCertificate);
   
+  console.log("Certificate Modal - Data:", certificateData, "Processing:", isProcessing, "Force Show:", forceShowCertificate);
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl">
@@ -78,7 +80,7 @@ export function CertificateModal({
                 courseTitle={certificateData.courseTitle}
                 completionDate={certificateData.completionDate}
                 certificateId={certificateData.certificateId}
-                appName={appName || "Tech Learn"}
+                appName="Tech Learn"
               />
             </>
           ) : (

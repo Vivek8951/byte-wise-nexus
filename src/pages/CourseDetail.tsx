@@ -162,20 +162,16 @@ export default function CourseDetail() {
       // Generate certificate
       const certificate = await generateCertificate(user.id, id, "Tech Learn");
       
-      // Add a small delay to ensure UI shows the certificate
-      setTimeout(() => {
-        if (certificate) {
-          console.log("Certificate generated successfully:", certificate);
-          setCertificateData(certificate);
-          toast.success("Congratulations! You've completed this course and earned a certificate!");
-        } else {
-          console.error("Failed to generate certificate");
-          toast.error("Course completed but there was an issue generating your certificate.");
-          // Keep the modal open so user can try again
-        }
+      if (certificate) {
+        console.log("Certificate generated successfully:", certificate);
+        setCertificateData(certificate);
+        toast.success("Congratulations! You've completed this course and earned a certificate!");
         setIsProcessingCertificate(false);
-      }, 1000); // Shorter delay for better UX
-      
+      } else {
+        console.error("Failed to generate certificate");
+        toast.error("Course completed but there was an issue generating your certificate.");
+        setIsProcessingCertificate(false);
+      }
     } catch (error) {
       console.error('Error marking course as complete:', error);
       toast.error("Failed to update course progress");
@@ -484,9 +480,9 @@ export default function CourseDetail() {
                 variant="outline" 
                 className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/20" 
                 disabled={progress < 100}
-                onClick={progress === 100 ? viewCertificate : handleMarkComplete}
+                onClick={viewCertificate}
               >
-                {progress < 100 ? 'Complete Course & Get Certificate' : 'Download Certificate'}
+                {progress < 100 ? 'Complete Course & Get Certificate' : 'View & Download Certificate'}
               </Button>
             </div>
           </div>
