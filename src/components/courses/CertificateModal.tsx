@@ -4,6 +4,7 @@ import { Certificate } from "./Certificate";
 import { CheckCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -77,12 +78,19 @@ export function CertificateModal({
                 courseTitle={certificateData.courseTitle}
                 completionDate={certificateData.completionDate}
                 certificateId={certificateData.certificateId}
-                appName={appName}
+                appName={appName || "Tech Learn"}
               />
             </>
           ) : (
             <div className="text-center p-8">
-              <p className="text-muted-foreground">Certificate data not available</p>
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <CheckCircle className="h-12 w-12 text-red-400" />
+                <p className="text-lg font-medium">Certificate data not available</p>
+                <p className="text-muted-foreground">
+                  Please complete the course to generate your certificate.
+                </p>
+                <Button onClick={onClose} variant="outline">Close</Button>
+              </div>
             </div>
           )}
         </div>

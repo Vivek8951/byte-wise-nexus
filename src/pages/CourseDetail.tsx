@@ -150,6 +150,7 @@ export default function CourseDetail() {
     setShowCertificate(true); // Show certificate modal with processing state
     
     try {
+      // Update progress to 100%
       await updateCourseProgress(user.id, id, { 
         completedVideos: videos.map(v => v.id),
         overallProgress: 100 
@@ -157,17 +158,20 @@ export default function CourseDetail() {
       
       setProgress(100);
       
+      console.log("Generating certificate...");
       // Generate certificate
       const certificate = await generateCertificate(user.id, id, "Tech Learn");
       
       // Add a small delay to ensure UI shows the certificate
       setTimeout(() => {
         if (certificate) {
+          console.log("Certificate generated successfully:", certificate);
           setCertificateData(certificate);
           toast.success("Congratulations! You've completed this course and earned a certificate!");
         } else {
+          console.error("Failed to generate certificate");
           toast.error("Course completed but there was an issue generating your certificate.");
-          setShowCertificate(false); // Hide modal if there was an error
+          // Keep the modal open so user can try again
         }
         setIsProcessingCertificate(false);
       }, 1000); // Shorter delay for better UX
@@ -186,8 +190,32 @@ export default function CourseDetail() {
     if (certificateData) {
       // Make sure certificate data includes correct app name
       certificateData.appName = "Tech Learn";
+      setShowCertificate(true);
+    } else {
+      // If no certificate data, try to generate one
+      if (user && id && progress === 100) {
+        setIsProcessingCertificate(true);
+        setShowCertificate(true);
+        
+        generateCertificate(user.id, id, "Tech Learn")
+          .then(certificate => {
+            if (certificate) {
+              setCertificateData(certificate);
+              toast.success("Your certificate is ready!");
+            } else {
+              toast.error("Failed to generate certificate");
+            }
+            setIsProcessingCertificate(false);
+          })
+          .catch(error => {
+            console.error("Error generating certificate:", error);
+            toast.error("Failed to generate certificate");
+            setIsProcessingCertificate(false);
+          });
+      } else {
+        toast.error("Please complete the course first to get your certificate");
+      }
     }
-    setShowCertificate(true);
   };
 
   const processSelectedVideo = async () => {

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 
 interface CertificateProps {
@@ -32,7 +32,7 @@ export function Certificate({
     // Small delay to ensure the certificate is rendered
     const timer = setTimeout(() => {
       downloadCertificate();
-    }, 1500);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
   
@@ -40,7 +40,11 @@ export function Certificate({
     if (!certificateRef.current) return;
     
     try {
-      toast.info("Preparing your certificate for download...");
+      console.log("Starting certificate download process");
+      toast({
+        title: "Preparing Certificate", 
+        description: "Your certificate is being prepared for download..."
+      });
       
       const canvas = await html2canvas(certificateRef.current, { 
         scale: 2,
@@ -62,10 +66,18 @@ export function Certificate({
       pdf.addImage(imgData, 'PNG', 0, 0, width, height);
       pdf.save(`${userName}-${courseTitle}-Certificate.pdf`);
       
-      toast.success("Certificate downloaded successfully!");
+      console.log("Certificate downloaded successfully");
+      toast({
+        title: "Success!",
+        description: "Certificate downloaded successfully!"
+      });
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error("Failed to download certificate. Please try again.");
+      toast({
+        title: "Download Failed",
+        description: "Failed to download certificate. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   

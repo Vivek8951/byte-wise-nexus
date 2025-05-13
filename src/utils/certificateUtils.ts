@@ -2,7 +2,7 @@
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { CourseEnrollment, User } from "@/types";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Json } from "@/integrations/supabase/types";
 
 export interface CertificateData {
@@ -21,6 +21,18 @@ export const generateCertificate = async (
   appName: string = "Tech Learn"
 ): Promise<CertificateData | null> => {
   try {
+    console.log("Generating certificate for user:", userId, "course:", courseId);
+    
+    // Check if certificate already exists
+    const existingCert = await getCertificate(userId, courseId);
+    if (existingCert) {
+      console.log("Certificate already exists, returning:", existingCert);
+      return {
+        ...existingCert,
+        appName: "Tech Learn" // Ensure app name is always correct
+      };
+    }
+    
     // Fetch user details
     const { data: userData, error: userError } = await supabase
       .from('profiles')
@@ -28,7 +40,15 @@ export const generateCertificate = async (
       .eq('id', userId)
       .single();
     
-    if (userError) throw userError;
+    if (userError) {
+      console.error("Error fetching user data:", userError);
+      throw userError;
+    }
+    
+    if (!userData || !userData.name) {
+      console.error("User data or name not found");
+      throw new Error("User data not found");
+    }
     
     // Fetch course details
     const { data: courseData, error: courseError } = await supabase
@@ -37,7 +57,15 @@ export const generateCertificate = async (
       .eq('id', courseId)
       .single();
     
-    if (courseError) throw courseError;
+    if (courseError) {
+      console.error("Error fetching course data:", courseError);
+      throw courseError;
+    }
+    
+    if (!courseData || !courseData.title) {
+      console.error("Course data or title not found");
+      throw new Error("Course data not found");
+    }
     
     // Generate a unique certificate ID
     const certificateId = `CERT-${userId.substring(0, 4)}-${courseId.substring(0, 4)}-${Date.now().toString(36)}`;
@@ -53,8 +81,10 @@ export const generateCertificate = async (
       courseTitle: courseData.title,
       completionDate,
       certificateId,
-      appName
+      appName: "Tech Learn" // Always use "Tech Learn"
     };
+    
+    console.log("Created certificate data:", certificateData);
     
     // Update the enrollment record to mark certificate as issued
     const { error: updateError } = await supabase
@@ -66,7 +96,10 @@ export const generateCertificate = async (
       .eq('user_id', userId)
       .eq('course_id', courseId);
     
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error("Error updating enrollment:", updateError);
+      throw updateError;
+    }
     
     // Store certificate data in the database
     try {
@@ -80,6 +113,7 @@ export const generateCertificate = async (
       
       if (insertError) {
         console.error("Failed to store certificate data:", insertError);
+        // Continue anyway as the enrollment is already marked
       }
     } catch (error) {
       console.error("Error storing certificate:", error);
@@ -89,7 +123,11 @@ export const generateCertificate = async (
     return certificateData;
   } catch (error) {
     console.error("Error generating certificate:", error);
-    toast.error("Failed to generate certificate. Please try again.");
+    toast({
+      title: "Error",
+      description: "Failed to generate certificate. Please try again.",
+      variant: "destructive",
+    });
     return null;
   }
 };
@@ -99,6 +137,8 @@ export const getCertificate = async (
   courseId: string
 ): Promise<CertificateData | null> => {
   try {
+    console.log("Getting certificate for user:", userId, "course:", courseId);
+    
     // Query the certificates table directly
     const { data, error } = await supabase
       .from('certificates')
@@ -107,15 +147,20 @@ export const getCertificate = async (
       .eq('course_id', courseId)
       .maybeSingle();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching certificate:", error);
+      throw error;
+    }
     
     // Return certificate data if it exists, ensuring app name is correct
     if (data && data.certificate_data) {
       const certData = data.certificate_data as unknown as CertificateData;
       certData.appName = "Tech Learn"; // Ensure app name is always correct
+      console.log("Found certificate:", certData);
       return certData;
     }
     
+    console.log("No certificate found");
     return null;
   } catch (error) {
     console.error("Error fetching certificate:", error);
