@@ -82,13 +82,13 @@ export default function About() {
               <div className="animate-on-scroll opacity-0">
                 <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Our Story</h2>
                 <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
-                  TechLearn was founded in 2020 by Dr. Sarah Chen with a vision to transform how computer science is taught and learned. 
-                  After years of teaching at universities, Sarah noticed that many students struggled with traditional teaching methods and 
+                  TechLearn was founded in 2025 with a vision to transform how computer science is taught and learned. 
+                  The founders noticed that many students struggled with traditional teaching methods and 
                   lacked practical experience.
                 </p>
                 <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
-                  She assembled a team of educators and technology experts to create a platform that combines academic rigor with 
-                  practical, industry-relevant learning. Today, TechLearn serves thousands of students worldwide, from college freshmen 
+                  A team of educators and technology experts was assembled to create a platform that combines academic rigor with 
+                  practical, industry-relevant learning. Today, TechLearn serves students worldwide, from college freshmen 
                   to seasoned professionals looking to upskill.
                 </p>
                 <p className="text-lg text-gray-700 dark:text-gray-300">
@@ -103,12 +103,6 @@ export default function About() {
                     alt="Student learning on laptop"
                     className="w-full h-full object-cover"
                   />
-                </div>
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-100 dark:bg-blue-900/30 rounded-lg p-4 shadow-lg">
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">10k+</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Active Students</span>
-                  </div>
                 </div>
               </div>
             </div>
