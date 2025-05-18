@@ -1,0 +1,131 @@
+
+<svg width="800" height="900" xmlns="http://www.w3.org/2000/svg">
+  <!-- Database Schema for Tech Learn Platform -->
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn Database Schema</text>
+  
+  <!-- User Table -->
+  <rect x="100" y="80" width="200" height="180" fill="#E5DEFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <rect x="100" y="80" width="200" height="30" fill="#9b87f5" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="200" y="100" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Users</text>
+  
+  <!-- User Columns -->
+  <text x="110" y="130" font-family="Arial" font-size="12" fill="#1A1F2C">id (UUID) - PK</text>
+  <text x="110" y="150" font-family="Arial" font-size="12" fill="#1A1F2C">email (VARCHAR) - UNIQUE</text>
+  <text x="110" y="170" font-family="Arial" font-size="12" fill="#1A1F2C">fullName (VARCHAR)</text>
+  <text x="110" y="190" font-family="Arial" font-size="12" fill="#1A1F2C">password (VARCHAR)</text>
+  <text x="110" y="210" font-family="Arial" font-size="12" fill="#1A1F2C">role (ENUM)</text>
+  <text x="110" y="230" font-family="Arial" font-size="12" fill="#1A1F2C">profilePic (VARCHAR)</text>
+  <text x="110" y="250" font-family="Arial" font-size="12" fill="#1A1F2C">createdAt (TIMESTAMP)</text>
+  
+  <!-- Course Table -->
+  <rect x="500" y="80" width="200" height="200" fill="#D3E4FD" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <rect x="500" y="80" width="200" height="30" fill="#0EA5E9" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="600" y="100" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Courses</text>
+  
+  <!-- Course Columns -->
+  <text x="510" y="130" font-family="Arial" font-size="12" fill="#1A1F2C">id (UUID) - PK</text>
+  <text x="510" y="150" font-family="Arial" font-size="12" fill="#1A1F2C">title (VARCHAR)</text>
+  <text x="510" y="170" font-family="Arial" font-size="12" fill="#1A1F2C">description (TEXT)</text>
+  <text x="510" y="190" font-family="Arial" font-size="12" fill="#1A1F2C">instructorId (UUID) - FK</text>
+  <text x="510" y="210" font-family="Arial" font-size="12" fill="#1A1F2C">difficulty (VARCHAR)</text>
+  <text x="510" y="230" font-family="Arial" font-size="12" fill="#1A1F2C">duration (VARCHAR)</text>
+  <text x="510" y="250" font-family="Arial" font-size="12" fill="#1A1F2C">thumbnailUrl (VARCHAR)</text>
+  <text x="510" y="270" font-family="Arial" font-size="12" fill="#1A1F2C">createdAt (TIMESTAMP)</text>
+  
+  <!-- Video Table -->
+  <rect x="500" y="320" width="200" height="220" fill="#FEF7CD" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <rect x="500" y="320" width="200" height="30" fill="#F97316" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="600" y="340" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Videos</text>
+  
+  <!-- Video Columns -->
+  <text x="510" y="370" font-family="Arial" font-size="12" fill="#1A1F2C">id (UUID) - PK</text>
+  <text x="510" y="390" font-family="Arial" font-size="12" fill="#1A1F2C">courseId (UUID) - FK</text>
+  <text x="510" y="410" font-family="Arial" font-size="12" fill="#1A1F2C">title (VARCHAR)</text>
+  <text x="510" y="430" font-family="Arial" font-size="12" fill="#1A1F2C">description (TEXT)</text>
+  <text x="510" y="450" font-family="Arial" font-size="12" fill="#1A1F2C">duration (VARCHAR)</text>
+  <text x="510" y="470" font-family="Arial" font-size="12" fill="#1A1F2C">url (VARCHAR)</text>
+  <text x="510" y="490" font-family="Arial" font-size="12" fill="#1A1F2C">thumbnailUrl (VARCHAR)</text>
+  <text x="510" y="510" font-family="Arial" font-size="12" fill="#1A1F2C">transcription (TEXT)</text>
+  <text x="510" y="530" font-family="Arial" font-size="12" fill="#1A1F2C">createdAt (TIMESTAMP)</text>
+  
+  <!-- Quiz Table -->
+  <rect x="500" y="580" width="200" height="160" fill="#FFDEE2" stroke="#D946EF" stroke-width="2" rx="5" ry="5"/>
+  <rect x="500" y="580" width="200" height="30" fill="#D946EF" stroke="#D946EF" stroke-width="2" rx="5" ry="5"/>
+  <text x="600" y="600" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Quizzes</text>
+  
+  <!-- Quiz Columns -->
+  <text x="510" y="630" font-family="Arial" font-size="12" fill="#1A1F2C">id (UUID) - PK</text>
+  <text x="510" y="650" font-family="Arial" font-size="12" fill="#1A1F2C">courseId (UUID) - FK</text>
+  <text x="510" y="670" font-family="Arial" font-size="12" fill="#1A1F2C">title (VARCHAR)</text>
+  <text x="510" y="690" font-family="Arial" font-size="12" fill="#1A1F2C">description (TEXT)</text>
+  <text x="510" y="710" font-family="Arial" font-size="12" fill="#1A1F2C">passingScore (INTEGER)</text>
+  <text x="510" y="730" font-family="Arial" font-size="12" fill="#1A1F2C">createdAt (TIMESTAMP)</text>
+  
+  <!-- Enrollment Table -->
+  <rect x="100" y="320" width="200" height="180" fill="#F2FCE2" stroke="#1EAEDB" stroke-width="2" rx="5" ry="5"/>
+  <rect x="100" y="320" width="200" height="30" fill="#1EAEDB" stroke="#1EAEDB" stroke-width="2" rx="5" ry="5"/>
+  <text x="200" y="340" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Enrollments</text>
+  
+  <!-- Enrollment Columns -->
+  <text x="110" y="370" font-family="Arial" font-size="12" fill="#1A1F2C">id (UUID) - PK</text>
+  <text x="110" y="390" font-family="Arial" font-size="12" fill="#1A1F2C">userId (UUID) - FK</text>
+  <text x="110" y="410" font-family="Arial" font-size="12" fill="#1A1F2C">courseId (UUID) - FK</text>
+  <text x="110" y="430" font-family="Arial" font-size="12" fill="#1A1F2C">enrollmentDate (TIMESTAMP)</text>
+  <text x="110" y="450" font-family="Arial" font-size="12" fill="#1A1F2C">completionDate (TIMESTAMP)</text>
+  <text x="110" y="470" font-family="Arial" font-size="12" fill="#1A1F2C">status (VARCHAR)</text>
+  <text x="110" y="490" font-family="Arial" font-size="12" fill="#1A1F2C">createdAt (TIMESTAMP)</text>
+  
+  <!-- Progress Table -->
+  <rect x="100" y="560" width="200" height="180" fill="#FDE1D3" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <rect x="100" y="560" width="200" height="30" fill="#F97316" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="200" y="580" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Progress</text>
+  
+  <!-- Progress Columns -->
+  <text x="110" y="610" font-family="Arial" font-size="12" fill="#1A1F2C">id (UUID) - PK</text>
+  <text x="110" y="630" font-family="Arial" font-size="12" fill="#1A1F2C">enrollmentId (UUID) - FK</text>
+  <text x="110" y="650" font-family="Arial" font-size="12" fill="#1A1F2C">contentId (UUID) - FK</text>
+  <text x="110" y="670" font-family="Arial" font-size="12" fill="#1A1F2C">contentType (VARCHAR)</text>
+  <text x="110" y="690" font-family="Arial" font-size="12" fill="#1A1F2C">status (VARCHAR)</text>
+  <text x="110" y="710" font-family="Arial" font-size="12" fill="#1A1F2C">score (FLOAT)</text>
+  <text x="110" y="730" font-family="Arial" font-size="12" fill="#1A1F2C">lastAccessedAt (TIMESTAMP)</text>
+  
+  <!-- Certificate Table -->
+  <rect x="100" y="780" width="200" height="160" fill="#FFDEE2" stroke="#D946EF" stroke-width="2" rx="5" ry="5"/>
+  <rect x="100" y="780" width="200" height="30" fill="#D946EF" stroke="#D946EF" stroke-width="2" rx="5" ry="5"/>
+  <text x="200" y="800" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Certificates</text>
+  
+  <!-- Certificate Columns -->
+  <text x="110" y="830" font-family="Arial" font-size="12" fill="#1A1F2C">id (UUID) - PK</text>
+  <text x="110" y="850" font-family="Arial" font-size="12" fill="#1A1F2C">userId (UUID) - FK</text>
+  <text x="110" y="870" font-family="Arial" font-size="12" fill="#1A1F2C">courseId (UUID) - FK</text>
+  <text x="110" y="890" font-family="Arial" font-size="12" fill="#1A1F2C">issueDate (TIMESTAMP)</text>
+  <text x="110" y="910" font-family="Arial" font-size="12" fill="#1A1F2C">verificationCode (VARCHAR)</text>
+  <text x="110" y="930" font-family="Arial" font-size="12" fill="#1A1F2C">pdfUrl (VARCHAR)</text>
+  
+  <!-- Relationship Lines -->
+  <!-- User to Course (Instructor) -->
+  <line x1="300" y1="190" x2="500" y2="190" stroke="#8B5CF6" stroke-width="2" stroke-dasharray="5,5"/>
+  
+  <!-- Course to Video -->
+  <line x1="600" y1="280" x2="600" y2="320" stroke="#0EA5E9" stroke-width="2"/>
+  
+  <!-- Course to Quiz -->
+  <line x1="600" y1="540" x2="600" y2="580" stroke="#0EA5E9" stroke-width="2"/>
+  
+  <!-- User to Enrollment -->
+  <line x1="200" y1="260" x2="200" y2="320" stroke="#8B5CF6" stroke-width="2"/>
+  
+  <!-- Course to Enrollment -->
+  <path d="M 500 200 Q 350 200 350 370 Q 350 390 300 390" fill="none" stroke="#0EA5E9" stroke-width="2"/>
+  
+  <!-- Enrollment to Progress -->
+  <line x1="200" y1="500" x2="200" y2="560" stroke="#1EAEDB" stroke-width="2"/>
+  
+  <!-- User to Certificate -->
+  <path d="M 100 170 Q 50 170 50 850 Q 50 850 100 850" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-dasharray="5,5"/>
+  
+  <!-- Course to Certificate -->
+  <path d="M 500 210 Q 30 210 30 870 Q 30 870 100 870" fill="none" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="5,5"/>
+</svg>

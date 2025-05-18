@@ -1,0 +1,107 @@
+
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- ER Diagram for Tech Learn Platform -->
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn Entity-Relationship Diagram</text>
+  
+  <!-- Entities (Rectangles) -->
+  <!-- User Entity -->
+  <rect x="50" y="100" width="150" height="80" fill="#E5DEFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="125" y="145" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#1A1F2C">User</text>
+  
+  <!-- Course Entity -->
+  <rect x="600" y="100" width="150" height="80" fill="#D3E4FD" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="675" y="145" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#1A1F2C">Course</text>
+  
+  <!-- Video Entity -->
+  <rect x="600" y="300" width="150" height="80" fill="#FEF7CD" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="675" y="345" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#1A1F2C">Video</text>
+  
+  <!-- Quiz Entity -->
+  <rect x="600" y="500" width="150" height="80" fill="#FFDEE2" stroke="#D946EF" stroke-width="2" rx="5" ry="5"/>
+  <text x="675" y="545" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#1A1F2C">Quiz</text>
+  
+  <!-- Enrollment Entity -->
+  <rect x="325" y="100" width="150" height="80" fill="#F2FCE2" stroke="#1EAEDB" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="145" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#1A1F2C">Enrollment</text>
+  
+  <!-- Progress Entity -->
+  <rect x="325" y="300" width="150" height="80" fill="#FDE1D3" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="345" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#1A1F2C">Progress</text>
+  
+  <!-- Certificate Entity -->
+  <rect x="50" y="300" width="150" height="80" fill="#F1F0FB" stroke="#D946EF" stroke-width="2" rx="5" ry="5"/>
+  <text x="125" y="345" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#1A1F2C">Certificate</text>
+  
+  <!-- Relationships (Diamond) -->
+  <!-- User Enrolls Course -->
+  <polygon points="275,140 250,165 275,190 300,165" fill="#FFFFFF" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="275" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">enrolls</text>
+  
+  <!-- Course Contains Video -->
+  <polygon points="675,220 650,245 675,270 700,245" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2"/>
+  <text x="675" y="250" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">contains</text>
+  
+  <!-- Course Contains Quiz -->
+  <polygon points="675,420 650,445 675,470 700,445" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2"/>
+  <text x="675" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">contains</text>
+  
+  <!-- Enrollment Has Progress -->
+  <polygon points="400,220 375,245 400,270 425,245" fill="#FFFFFF" stroke="#1EAEDB" stroke-width="2"/>
+  <text x="400" y="250" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">tracks</text>
+  
+  <!-- User Earns Certificate -->
+  <polygon points="125,220 100,245 125,270 150,245" fill="#FFFFFF" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="125" y="250" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">earns</text>
+  
+  <!-- Course Completion Generates Certificate -->
+  <line x1="325" y1="340" x2="200" y2="340" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="260" y="330" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">generates</text>
+  
+  <!-- Connecting Lines -->
+  <!-- User to Enrolls -->
+  <line x1="200" y1="140" x2="250" y2="140" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="215" y="135" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">1</text>
+  
+  <!-- Enrolls to Course -->
+  <line x1="300" y1="140" x2="325" y2="140" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="315" y="135" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">N</text>
+  
+  <!-- Course to Enrollment -->
+  <line x1="475" y1="140" x2="600" y2="140" stroke="#0EA5E9" stroke-width="2"/>
+  <text x="575" y="135" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">1</text>
+  <text x="495" y="135" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">N</text>
+  
+  <!-- Course to Contains Video -->
+  <line x1="675" y1="180" x2="675" y2="220" stroke="#0EA5E9" stroke-width="2"/>
+  <text x="665" y="200" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">1</text>
+  
+  <!-- Contains Video to Video -->
+  <line x1="675" y1="270" x2="675" y2="300" stroke="#0EA5E9" stroke-width="2"/>
+  <text x="665" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">N</text>
+  
+  <!-- Course to Contains Quiz -->
+  <line x1="675" y1="380" x2="675" y2="420" stroke="#0EA5E9" stroke-width="2"/>
+  <text x="665" y="400" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">1</text>
+  
+  <!-- Contains Quiz to Quiz -->
+  <line x1="675" y1="470" x2="675" y2="500" stroke="#0EA5E9" stroke-width="2"/>
+  <text x="665" y="490" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">N</text>
+  
+  <!-- Enrollment to Has Progress -->
+  <line x1="400" y1="180" x2="400" y2="220" stroke="#1EAEDB" stroke-width="2"/>
+  <text x="390" y="200" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">1</text>
+  
+  <!-- Has Progress to Progress -->
+  <line x1="400" y1="270" x2="400" y2="300" stroke="#1EAEDB" stroke-width="2"/>
+  <text x="390" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">N</text>
+  
+  <!-- User to Earns Certificate -->
+  <line x1="125" y1="180" x2="125" y2="220" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="115" y="200" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">1</text>
+  
+  <!-- Earns Certificate to Certificate -->
+  <line x1="125" y1="270" x2="125" y2="300" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="115" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">N</text>
+</svg>
