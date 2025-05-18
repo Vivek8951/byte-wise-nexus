@@ -2,6 +2,13 @@
 <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
   <!-- Authentication Flow for Tech Learn Platform -->
   
+  <!-- Arrow Marker Definition (must be defined before use) -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+  
   <!-- Title -->
   <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn Authentication Flow</text>
   
@@ -57,11 +64,4 @@
   <!-- Response Data -->
   <line x1="400" y1="500" x2="175" y2="500" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
   <text x="280" y="490" font-family="Arial" font-size="12" fill="#1A1F2C">Response Data</text>
-  
-  <!-- Arrow Marker Definition -->
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
-    </marker>
-  </defs>
 </svg>

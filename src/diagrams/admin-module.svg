@@ -1,0 +1,94 @@
+
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Admin Module Architecture for Tech Learn Platform -->
+  
+  <!-- Arrow Marker Definition (must be defined before use) -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn Admin Module</text>
+  
+  <!-- Admin Dashboard Container -->
+  <rect x="50" y="70" width="700" height="480" fill="#F8F9FC" stroke="#6366F1" stroke-width="2" rx="10" ry="10"/>
+  <text x="400" y="95" font-family="Arial" font-size="18" text-anchor="middle" fill="#4F46E5">Admin Dashboard</text>
+  
+  <!-- Admin Authentication Module -->
+  <rect x="80" y="120" width="180" height="100" fill="#E0E7FF" stroke="#6366F1" stroke-width="2" rx="5" ry="5"/>
+  <text x="170" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#4338CA">Authentication</text>
+  <text x="170" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Admin Login</text>
+  <text x="170" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Role Verification</text>
+  <text x="170" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Session Management</text>
+  
+  <!-- Course Management Module -->
+  <rect x="80" y="240" width="180" height="100" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2" rx="5" ry="5"/>
+  <text x="170" y="265" font-family="Arial" font-size="16" text-anchor="middle" fill="#2563EB">Course Management</text>
+  <text x="170" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Create/Edit Courses</text>
+  <text x="170" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Upload Materials</text>
+  <text x="170" y="330" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Configure Assessments</text>
+  
+  <!-- User Management Module -->
+  <rect x="80" y="360" width="180" height="100" fill="#E0F2FE" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="170" y="385" font-family="Arial" font-size="16" text-anchor="middle" fill="#0284C7">User Management</text>
+  <text x="170" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Manage Accounts</text>
+  <text x="170" y="430" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Access Control</text>
+  <text x="170" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• User Statistics</text>
+  
+  <!-- Analytics Dashboard -->
+  <rect x="310" y="120" width="180" height="100" fill="#F0FDF4" stroke="#22C55E" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#16A34A">Analytics Dashboard</text>
+  <text x="400" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• User Engagement</text>
+  <text x="400" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Course Metrics</text>
+  <text x="400" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Revenue Analytics</text>
+  
+  <!-- Content Management System -->
+  <rect x="310" y="240" width="180" height="100" fill="#FFEDD5" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="265" font-family="Arial" font-size="16" text-anchor="middle" fill="#EA580C">Content Management</text>
+  <text x="400" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Media Library</text>
+  <text x="400" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Content Templates</text>
+  <text x="400" y="330" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Version Control</text>
+  
+  <!-- Certificate Management -->
+  <rect x="310" y="360" width="180" height="100" fill="#FCE7F3" stroke="#EC4899" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="385" font-family="Arial" font-size="16" text-anchor="middle" fill="#DB2777">Certificate System</text>
+  <text x="400" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Certificate Templates</text>
+  <text x="400" y="430" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Auto-generation</text>
+  <text x="400" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Verification System</text>
+  
+  <!-- AI Configuration -->
+  <rect x="540" y="120" width="180" height="100" fill="#EDE9FE" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="630" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#7C3AED">AI Configuration</text>
+  <text x="630" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Chatbot Training</text>
+  <text x="630" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Learning Assistant</text>
+  <text x="630" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Knowledge Base</text>
+  
+  <!-- System Settings -->
+  <rect x="540" y="240" width="180" height="100" fill="#F3E8FF" stroke="#A855F7" stroke-width="2" rx="5" ry="5"/>
+  <text x="630" y="265" font-family="Arial" font-size="16" text-anchor="middle" fill="#9333EA">System Settings</text>
+  <text x="630" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Platform Configuration</text>
+  <text x="630" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Email Templates</text>
+  <text x="630" y="330" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Security Settings</text>
+  
+  <!-- API Management -->
+  <rect x="540" y="360" width="180" height="100" fill="#E0E7FF" stroke="#6366F1" stroke-width="2" rx="5" ry="5"/>
+  <text x="630" y="385" font-family="Arial" font-size="16" text-anchor="middle" fill="#4F46E5">API Management</text>
+  <text x="630" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• API Keys</text>
+  <text x="630" y="430" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Integration Settings</text>
+  <text x="630" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Webhooks</text>
+  
+  <!-- Connections between modules -->
+  <line x1="260" y1="170" x2="310" y2="170" stroke="#6366F1" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="290" x2="310" y2="290" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="410" x2="310" y2="410" stroke="#0EA5E9" stroke-width="1.5" marker-end="url(#arrow)"/>
+  
+  <line x1="490" y1="170" x2="540" y2="170" stroke="#22C55E" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="490" y1="290" x2="540" y2="290" stroke="#F97316" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="490" y1="410" x2="540" y2="410" stroke="#EC4899" stroke-width="1.5" marker-end="url(#arrow)"/>
+  
+  <path d="M 170 220 C 170 230 300 230 400 230" fill="none" stroke="#6366F1" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 400 340 C 400 350 250 350 170 350" fill="none" stroke="#F97316" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 630 220 C 630 230 500 230 400 230" fill="none" stroke="#8B5CF6" stroke-width="1.5" marker-end="url(#arrow)"/>
+</svg>

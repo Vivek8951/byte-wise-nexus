@@ -15,3 +15,6 @@ This folder contains visual representations of the Tech Learn platform architect
 8. `data-flow.svg` - Details the data flow between system layers
 9. `deployment-architecture.svg` - Shows the deployment infrastructure
 10. `chatbot-integration.svg` - Illustrates the AI chatbot integration
+11. `admin-module.svg` - Displays the admin module components and relationships
+12. `user-module.svg` - Illustrates the user/student module components and relationships
+13. `admin-workflow.svg` - Shows the detailed workflow for admin operations

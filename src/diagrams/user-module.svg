@@ -1,0 +1,94 @@
+
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- User Module Architecture for Tech Learn Platform -->
+  
+  <!-- Arrow Marker Definition (must be defined before use) -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn User Module</text>
+  
+  <!-- User Dashboard Container -->
+  <rect x="50" y="70" width="700" height="480" fill="#F8F9FC" stroke="#0EA5E9" stroke-width="2" rx="10" ry="10"/>
+  <text x="400" y="95" font-family="Arial" font-size="18" text-anchor="middle" fill="#0284C7">Student Dashboard</text>
+  
+  <!-- User Authentication Module -->
+  <rect x="80" y="120" width="180" height="100" fill="#E0F2FE" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="170" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#0284C7">Authentication</text>
+  <text x="170" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• User Login</text>
+  <text x="170" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Registration</text>
+  <text x="170" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Password Reset</text>
+  
+  <!-- Course Catalog Module -->
+  <rect x="80" y="240" width="180" height="100" fill="#DBEAFE" stroke="#3B82F6" stroke-width="2" rx="5" ry="5"/>
+  <text x="170" y="265" font-family="Arial" font-size="16" text-anchor="middle" fill="#2563EB">Course Catalog</text>
+  <text x="170" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Browse Courses</text>
+  <text x="170" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Search &amp; Filter</text>
+  <text x="170" y="330" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Course Details</text>
+  
+  <!-- My Learning Module -->
+  <rect x="80" y="360" width="180" height="100" fill="#EDE9FE" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="170" y="385" font-family="Arial" font-size="16" text-anchor="middle" fill="#7C3AED">My Learning</text>
+  <text x="170" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Enrolled Courses</text>
+  <text x="170" y="430" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Learning Progress</text>
+  <text x="170" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Completed Courses</text>
+  
+  <!-- Course Player -->
+  <rect x="310" y="120" width="180" height="100" fill="#F0FDF4" stroke="#22C55E" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#16A34A">Course Player</text>
+  <text x="400" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Video Lessons</text>
+  <text x="400" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Interactive Content</text>
+  <text x="400" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Progress Tracking</text>
+  
+  <!-- Assessments Module -->
+  <rect x="310" y="240" width="180" height="100" fill="#FFEDD5" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="265" font-family="Arial" font-size="16" text-anchor="middle" fill="#EA580C">Assessments</text>
+  <text x="400" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Quizzes</text>
+  <text x="400" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Assignments</text>
+  <text x="400" y="330" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Exam Preparation</text>
+  
+  <!-- Certificates Module -->
+  <rect x="310" y="360" width="180" height="100" fill="#FCE7F3" stroke="#EC4899" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="385" font-family="Arial" font-size="16" text-anchor="middle" fill="#DB2777">Certificates</text>
+  <text x="400" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• View Certificates</text>
+  <text x="400" y="430" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Download PDF</text>
+  <text x="400" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Share Achievements</text>
+  
+  <!-- AI Learning Assistant -->
+  <rect x="540" y="120" width="180" height="100" fill="#EDE9FE" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="630" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#7C3AED">AI Learning Assistant</text>
+  <text x="630" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Course Guidance</text>
+  <text x="630" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Content Q&amp;A</text>
+  <text x="630" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Learning Support</text>
+  
+  <!-- User Profile -->
+  <rect x="540" y="240" width="180" height="100" fill="#F3E8FF" stroke="#A855F7" stroke-width="2" rx="5" ry="5"/>
+  <text x="630" y="265" font-family="Arial" font-size="16" text-anchor="middle" fill="#9333EA">User Profile</text>
+  <text x="630" y="290" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Profile Settings</text>
+  <text x="630" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Notification Prefs</text>
+  <text x="630" y="330" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Account Management</text>
+  
+  <!-- Community Module -->
+  <rect x="540" y="360" width="180" height="100" fill="#E0E7FF" stroke="#6366F1" stroke-width="2" rx="5" ry="5"/>
+  <text x="630" y="385" font-family="Arial" font-size="16" text-anchor="middle" fill="#4F46E5">Community</text>
+  <text x="630" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Discussion Forums</text>
+  <text x="630" y="430" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Study Groups</text>
+  <text x="630" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">• Peer Learning</text>
+  
+  <!-- Connections between modules -->
+  <line x1="260" y1="170" x2="310" y2="170" stroke="#0EA5E9" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="290" x2="310" y2="290" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="410" x2="310" y2="410" stroke="#8B5CF6" stroke-width="1.5" marker-end="url(#arrow)"/>
+  
+  <line x1="490" y1="170" x2="540" y2="170" stroke="#22C55E" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="490" y1="290" x2="540" y2="290" stroke="#F97316" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="490" y1="410" x2="540" y2="410" stroke="#EC4899" stroke-width="1.5" marker-end="url(#arrow)"/>
+  
+  <path d="M 170 220 C 170 230 300 230 400 230" fill="none" stroke="#0EA5E9" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 400 340 C 400 350 250 350 170 350" fill="none" stroke="#F97316" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 630 220 C 630 230 500 230 400 230" fill="none" stroke="#8B5CF6" stroke-width="1.5" marker-end="url(#arrow)"/>
+</svg>
