@@ -5,6 +5,13 @@
   <!-- Title -->
   <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn Data Flow Diagram</text>
   
+  <!-- Arrow Marker Definition (must be defined before use) -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+  
   <!-- External Entities (Squares) -->
   <!-- Student -->
   <rect x="50" y="100" width="120" height="60" fill="#E5DEFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
@@ -20,31 +27,31 @@
   
   <!-- Processes (Circles) -->
   <!-- User Authentication -->
-  <circle cx="250" y="130" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
+  <circle cx="250" cy="130" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
   <text x="250" y="125" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">1.0</text>
   <text x="250" y="145" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">User</text>
   <text x="250" y="160" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Authentication</text>
   
   <!-- Course Management -->
-  <circle cx="400" y="250" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
+  <circle cx="400" cy="250" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
   <text x="400" y="245" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">2.0</text>
   <text x="400" y="265" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Course</text>
   <text x="400" y="280" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Management</text>
   
   <!-- Progress Tracking -->
-  <circle cx="250" y="380" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
+  <circle cx="250" cy="380" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
   <text x="250" y="375" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">3.0</text>
   <text x="250" y="395" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Progress</text>
   <text x="250" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Tracking</text>
   
   <!-- Certificate Generation -->
-  <circle cx="550" y="380" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
+  <circle cx="550" cy="380" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
   <text x="550" y="375" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">4.0</text>
   <text x="550" y="395" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Certificate</text>
   <text x="550" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Generation</text>
   
   <!-- AI Assistant -->
-  <circle cx="550" y="130" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
+  <circle cx="550" cy="130" r="50" fill="#F6F6F7" stroke="#9b87f5" stroke-width="2"/>
   <text x="550" y="125" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">5.0</text>
   <text x="550" y="145" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">AI Learning</text>
   <text x="550" y="160" font-family="Arial" font-size="12" text-anchor="middle" fill="#1A1F2C">Assistant</text>
@@ -98,7 +105,7 @@
   <text x="450" y="400" font-family="Arial" font-size="10" fill="#333">Retrieve</text>
   
   <!-- Student to Progress Tracking -->
-  <path d="M 170 140 Q 180 300 220 340" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 170 140 Q 180 300 200 340" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="180" y="240" font-family="Arial" font-size="10" fill="#333">Activity Data</text>
   
   <!-- Progress Tracking to Progress Data -->
@@ -106,7 +113,7 @@
   <text x="450" y="450" font-family="Arial" font-size="10" fill="#333">Store Progress</text>
   
   <!-- Progress Tracking to Student -->
-  <path d="M 220 340 Q 180 300 170 140" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 200 340 Q 160 280 170 140" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="150" y="240" font-family="Arial" font-size="10" fill="#333">Progress Updates</text>
   
   <!-- Progress Tracking to Certificate Generation -->
@@ -128,11 +135,4 @@
   <!-- Admin to User Data -->
   <line x1="170" y1="530" x2="200" y2="530" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
   <text x="185" y="550" font-family="Arial" font-size="10" fill="#333">Manage</text>
-  
-  <!-- Arrow Marker -->
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
-    </marker>
-  </defs>
 </svg>
