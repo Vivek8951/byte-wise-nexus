@@ -1,0 +1,52 @@
+
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Backend Architecture for Tech Learn Platform -->
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn Backend Architecture</text>
+  
+  <!-- Client Application -->
+  <rect x="200" y="80" width="400" height="50" fill="#E5DEFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Client Application</text>
+  
+  <!-- Supabase Platform -->
+  <rect x="100" y="180" width="600" height="350" fill="#D3E4FD" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="210" font-family="Arial" font-size="18" text-anchor="middle" fill="#1A1F2C">Supabase Platform</text>
+  
+  <!-- Authentication -->
+  <rect x="150" y="240" width="220" height="120" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="260" y="270" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Authentication</text>
+  <text x="180" y="300" font-family="Arial" font-size="14" fill="#1A1F2C">• JWT</text>
+  <text x="180" y="330" font-family="Arial" font-size="14" fill="#1A1F2C">• OAuth</text>
+  <text x="180" y="360" font-family="Arial" font-size="14" fill="#1A1F2C">• Email/Pass</text>
+  
+  <!-- Database -->
+  <rect x="430" y="240" width="220" height="120" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="540" y="270" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Database</text>
+  <text x="460" y="300" font-family="Arial" font-size="14" fill="#1A1F2C">• PostgreSQL</text>
+  <text x="460" y="330" font-family="Arial" font-size="14" fill="#1A1F2C">• Row Level Security</text>
+  
+  <!-- Storage -->
+  <rect x="150" y="380" width="220" height="120" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="260" y="410" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Storage</text>
+  <text x="180" y="440" font-family="Arial" font-size="14" fill="#1A1F2C">• Files</text>
+  <text x="180" y="470" font-family="Arial" font-size="14" fill="#1A1F2C">• Images</text>
+  <text x="180" y="500" font-family="Arial" font-size="14" fill="#1A1F2C">• Videos</text>
+  
+  <!-- Functions -->
+  <rect x="430" y="380" width="220" height="120" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="540" y="410" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Functions</text>
+  <text x="460" y="440" font-family="Arial" font-size="14" fill="#1A1F2C">• Edge Functions</text>
+  <text x="460" y="470" font-family="Arial" font-size="14" fill="#1A1F2C">• Webhooks</text>
+  <text x="460" y="500" font-family="Arial" font-size="14" fill="#1A1F2C">• Triggers</text>
+  
+  <!-- Connection line -->
+  <line x1="400" y1="130" x2="400" y2="180" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- Arrow Marker Definition -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+</svg>

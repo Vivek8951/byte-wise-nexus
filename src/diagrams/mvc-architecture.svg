@@ -1,0 +1,60 @@
+
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- MVC Architecture Diagram for Tech Learn Platform -->
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn MVC Architecture</text>
+  
+  <!-- View Layer -->
+  <rect x="100" y="80" width="600" height="120" fill="#E5DEFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="110" font-family="Arial" font-size="18" text-anchor="middle" fill="#1A1F2C">View Layer</text>
+  
+  <!-- View Components -->
+  <rect x="150" y="130" width="200" height="50" fill="#FFFFFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="250" y="160" font-family="Arial" font-size="14" text-anchor="middle" fill="#1A1F2C">React Components</text>
+  
+  <rect x="450" y="130" width="200" height="50" fill="#FFFFFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="550" y="160" font-family="Arial" font-size="14" text-anchor="middle" fill="#1A1F2C">Components Library</text>
+  
+  <!-- Controller Layer -->
+  <rect x="100" y="240" width="600" height="120" fill="#D3E4FD" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="270" font-family="Arial" font-size="18" text-anchor="middle" fill="#1A1F2C">Controller Layer</text>
+  
+  <!-- Controller Components -->
+  <rect x="150" y="290" width="200" height="50" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="250" y="320" font-family="Arial" font-size="14" text-anchor="middle" fill="#1A1F2C">React Context API</text>
+  
+  <rect x="450" y="290" width="200" height="50" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="550" y="320" font-family="Arial" font-size="14" text-anchor="middle" fill="#1A1F2C">Custom Hooks</text>
+  
+  <!-- Model Layer -->
+  <rect x="100" y="400" width="600" height="120" fill="#FDE1D3" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="430" font-family="Arial" font-size="18" text-anchor="middle" fill="#1A1F2C">Model Layer</text>
+  
+  <!-- Model Components -->
+  <rect x="150" y="450" width="200" height="50" fill="#FFFFFF" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="250" y="480" font-family="Arial" font-size="14" text-anchor="middle" fill="#1A1F2C">TypeScript Interfaces</text>
+  
+  <rect x="450" y="450" width="200" height="50" fill="#FFFFFF" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="550" y="480" font-family="Arial" font-size="14" text-anchor="middle" fill="#1A1F2C">Supabase SDK</text>
+  
+  <!-- Arrows between layers -->
+  <!-- View to Controller -->
+  <line x1="400" y1="200" x2="400" y2="240" stroke="#333" stroke-width="2" stroke-dasharray="none" marker-end="url(#arrow)"/>
+  
+  <!-- Controller to View -->
+  <line x1="380" y1="240" x2="380" y2="200" stroke="#333" stroke-width="2" stroke-dasharray="none" marker-end="url(#arrow)"/>
+  
+  <!-- Controller to Model -->
+  <line x1="400" y1="360" x2="400" y2="400" stroke="#333" stroke-width="2" stroke-dasharray="none" marker-end="url(#arrow)"/>
+  
+  <!-- Model to Controller -->
+  <line x1="380" y1="400" x2="380" y2="360" stroke="#333" stroke-width="2" stroke-dasharray="none" marker-end="url(#arrow)"/>
+  
+  <!-- Arrow Marker Definition -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+</svg>

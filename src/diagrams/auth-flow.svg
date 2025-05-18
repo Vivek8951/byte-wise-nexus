@@ -1,0 +1,67 @@
+
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Authentication Flow for Tech Learn Platform -->
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn Authentication Flow</text>
+  
+  <!-- Client -->
+  <rect x="100" y="80" width="150" height="450" fill="#E5DEFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="175" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Client</text>
+  
+  <!-- React Auth Flow -->
+  <rect x="325" y="80" width="150" height="450" fill="#D3E4FD" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="400" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">React Auth Flow</text>
+  
+  <!-- Supabase -->
+  <rect x="550" y="80" width="150" height="450" fill="#FDE1D3" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="625" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Supabase</text>
+  
+  <!-- Login Request -->
+  <line x1="175" y1="150" x2="400" y2="150" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="280" y="140" font-family="Arial" font-size="12" fill="#1A1F2C">Login Request</text>
+  
+  <!-- Auth Credentials -->
+  <line x1="400" y1="180" x2="625" y2="180" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="510" y="170" font-family="Arial" font-size="12" fill="#1A1F2C">Auth Credentials</text>
+  
+  <!-- Validation -->
+  <rect x="590" y="200" width="80" height="40" fill="#FFFFFF" stroke="#F97316" stroke-width="1" rx="5" ry="5"/>
+  <text x="630" y="225" font-family="Arial" font-size="10" text-anchor="middle" fill="#1A1F2C">Validate Credentials</text>
+  
+  <!-- JWT + User Data -->
+  <line x1="625" y1="260" x2="400" y2="260" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="510" y="250" font-family="Arial" font-size="12" fill="#1A1F2C">JWT + User Data</text>
+  
+  <!-- Store in Context -->
+  <rect x="360" y="280" width="80" height="40" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="1" rx="5" ry="5"/>
+  <text x="400" y="300" font-family="Arial" font-size="10" text-anchor="middle" fill="#1A1F2C">Store in Context &</text>
+  <text x="400" y="315" font-family="Arial" font-size="10" text-anchor="middle" fill="#1A1F2C">Local Storage</text>
+  
+  <!-- Auth Success -->
+  <line x1="400" y1="340" x2="175" y2="340" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="280" y="330" font-family="Arial" font-size="12" fill="#1A1F2C">Auth Success</text>
+  
+  <!-- Subsequent Request -->
+  <line x1="175" y1="380" x2="400" y2="380" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="280" y="370" font-family="Arial" font-size="12" fill="#1A1F2C">Subsequent Request</text>
+  
+  <!-- Request + JWT -->
+  <line x1="400" y1="420" x2="625" y2="420" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="510" y="410" font-family="Arial" font-size="12" fill="#1A1F2C">Request + JWT</text>
+  
+  <!-- Response + Data -->
+  <line x1="625" y1="460" x2="400" y2="460" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="510" y="450" font-family="Arial" font-size="12" fill="#1A1F2C">Response + Data</text>
+  
+  <!-- Response Data -->
+  <line x1="400" y1="500" x2="175" y2="500" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="280" y="490" font-family="Arial" font-size="12" fill="#1A1F2C">Response Data</text>
+  
+  <!-- Arrow Marker Definition -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+</svg>

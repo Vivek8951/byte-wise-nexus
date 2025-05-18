@@ -1,0 +1,69 @@
+
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- AI Chatbot Integration for Tech Learn Platform -->
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1A1F2C">Tech Learn AI Chatbot Integration Architecture</text>
+  
+  <!-- Components -->
+  <rect x="100" y="80" width="180" height="80" fill="#E5DEFF" stroke="#8B5CF6" stroke-width="2" rx="5" ry="5"/>
+  <text x="190" y="120" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">React Chatbot</text>
+  <text x="190" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Component</text>
+  
+  <rect x="350" y="80" width="180" height="80" fill="#D3E4FD" stroke="#0EA5E9" stroke-width="2" rx="5" ry="5"/>
+  <text x="440" y="120" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Edge Functions</text>
+  <text x="440" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">in Supabase</text>
+  
+  <rect x="600" y="80" width="180" height="80" fill="#FDE1D3" stroke="#F97316" stroke-width="2" rx="5" ry="5"/>
+  <text x="690" y="120" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">AI Model API</text>
+  <text x="690" y="145" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">(Hugging Face)</text>
+  
+  <!-- User Query flow -->
+  <line x1="190" y1="200" x2="190" y2="250" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="150" y="230" font-family="Arial" font-size="12" fill="#1A1F2C">User Query</text>
+  
+  <!-- Context DB -->
+  <rect x="600" y="300" width="180" height="80" fill="#F2FCE2" stroke="#1EAEDB" stroke-width="2" rx="5" ry="5"/>
+  <text x="690" y="340" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">Context Lookup</text>
+  <text x="690" y="365" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">in Database</text>
+  
+  <!-- Query to Context DB -->
+  <path d="M 440 200 L 440 280 C 440 290 450 300 460 300 L 600 300" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="270" font-family="Arial" font-size="12" fill="#1A1F2C">Query</text>
+  
+  <!-- Context back to Edge Function -->
+  <path d="M 600 340 L 460 340 C 450 340 440 330 440 320 L 440 300" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="330" font-family="Arial" font-size="12" fill="#1A1F2C">Response with Context</text>
+  
+  <!-- AI Text Generation -->
+  <rect x="600" y="430" width="180" height="80" fill="#FEF7CD" stroke="#FACC15" stroke-width="2" rx="5" ry="5"/>
+  <text x="690" y="470" font-family="Arial" font-size="16" text-anchor="middle" fill="#1A1F2C">AI Text Generation</text>
+  
+  <!-- Edge Function to AI Generation -->
+  <path d="M 440 250 L 440 430 C 440 440 450 450 460 450 L 600 450" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="410" font-family="Arial" font-size="12" fill="#1A1F2C">AI Request</text>
+  
+  <!-- AI back to Edge Function -->
+  <path d="M 600 480 L 460 480 C 450 480 440 470 440 460 L 440 380" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="500" y="500" font-family="Arial" font-size="12" fill="#1A1F2C">AI Response</text>
+  
+  <!-- Response back to Component -->
+  <line x1="190" y1="250" x2="190" y2="200" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="220" y="230" font-family="Arial" font-size="12" fill="#1A1F2C">Response</text>
+  
+  <!-- Display to User -->
+  <text x="190" y="270" font-family="Arial" font-size="12" fill="#1A1F2C">Display to User</text>
+  
+  <!-- Component connections -->
+  <line x1="280" y1="120" x2="350" y2="120" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="530" y1="120" x2="600" y2="120" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="350" y1="140" x2="280" y2="140" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="140" x2="530" y2="140" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- Arrow Marker Definition -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+    </marker>
+  </defs>
+</svg>
