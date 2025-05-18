@@ -93,6 +93,65 @@ Tech Learn implements a Model-View-Controller (MVC) architecture:
    - API integration layer for backend communication
    - Authentication and authorization logic
 
+### System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT LAYER                             │
+│                                                                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐    │
+│  │   Pages     │     │  Components  │     │    Layouts      │    │
+│  │             │     │             │     │                 │    │
+│  │  Dashboard  │     │  CourseCard │     │    Navbar       │    │
+│  │  Courses    │     │  VideoPlayer│     │    Footer       │    │
+│  │  Login      │     │  ChatBot    │     │    Sidebar      │    │
+│  └─────────────┘     └─────────────┘     └─────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      CONTROLLER LAYER                           │
+│                                                                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐    │
+│  │   Context   │     │    Hooks    │     │     Utils       │    │
+│  │             │     │             │     │                 │    │
+│  │  AuthContext│     │  useAuth    │     │  authUtils      │    │
+│  │  CourseCtx  │     │  useCourses │     │  formatUtils    │    │
+│  │  ChatbotCtx │     │  useToast   │     │  apiUtils       │    │
+│  └─────────────┘     └─────────────┘     └─────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        MODEL LAYER                              │
+│                                                                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐    │
+│  │ Data Models │     │    API      │     │   Services      │    │
+│  │             │     │             │     │                 │    │
+│  │  User       │     │  Supabase   │     │  AuthService    │    │
+│  │  Course     │     │  Client     │     │  CourseService  │    │
+│  │  Video      │     │  Functions  │     │  StorageService │    │
+│  └─────────────┘     └─────────────┘     └─────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       BACKEND LAYER                             │
+│                                                                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐    │
+│  │  Database   │     │  Functions  │     │    Storage      │    │
+│  │             │     │             │     │                 │    │
+│  │  Profiles   │     │  Edge       │     │  Course Videos  │    │
+│  │  Courses    │     │  Functions  │     │  Course Notes   │    │
+│  │  Videos     │     │  Triggers   │     │  User Avatars   │    │
+│  └─────────────┘     └─────────────┘     └─────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ### Core Features
 
 - **User Authentication**: Secure login/registration system with role-based access control
@@ -154,16 +213,63 @@ Tech Learn implements a Model-View-Controller (MVC) architecture:
 
 ## System Design
 
-### Database Design
+### Database Design Diagram
 
-The system uses a relational database structure in Supabase with the following key tables:
-- `profiles`: User profile information
-- `courses`: Course metadata and content
-- `videos`: Video resources linked to courses
-- `quizzes`: Assessment materials
-- `course_enrollments`: Mapping between users and courses
-- `course_progress`: Tracking user advancement through courses
-- `certificates`: Record of completed courses and issued certificates
+```
+┌─────────────────────┐       ┌─────────────────────┐
+│     profiles        │       │      courses        │
+├─────────────────────┤       ├─────────────────────┤
+│ id (PK)             │       │ id (PK)             │
+│ name                │◄─────┐│ title               │
+│ email               │      ││ description         │
+│ role                │      ││ category            │
+│ avatar              │      ││ thumbnail           │
+└─────────────────────┘      ││ instructor          │
+                             ││ duration            │
+┌─────────────────────┐      ││ level               │
+│ course_enrollments  │      ││ rating              │
+├─────────────────────┤      ││ enrolledCount       │
+│ userId (FK)         │──────┘│ featured            │
+│ courseId (FK)       │───────┘ createdAt           │
+│ enrollmentDate      │        │ updatedAt           │
+│ isCompleted         │        └─────────────────────┘
+│ certificateIssued   │                 │
+└─────────────────────┘                 │
+         │                              │
+         │                              │
+┌────────┴────────┐      ┌──────────────▼──────────┐
+│ course_progress  │      │       videos           │
+├─────────────────┐│      ├─────────────────────────┤
+│ userId (FK)     ││      │ id (PK)                │
+│ courseId (FK)   ││◄─────┤ courseId (FK)          │
+│ completedVideos ││      │ title                  │
+│ completedQuizzes││      │ description            │
+│ lastAccessed    ││      │ url                    │
+│ overallProgress ││      │ duration               │
+└─────────────────┘│      │ thumbnail              │
+                          │ order                  │
+┌─────────────────────┐   │ analyzedContent        │
+│      quizzes        │   └─────────────────────────┘
+├─────────────────────┤              │
+│ id (PK)             │              │
+│ courseId (FK)       │◄─────────────┘
+│ title               │
+│ description         │   ┌─────────────────────────┐
+│ questions           │   │     certificates        │
+│ order               │   ├─────────────────────────┤
+└─────────────────────┘   │ userId (FK)            │
+         │                │ courseId (FK)          │
+         │                │ certificateId          │
+┌────────▼────────────┐   │ issueDate             │
+│   quiz_attempts     │   │ verificationCode      │
+├─────────────────────┤   └─────────────────────────┘
+│ userId (FK)         │
+│ quizId (FK)         │
+│ courseId (FK)       │
+│ score               │
+│ completedAt         │
+└─────────────────────┘
+```
 
 ### Component Architecture
 
@@ -173,6 +279,45 @@ The frontend is organized into reusable components:
 - **Course Components**: CourseCard, CourseDetail, VideoPlayer
 - **Dashboard Components**: StudentDashboard, AdminDashboard
 - **UI Components**: Button, Card, Modal, Tabs (from shadcn/ui)
+
+### Front-End Architecture Diagram
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                         App (Root)                             │
+└────────────────────────────────────────────────────────────────┘
+                  │                  │                  │
+      ┌───────────▼───────┐  ┌───────▼───────┐  ┌───────▼───────┐
+      │    Context        │  │     Routes    │  │  Global Comps  │
+      │  Providers        │  │               │  │                │
+      └───────────────────┘  └───────────────┘  └───────────────┘
+      │                      │                  │
+┌─────▼─────┐        ┌───────▼────────┐  ┌──────▼───────┐
+│AuthProvider│        │     Pages     │  │   Toaster    │
+└───────────┘        └────────────────┘  └──────────────┘
+┌─────▼─────┐              │                      │
+│CourseProvid│        ┌────▼────┐           ┌────▼─────┐
+└───────────┘        │ Index    │           │  Dialog   │
+┌─────▼─────┐        └─────────┘           └───────────┘
+│ChatbotProv│        ┌────▼────┐           ┌────▼─────┐
+└───────────┘        │Dashboard │           │ Chatbot  │
+                     └─────────┘           └───────────┘
+                     ┌────▼────┐
+                     │ Courses │
+                     └─────────┘
+                     ┌────▼────┐
+                     │CourseDetl│
+                     └─────────┘
+                     ┌────▼────┐
+                     │  Login  │
+                     └─────────┘
+                     ┌────▼────┐
+                     │ Register│
+                     └─────────┘
+                     ┌────▼────┐
+                     │   Admin │
+                     └─────────┘
+```
 
 ### User Interface Design
 
@@ -204,7 +349,7 @@ The frontend is built using React with TypeScript, enabling type safety and enha
      return (
        <div className="bg-white rounded-lg shadow-md p-4">
          <h3 className="text-lg font-bold">{course.title}</h3>
-         {/* Component content */}
+         <p className="text-gray-600">{course.description}</p>
          <Button onClick={() => onEnroll(course.id)}>Enroll Now</Button>
        </div>
      );
@@ -235,7 +380,10 @@ The frontend is built using React with TypeScript, enabling type safety and enha
      <Route path="/dashboard" element={<Dashboard />} />
      <Route path="/courses" element={<Courses />} />
      <Route path="/courses/:id" element={<CourseDetail />} />
-     {/* Additional routes */}
+     <Route path="/login" element={<Login />} />
+     <Route path="/register" element={<Register />} />
+     <Route path="/admin/courses" element={<AdminCourses />} />
+     <Route path="/admin/users" element={<AdminUsers />} />
    </Routes>
    ```
 
