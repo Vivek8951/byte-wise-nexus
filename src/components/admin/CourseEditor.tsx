@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
@@ -57,19 +58,11 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     course?.id ? [] : [{ title: '', description: '', fileUrl: '', fileType: 'pdf', order: 1 }]
   );
   
-  // Upload states
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
-  
-  // AI generation states
+  // Enhanced states for better UX
+  const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
   
-  // File upload references
-  const videoFileRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const noteFileRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const previewVideos = useRef<Record<string, string>>({});
   const titleRef = useRef<HTMLInputElement | null>(null);
-  
   const { toast } = useToast();
 
   // Watch for title changes
@@ -208,13 +201,6 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
               url: '', 
               duration: '20:00', 
               order: 2 
-            },
-            { 
-              title: `${titleValue} Practical Applications`, 
-              description: `Real-world applications and projects using ${titleValue}`, 
-              url: '', 
-              duration: '25:00', 
-              order: 3 
             }
           ];
         }
@@ -229,13 +215,6 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             fileUrl: '',
             fileType: 'pdf' as const,
             order: 1
-          },
-          {
-            title: `${titleValue} Reference Guide`,
-            description: `Quick reference guide and cheat sheet`,
-            fileUrl: '',
-            fileType: 'pdf' as const,
-            order: 2
           }
         ];
         
@@ -260,71 +239,144 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     }
   };
 
-  const onSubmit = (data: any) => {
-    console.log('Submitting course data:', data);
-    console.log('Videos:', videos);
-    console.log('Notes:', notes);
+  const onSubmit = async (data: any) => {
+    setIsSaving(true);
     
-    // Enhanced validation
-    if (!data.title || !data.description || !data.category || !data.instructor || !data.duration || !data.thumbnail) {
-      toast({
-        title: "Missing required fields",
-        description: "Please fill out all required course fields",
-        variant: "destructive"
-      });
-      return;
-    }
+    try {
+      console.log('Submitting course data:', data);
+      console.log('Videos:', videos);
+      console.log('Notes:', notes);
+      
+      // Enhanced validation
+      if (!data.title?.trim()) {
+        toast({
+          title: "Title required",
+          description: "Please enter a course title",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    // Validate level
-    if (!['beginner', 'intermediate', 'advanced'].includes(level)) {
-      toast({
-        title: "Invalid level",
-        description: "Please select a valid difficulty level",
-        variant: "destructive"
-      });
-      return;
-    }
+      if (!data.description?.trim()) {
+        toast({
+          title: "Description required", 
+          description: "Please enter a course description",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    // Validate videos - allow empty URL for now, will be filled later
-    const validVideos = videos.filter(v => v.title && v.title.trim() !== '');
-    if (validVideos.length === 0) {
-      toast({
-        title: "At least one video required",
-        description: "Please add at least one video to the course",
-        variant: "destructive"
-      });
-      return;
-    }
+      if (!data.category?.trim()) {
+        toast({
+          title: "Category required",
+          description: "Please enter a course category",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    // Validate notes - allow empty fileUrl for now
-    const validNotes = notes.filter(n => n.title && n.title.trim() !== '');
-    if (validNotes.length === 0) {
-      toast({
-        title: "At least one document required",
-        description: "Please add at least one document to the course",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Show saving indicator
-    toast({
-      title: "Saving course...",
-      description: "Please wait while we save your course",
-    });
-    
-    // Save the course with videos and notes
-    onSave(
-      { 
+      if (!data.instructor?.trim()) {
+        toast({
+          title: "Instructor required",
+          description: "Please enter an instructor name",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!data.duration?.trim()) {
+        toast({
+          title: "Duration required",
+          description: "Please enter course duration",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!data.thumbnail?.trim()) {
+        toast({
+          title: "Thumbnail required",
+          description: "Please provide a thumbnail URL",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate level
+      if (!['beginner', 'intermediate', 'advanced'].includes(level)) {
+        toast({
+          title: "Invalid level",
+          description: "Please select a valid difficulty level",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate videos - require at least one with title
+      const validVideos = videos.filter(v => v.title && v.title.trim() !== '');
+      if (validVideos.length === 0) {
+        toast({
+          title: "At least one video required",
+          description: "Please add at least one video with a title",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate notes - require at least one with title
+      const validNotes = notes.filter(n => n.title && n.title.trim() !== '');
+      if (validNotes.length === 0) {
+        toast({
+          title: "At least one document required",
+          description: "Please add at least one document with a title",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Prepare course data
+      const courseData = { 
         ...data, 
         level,
         enrolledCount: 0,
         rating: 0,
         featured: false
-      },
-      validVideos,
-      validNotes
-    );
+      };
+
+      // Clean and validate videos
+      const cleanVideos = validVideos.map((video, index) => ({
+        ...video,
+        order: index + 1,
+        duration: video.duration || '10:00',
+        description: video.description || '',
+        url: video.url || '',
+        thumbnail: video.thumbnail || ''
+      }));
+
+      // Clean and validate notes
+      const cleanNotes = validNotes.map((note, index) => ({
+        ...note,
+        order: index + 1,
+        description: note.description || '',
+        fileUrl: note.fileUrl || '',
+        fileType: note.fileType || 'pdf'
+      }));
+      
+      console.log('Calling onSave with cleaned data...');
+      
+      // Save the course with videos and notes
+      await onSave(courseData, cleanVideos, cleanNotes);
+      
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      toast({
+        title: "Save failed",
+        description: "An error occurred while saving the course. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -446,7 +498,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             )}
           </div>
           
-          {/* Videos section with better validation */}
+          {/* Videos section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Videos</h3>
@@ -478,14 +530,16 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                       <VideoIcon className="h-5 w-5 mr-2 text-tech-blue" />
                       <h4 className="font-medium">Video {index + 1}</h4>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setVideos(videos.filter((_, i) => i !== index))}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    {videos.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setVideos(videos.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
                   </div>
                   
                   <div className="grid gap-3">
@@ -550,7 +604,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             </div>
           </div>
           
-          {/* Notes section with better validation */}
+          {/* Notes section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Notes & Documents</h3>
@@ -582,14 +636,16 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                       <File className="h-5 w-5 mr-2 text-tech-purple" />
                       <h4 className="font-medium">Document {index + 1}</h4>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setNotes(notes.filter((_, i) => i !== index))}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    {notes.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setNotes(notes.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
                   </div>
                   
                   <div className="grid gap-3">
@@ -649,12 +705,25 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
           
           {/* Submit and cancel buttons */}
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-tech-blue hover:bg-tech-darkblue flex items-center gap-2">
-              <Save className="h-4 w-4" /> 
-              Save Course
+            <Button 
+              type="submit" 
+              className="bg-tech-blue hover:bg-tech-darkblue flex items-center gap-2"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving Course...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" /> 
+                  Save Course
+                </>
+              )}
             </Button>
           </div>
         </div>

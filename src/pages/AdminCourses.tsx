@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -58,7 +57,8 @@ export default function AdminCourses() {
     addNote,
     deleteVideo,
     deleteNote,
-    isLoading: coursesLoading 
+    isLoading: coursesLoading,
+    refreshCourses
   } = useCourses();
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -120,13 +120,22 @@ export default function AdminCourses() {
   
   const handleSaveCourse = async (courseData: Partial<Course>, videosData: Partial<Video>[], notesData: Partial<Note>[]) => {
     try {
+      console.log('Starting course save process...');
+      
       if (isNewCourse) {
+        console.log('Adding new course...');
         // Add new course
         const newCourse = await addCourse(courseData as Omit<Course, 'id' | 'createdAt' | 'updatedAt'>);
         
+        if (!newCourse) {
+          throw new Error('Failed to create course');
+        }
+        
+        console.log('Course created, adding videos and notes...');
+        
         // Add videos and notes
-        if (newCourse) {
-          for (const video of videosData) {
+        for (const video of videosData) {
+          try {
             await addVideo({ 
               courseId: newCourse.id, 
               title: video.title || '',
@@ -136,9 +145,13 @@ export default function AdminCourses() {
               thumbnail: video.thumbnail,
               order: video.order || 0 
             });
+          } catch (error) {
+            console.error('Error adding video:', error);
           }
-          
-          for (const note of notesData) {
+        }
+        
+        for (const note of notesData) {
+          try {
             await addNote({ 
               courseId: newCourse.id, 
               title: note.title || '',
@@ -147,6 +160,8 @@ export default function AdminCourses() {
               fileType: note.fileType || 'pdf',
               order: note.order || 0 
             });
+          } catch (error) {
+            console.error('Error adding note:', error);
           }
         }
         
@@ -155,6 +170,7 @@ export default function AdminCourses() {
           description: `"${courseData.title}" has been added successfully`,
         });
       } else if (currentCourse) {
+        console.log('Updating existing course...');
         // Update existing course
         await updateCourse(currentCourse.id, courseData);
         
@@ -164,35 +180,51 @@ export default function AdminCourses() {
         
         // Delete existing videos and notes first
         for (const video of existingVideos) {
-          await deleteVideo(video.id);
+          try {
+            await deleteVideo(video.id);
+          } catch (error) {
+            console.error('Error deleting video:', error);
+          }
         }
         
         for (const note of existingNotes) {
-          await deleteNote(note.id);
+          try {
+            await deleteNote(note.id);
+          } catch (error) {
+            console.error('Error deleting note:', error);
+          }
         }
         
         // Add new videos and notes
         for (const video of videosData) {
-          await addVideo({ 
-            courseId: currentCourse.id, 
-            title: video.title || '',
-            description: video.description || '',
-            url: video.url || '',
-            duration: video.duration || '',
-            thumbnail: video.thumbnail,
-            order: video.order || 0 
-          });
+          try {
+            await addVideo({ 
+              courseId: currentCourse.id, 
+              title: video.title || '',
+              description: video.description || '',
+              url: video.url || '',
+              duration: video.duration || '',
+              thumbnail: video.thumbnail,
+              order: video.order || 0 
+            });
+          } catch (error) {
+            console.error('Error adding video:', error);
+          }
         }
         
         for (const note of notesData) {
-          await addNote({ 
-            courseId: currentCourse.id, 
-            title: note.title || '',
-            description: note.description || '',
-            fileUrl: note.fileUrl || '',
-            fileType: note.fileType || 'pdf',
-            order: note.order || 0 
-          });
+          try {
+            await addNote({ 
+              courseId: currentCourse.id, 
+              title: note.title || '',
+              description: note.description || '',
+              fileUrl: note.fileUrl || '',
+              fileType: note.fileType || 'pdf',
+              order: note.order || 0 
+            });
+          } catch (error) {
+            console.error('Error adding note:', error);
+          }
         }
         
         toast({
@@ -201,11 +233,15 @@ export default function AdminCourses() {
         });
       }
       
+      // Refresh the courses data to reflect changes
+      await refreshCourses();
+      
       setIsEditorOpen(false);
     } catch (error) {
+      console.error('Error in handleSaveCourse:', error);
       toast({
         title: "Error",
-        description: "There was a problem saving the course",
+        description: "There was a problem saving the course. Please try again.",
         variant: "destructive"
       });
     }
@@ -238,7 +274,6 @@ export default function AdminCourses() {
     });
   };
   
-  // Update this function to generate exactly the number of courses specified
   const handlePopulateCourses = async () => {
     setIsPopulating(true);
     try {
@@ -252,7 +287,7 @@ export default function AdminCourses() {
           description: result.message,
         });
         // Refresh courses data
-        window.location.reload();
+        await refreshCourses();
       } else {
         toast({
           title: "Error",
