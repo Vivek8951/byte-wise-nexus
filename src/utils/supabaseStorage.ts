@@ -501,42 +501,20 @@ export const populateCourses = async (
   const { clearExisting = false } = options;
   
   // Validate input
-  if (courseCount <= 0 || courseCount > 15) {
+  if (courseCount <= 0 || courseCount > 100) {
     return {
       success: false,
-      message: "Please specify between 1 and 15 courses to generate"
+      message: "Please specify between 1 and 100 courses to generate"
     };
   }
 
   try {
-    // Clear existing courses if specified
-    if (clearExisting) {
-      const { error: deleteVideosError } = await supabase
-        .from('videos')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      const { error: deleteNotesError } = await supabase
-        .from('notes')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      const { error: deleteCoursesError } = await supabase
-        .from('courses')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (deleteCoursesError || deleteVideosError || deleteNotesError) {
-        throw new Error("Failed to clear existing courses");
-      }
-    }
-    
     console.log(`Generating ${courseCount} courses with AI`);
     
     // Call the Supabase Edge Function to generate courses
     const { data, error } = await supabase.functions.invoke('populate-courses', {
       body: {
-        courseCount,
+        count: courseCount,
         clearExisting,
       },
     });
