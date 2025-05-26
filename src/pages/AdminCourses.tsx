@@ -69,7 +69,6 @@ export default function AdminCourses() {
   const [isPopulating, setIsPopulating] = useState(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [courseCount, setCourseCount] = useState(5);
-  const [clearExisting, setClearExisting] = useState(false);
   const [isDeletingCourse, setIsDeletingCourse] = useState(false);
   
   // Redirect if not authenticated or not admin
@@ -300,7 +299,7 @@ export default function AdminCourses() {
     setIsPopulating(true);
     try {
       const result = await populateCourses(courseCount, {
-        clearExisting
+        clearExisting: false
       });
       
       if (result.success) {
@@ -549,21 +548,6 @@ export default function AdminCourses() {
                 <p className="text-xs text-gray-400 mt-1">
                   Specify the number of courses to generate
                 </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clearExisting" className="text-right text-gray-300">
-                Clear existing
-              </Label>
-              <div className="flex items-center space-x-2 col-span-3">
-                <Switch 
-                  id="clearExisting" 
-                  checked={clearExisting} 
-                  onCheckedChange={setClearExisting} 
-                />
-                <Label htmlFor="clearExisting" className="text-sm text-gray-400">
-                  Remove all existing courses before generating new ones
-                </Label>
               </div>
             </div>
           </div>

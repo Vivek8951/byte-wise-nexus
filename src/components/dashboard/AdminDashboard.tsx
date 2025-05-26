@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { 
@@ -22,7 +21,6 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { populateCourses } from "@/utils/supabaseStorage";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
@@ -35,7 +33,6 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   const { toast } = useToast();
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [clearExisting, setClearExisting] = useState(false);
   const [courseCount, setCourseCount] = useState(5);
   
   // Filter out duplicate courses by ID for display
@@ -65,7 +62,7 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
         const currentBatchSize = Math.min(remainingCourses, batchSize);
         
         const result = await populateCourses(currentBatchSize, { 
-          clearExisting: i === 0 && clearExisting 
+          clearExisting: false
         });
         
         if (result.success) {
@@ -235,21 +232,6 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                 <p className="text-xs text-gray-400 mt-1">
                   Specify the number of courses to generate
                 </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clearExisting" className="text-right text-gray-300">
-                Clear existing
-              </Label>
-              <div className="flex items-center space-x-2 col-span-3">
-                <Switch 
-                  id="clearExisting" 
-                  checked={clearExisting} 
-                  onCheckedChange={setClearExisting} 
-                />
-                <Label htmlFor="clearExisting" className="text-sm text-gray-400">
-                  Remove all existing courses before generating new ones
-                </Label>
               </div>
             </div>
           </div>
