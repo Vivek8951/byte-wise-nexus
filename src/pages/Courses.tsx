@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Chatbot } from "@/components/chatbot/Chatbot";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { useCourses } from "@/context/CourseContext";
 import { useAuth } from "@/context/AuthContext";
@@ -236,7 +235,6 @@ export default function Courses() {
         </div>
       </main>
       <Footer />
-      <Chatbot />
     </>
   );
 }

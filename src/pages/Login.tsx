@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BackButton } from "@/components/ui/back-button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Chatbot } from "@/components/chatbot/Chatbot";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -240,7 +239,6 @@ export default function Login() {
       </Dialog>
       
       <Footer />
-      <Chatbot />
     </>
   );
 }

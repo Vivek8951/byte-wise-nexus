@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { Book, Users, Award, CheckCircle, BookOpen } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Chatbot } from "@/components/chatbot/Chatbot";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
@@ -92,7 +91,7 @@ export default function About() {
                   to seasoned professionals looking to upskill.
                 </p>
                 <p className="text-lg text-gray-700 dark:text-gray-300">
-                  Our innovative approach integrates video lessons, interactive coding exercises, AI-powered assistance, and a 
+                  Our innovative approach integrates video lessons, interactive coding exercises, and a 
                   supportive learning community to deliver an effective and engaging educational experience.
                 </p>
               </div>
@@ -164,7 +163,6 @@ export default function About() {
         </section>
       </main>
       <Footer />
-      <Chatbot />
     </>
   );
 }

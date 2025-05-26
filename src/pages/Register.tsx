@@ -14,7 +14,6 @@ import { BackButton } from "@/components/ui/back-button";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UserRole } from "@/types";
-import { Chatbot } from "@/components/chatbot/Chatbot";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -278,7 +277,6 @@ export default function Register() {
         </div>
       </div>
       <Footer />
-      <Chatbot />
     </>
   );
 }
