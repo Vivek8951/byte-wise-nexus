@@ -44,10 +44,10 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
   );
   
   const handleGenerateCourses = async () => {
-    if (courseCount <= 0 || courseCount > 15) {
+    if (courseCount <= 0) {
       toast({
         title: "Invalid course count",
-        description: "Please specify between 1 and 15 courses",
+        description: "Please specify at least 1 course",
         variant: "destructive"
       });
       return;
@@ -228,13 +228,12 @@ export function AdminDashboard({ courses }: AdminDashboardProps) {
                   id="courseCount"
                   type="number"
                   min="1"
-                  max="15"
                   value={courseCount}
                   onChange={(e) => setCourseCount(parseInt(e.target.value) || 5)}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Maximum 15 courses per generation
+                  Specify the number of courses to generate
                 </p>
               </div>
             </div>

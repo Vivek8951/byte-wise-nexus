@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -33,7 +32,12 @@ const courseCategories = [
   "Database Management",
   "Networking",
   "Operating Systems",
-  "Algorithms"
+  "Algorithms",
+  "Software Engineering",
+  "Game Development",
+  "Blockchain",
+  "Digital Marketing",
+  "UX/UI Design"
 ];
 
 // Course difficulty levels
@@ -72,25 +76,25 @@ const instructorNames = [
 
 // Generate a course with AI using Hugging Face API
 async function generateCourseWithAI(category: string) {
-  // Default course in case AI generation fails
+  // Enhanced default course data
   let course = {
-    title: `Introduction to ${category}`,
-    description: `Learn the fundamentals of ${category} with hands-on projects and real-world applications.`,
+    title: `Complete ${category} Course`,
+    description: `Master ${category} with comprehensive hands-on training, real-world projects, and industry best practices. This course covers everything from fundamentals to advanced concepts, designed for practical application in modern development environments.`,
     category: category,
     instructor: instructorNames[Math.floor(Math.random() * instructorNames.length)],
-    duration: `${Math.floor(Math.random() * 10) + 4} weeks`,
+    duration: `${Math.floor(Math.random() * 8) + 6} weeks`,
     level: courseLevels[Math.floor(Math.random() * courseLevels.length)] as "beginner" | "intermediate" | "advanced"
   };
   
   if (huggingFaceApiKey) {
     try {
-      const prompt = `Generate a tech course about ${category}. Return the result as JSON with the following fields:
+      const prompt = `Create a comprehensive tech course about ${category}. The course should be practical and industry-relevant. Return ONLY valid JSON with these exact fields:
       {
-        "title": "course title",
-        "description": "detailed course description in 1-2 sentences",
-        "instructor": "instructor name",
-        "duration": "course duration in weeks",
-        "level": "difficulty level (beginner, intermediate, or advanced)"
+        "title": "engaging course title",
+        "description": "detailed 2-3 sentence course description highlighting practical skills and outcomes",
+        "instructor": "instructor full name",
+        "duration": "X weeks format",
+        "level": "beginner, intermediate, or advanced"
       }`;
       
       const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", {
@@ -102,9 +106,10 @@ async function generateCourseWithAI(category: string) {
         body: JSON.stringify({
           inputs: prompt,
           parameters: {
-            max_new_tokens: 250,
+            max_new_tokens: 200,
             temperature: 0.7,
-            return_full_text: false
+            return_full_text: false,
+            do_sample: true
           }
         })
       });
@@ -116,44 +121,46 @@ async function generateCourseWithAI(category: string) {
         // Extract JSON content from the response
         let jsonContent;
         try {
-          // The API might return the response in various formats, so we need to handle them
           if (Array.isArray(result) && result[0]?.generated_text) {
             // Try to extract JSON from the generated text
-            const matches = result[0].generated_text.match(/\{[\s\S]*\}/);
-            if (matches) {
-              jsonContent = JSON.parse(matches[0]);
+            const text = result[0].generated_text;
+            const jsonStart = text.indexOf('{');
+            const jsonEnd = text.lastIndexOf('}') + 1;
+            
+            if (jsonStart !== -1 && jsonEnd !== -1) {
+              const jsonStr = text.substring(jsonStart, jsonEnd);
+              jsonContent = JSON.parse(jsonStr);
             }
-          } else if (typeof result === 'object') {
-            jsonContent = result;
           }
           
-          if (jsonContent) {
-            // Validate and use AI-generated content
-            if (jsonContent.title && jsonContent.description) {
-              course = {
-                title: jsonContent.title,
-                description: jsonContent.description,
-                category: category,
-                instructor: jsonContent.instructor || course.instructor,
-                duration: jsonContent.duration || course.duration,
-                level: (jsonContent.level === "beginner" || jsonContent.level === "intermediate" || jsonContent.level === "advanced") 
-                  ? jsonContent.level as "beginner" | "intermediate" | "advanced"
-                  : course.level
-              };
-            }
+          if (jsonContent && jsonContent.title && jsonContent.description) {
+            // Validate and clean the AI-generated content
+            course = {
+              title: jsonContent.title.substring(0, 100), // Limit title length
+              description: jsonContent.description.substring(0, 500), // Limit description length
+              category: category,
+              instructor: jsonContent.instructor || course.instructor,
+              duration: jsonContent.duration || course.duration,
+              level: (jsonContent.level === "beginner" || jsonContent.level === "intermediate" || jsonContent.level === "advanced") 
+                ? jsonContent.level as "beginner" | "intermediate" | "advanced"
+                : course.level
+            };
           }
         } catch (error) {
           console.error("Error parsing AI response:", error);
+          // Keep default course data if parsing fails
         }
       }
     } catch (error) {
       console.error("Error generating course with AI:", error);
+      // Keep default course data if AI generation fails
     }
   }
   
   return course;
 }
 
+// Search YouTube for related videos and get a thumbnail
 async function searchYouTubeForCourse(course: any) {
   if (!youtubeApiKey) {
     console.log("YouTube API key not configured, using placeholder thumbnails");
@@ -211,8 +218,8 @@ serve(async (req) => {
     console.log(`Received request to generate ${count} courses`);
     console.log(`Clear existing courses: ${clearExisting}`);
     
-    // Ensure count is within reasonable limits
-    const coursesToGenerate = Math.min(Math.max(parseInt(count.toString()) || 5, 1), 15);
+    // Ensure count is within reasonable limits (removed the 15 course limit)
+    const coursesToGenerate = Math.min(Math.max(parseInt(count.toString()) || 5, 1), 50);
     console.log(`Will generate ${coursesToGenerate} courses`);
     
     // Clear all existing courses if requested
@@ -414,7 +421,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: `Successfully generated ${totalCoursesGenerated} courses with AI`, 
-        count: totalCoursesGenerated
+        count: totalCoursesGenerated,
+        coursesGenerated: totalCoursesGenerated
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

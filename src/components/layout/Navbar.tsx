@@ -1,11 +1,20 @@
 
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, Bell, ChevronDown, LogOut, User as UserIcon, Settings, Layers } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { 
+  Menu, 
+  X, 
+  User, 
+  LogOut, 
+  Settings, 
+  BookOpen, 
+  Users,
+  BarChart3,
+  GraduationCap,
+  Home
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,281 +23,270 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export function Navbar() {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-  
-  // Handle scroll for navbar glass effect
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location]);
-  
   const handleLogout = async () => {
-    try {
-      await logout();
-      if (isMenuOpen) {
-        setIsMenuOpen(false);
-      }
-      navigate('/');
-      toast({
-        title: "Logged out successfully",
-        description: "Hope to see you again soon!",
-      });
-    } catch (error: any) {
-      console.error("Logout failed:", error);
-      toast({
-        title: "Logout failed",
-        description: "Please try again later",
-        variant: "destructive"
-      });
-    }
+    await logout();
+    navigate("/");
   };
 
-  // Function to navigate to appropriate dashboard based on user role
-  const goToDashboard = () => {
-    if (user?.role === 'admin') {
-      navigate('/admin/courses');
-    } else {
-      navigate('/dashboard');
-    }
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
-  // Active link styles
-  const isActivePath = (path: string) => {
-    return location.pathname === path;
-  };
-  
   return (
-    <header 
-      className={`sticky top-0 z-40 w-full border-b transition-all duration-500 ${
-        scrolled ? 'bg-background/80 backdrop-blur-lg shadow-md' : 'bg-background'
-      }`}
-    >
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden" 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          
+    <nav className="bg-background border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-background/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <Link 
-            to={user ? (user.role === 'admin' ? "/admin/courses" : "/dashboard") : "/"}
-            className="flex items-center gap-2 font-bold text-xl text-[#0056D2] hover:scale-105 transition-transform duration-300"
+            to="/" 
+            className="flex items-center space-x-2 text-xl font-bold text-primary hover:text-primary/90 transition-colors"
           >
-            <Layers className="h-6 w-6 animate-pulse" />
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">TechLearn</span>
+            <GraduationCap className="h-8 w-8" />
+            <span>TechLearn</span>
           </Link>
-          
-          <div className="hidden md:flex items-center ml-6 space-x-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-sm font-medium rounded-full group">
-                  Explore 
-                  <ChevronDown className="ml-1 h-4 w-4 group-hover:rotate-180 transition-transform duration-300" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56 animate-in fade-in-80 zoom-in-95">
-                <DropdownMenuLabel>Course Categories</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/courses?category=algorithms")} className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  Data Structures & Algorithms
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/courses?category=systems")} className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  Operating Systems
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/courses?category=databases")} className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  Database Management
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/courses?category=networking")} className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  Networking
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/courses?category=ai")} className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  Artificial Intelligence
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/courses?category=web")} className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  Web Development
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link 
+              to="/courses" 
+              className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+            >
+              <BookOpen className="h-4 w-4" />
+              Browse Courses
+            </Link>
+            <Link 
+              to="/about" 
+              className="text-foreground hover:text-primary transition-colors"
+            >
+              About
+            </Link>
             
-            <Button 
-              variant={isActivePath("/courses") ? "secondary" : "ghost"} 
-              className="text-sm font-medium rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-              onClick={() => navigate("/courses")}
-            >
-              All Courses
-            </Button>
-
-            <Button 
-              variant={isActivePath("/about") ? "secondary" : "ghost"} 
-              className="text-sm font-medium rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-              onClick={() => navigate("/about")}
-            >
-              About Us
-            </Button>
-
-            {user && (
-              <Button 
-                variant={isActivePath("/dashboard") || isActivePath("/admin/courses") ? "secondary" : "ghost"} 
-                className="text-sm font-medium rounded-full"
-                onClick={goToDashboard}
-              >
-                My Learning
-              </Button>
+            {isAuthenticated && (
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                >
+                  <Home className="h-4 w-4" />
+                  Dashboard
+                </Link>
+                
+                {user?.role === 'admin' && (
+                  <>
+                    <Link 
+                      to="/admin/courses" 
+                      className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      Courses
+                    </Link>
+                    <Link 
+                      to="/admin/users" 
+                      className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                    >
+                      <Users className="h-4 w-4" />
+                      Users
+                    </Link>
+                  </>
+                )}
+              </>
             )}
           </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          
-          {user ? (
-            <div className="flex items-center gap-3">
-              <TooltipProvider delayDuration={300}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="rounded-full hover:scale-110 transition-transform duration-300 relative"
-                    >
-                      <Bell className="h-5 w-5" />
-                      <span className="sr-only">Notifications</span>
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-pulse">3</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Notifications</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
+
+          {/* Right side buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle />
+            
+            {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost"
-                    size="icon"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90 hover:scale-110 transition-all duration-300"
-                  >
-                    {user.name.charAt(0).toUpperCase()}
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {getInitials(user.name || user.email)}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 animate-in slide-in-from-top-5">
-                  <DropdownMenuLabel className="flex items-center gap-2">
-                    <span className="font-normal text-sm text-muted-foreground">Signed in as</span>
-                    <span className="font-medium">{user.name}</span>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.name || "User"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground capitalize">
+                        {user.role} Account
+                      </p>
+                    </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={goToDashboard} className="flex items-center gap-2 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
-                    {user.role === 'admin' ? <Layers className="h-4 w-4" /> : <UserIcon className="h-4 w-4" />}
-                    <span>{user.role === 'admin' ? 'Admin Dashboard' : 'My Dashboard'}</span>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate("/admin/courses")}>
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        <span>Manage Courses</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                        <Users className="mr-2 h-4 w-4" />
+                        <span>Manage Users</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={handleLogout} 
-                    disabled={isLoading}
-                    className="flex items-center gap-2 text-red-600 dark:text-red-400 cursor-pointer transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>{isLoading ? 'Logging out...' : 'Log out'}</span>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link to="/login">
-                <Button variant="ghost" className="hover:scale-105 transition-transform duration-300 rounded-full">Login</Button>
-              </Link>
-              <Link to="/register" className="hidden md:inline-flex">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 transition-all duration-300 text-white rounded-full shadow-md hover:shadow-lg">Sign Up</Button>
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Mobile Menu - with simplified navigation */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row auto-rows-max overflow-auto bg-white dark:bg-gray-900 p-6 pb-32 shadow-xl animate-in slide-in-from-top-5 md:hidden">
-          <nav className="flex flex-col gap-6 text-lg">
-            <Link to="/courses">
-              <Button variant="ghost" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">All Courses</Button>
-            </Link>
-            <Link to="/about">
-              <Button variant="ghost" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">About Us</Button>
-            </Link>
-            {user && (
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                onClick={goToDashboard}
-              >
-                My Learning
-              </Button>
-            )}
-            {user?.role === 'admin' && (
-              <Link to="/admin/courses">
-                <Button variant="ghost" className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  Manage Courses
-                </Button>
-              </Link>
-            )}
-            {user ? (
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2 hover:bg-red-100 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950 dark:hover:text-red-400 transition-all"
-                onClick={handleLogout}
-                disabled={isLoading}
-              >
-                <LogOut className="h-4 w-4" />
-                {isLoading ? 'Logging out...' : 'Logout'}
-              </Button>
             ) : (
-              <div className="flex flex-col gap-2">
-                <Link to="/login">
-                  <Button variant="outline" className="w-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Login</Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-colors">Sign Up</Button>
-                </Link>
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/register">Get Started</Link>
+                </Button>
               </div>
             )}
-          </nav>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center space-x-2">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-foreground"
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </div>
-      )}
-    </header>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-border">
+              <Link
+                to="/courses"
+                className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Browse Courses
+              </Link>
+              <Link
+                to="/about"
+                className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  
+                  {user?.role === 'admin' && (
+                    <>
+                      <Link
+                        to="/admin/courses"
+                        className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Courses
+                      </Link>
+                      <Link
+                        to="/admin/users"
+                        className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Users
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
+              
+              {isAuthenticated && user ? (
+                <div className="border-t border-border pt-4 pb-3">
+                  <div className="flex items-center px-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {getInitials(user.name || user.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="ml-3">
+                      <div className="text-base font-medium text-foreground">
+                        {user.name || "User"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-1 px-2">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        navigate("/dashboard");
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-t border-border pt-4 pb-3 space-y-2 px-3">
+                  <Button variant="ghost" className="w-full" asChild>
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
+                  </Button>
+                  <Button className="w-full" asChild>
+                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
   );
 }

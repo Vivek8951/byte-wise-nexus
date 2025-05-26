@@ -275,6 +275,15 @@ export default function AdminCourses() {
   };
   
   const handlePopulateCourses = async () => {
+    if (courseCount <= 0) {
+      toast({
+        title: "Invalid course count",
+        description: "Please specify at least 1 course",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsPopulating(true);
     try {
       const result = await populateCourses(courseCount, {
@@ -512,13 +521,12 @@ export default function AdminCourses() {
                   id="courseCount"
                   type="number"
                   min="1"
-                  max="15"
                   value={courseCount}
                   onChange={(e) => setCourseCount(parseInt(e.target.value) || 5)}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Maximum 15 courses per generation
+                  Specify the number of courses to generate
                 </p>
               </div>
             </div>
