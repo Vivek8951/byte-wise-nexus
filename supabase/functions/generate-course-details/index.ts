@@ -2,11 +2,47 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || '';
+const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY') || '';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Function to search YouTube for relevant videos
+async function searchYouTubeVideos(query: string, maxResults: number = 3) {
+  if (!YOUTUBE_API_KEY) {
+    console.log('YouTube API key not found, skipping video search');
+    return [];
+  }
+  
+  try {
+    const searchQuery = encodeURIComponent(`${query} tutorial programming course`);
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&type=video&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}&videoEmbeddable=true&videoCategoryId=27`
+    );
+    
+    if (!response.ok) {
+      console.error('YouTube API error:', response.status, response.statusText);
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    return data.items?.map((item: any) => ({
+      title: item.snippet.title,
+      description: item.snippet.description,
+      videoId: item.id.videoId,
+      youtubeUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
+      thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+      duration: '10:00' // Default duration, could be fetched with additional API call
+    })) || [];
+  } catch (error) {
+    console.error('Error searching YouTube:', error);
+    return [];
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -33,12 +69,12 @@ serve(async (req) => {
     const prompt = `Generate a detailed description for a technical course titled "${title}". Also provide:
 1. A category for the course (e.g., Web Development, Data Science, Programming, Cybersecurity, etc.)
 2. A suggested duration for the course (e.g., "8 weeks")
-3. A difficulty level (beginner, intermediate, or advanced)
+3. A difficulty level (MUST be exactly one of: beginner, intermediate, advanced)
 4. A fictional instructor name who would be qualified to teach this course
 5. 3 video lesson titles that would be included in this course
 
 Format the response as JSON with these keys:
-description (string), category (string), duration (string), level (string), instructor (string), and videos (array of strings).`;
+description (string), category (string), duration (string), level (string), instructor (string), and videos (array of objects with title and description).`;
 
     // Call OpenRouter API
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -54,7 +90,7 @@ description (string), category (string), duration (string), level (string), inst
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that generates course details in JSON format."
+            content: "You are a helpful assistant that generates course details in JSON format. Always ensure the level field is exactly 'beginner', 'intermediate', or 'advanced'."
           },
           {
             role: "user",
@@ -88,11 +124,45 @@ description (string), category (string), duration (string), level (string), inst
       
       if (jsonMatch) {
         courseDetails = JSON.parse(jsonMatch[0]);
+        
+        // Ensure level is valid
+        if (!['beginner', 'intermediate', 'advanced'].includes(courseDetails.level)) {
+          courseDetails.level = 'intermediate';
+        }
+        
+        // Search for YouTube videos related to the course
+        console.log('Searching for YouTube videos...');
+        const youtubeVideos = await searchYouTubeVideos(title);
+        
+        // Enhance video data with YouTube results
+        if (youtubeVideos.length > 0 && courseDetails.videos) {
+          courseDetails.videos = courseDetails.videos.map((video: any, index: number) => {
+            const youtubeVideo = youtubeVideos[index];
+            if (youtubeVideo) {
+              return {
+                ...video,
+                youtubeUrl: youtubeVideo.embedUrl, // Use embed URL
+                thumbnail: youtubeVideo.thumbnail,
+                duration: youtubeVideo.duration
+              };
+            }
+            return video;
+          });
+        } else if (youtubeVideos.length > 0) {
+          // If no videos in courseDetails, use YouTube results
+          courseDetails.videos = youtubeVideos.map((video) => ({
+            title: video.title,
+            description: video.description,
+            youtubeUrl: video.embedUrl,
+            thumbnail: video.thumbnail,
+            duration: video.duration
+          }));
+        }
+        
       } else {
         // Fallback: Parse the response as plain text
         const lines = generatedText.split('\n').filter(line => line.trim());
         
-        // Extract what we can
         const description = lines.find(line => 
           !line.toLowerCase().startsWith('category') && 
           !line.toLowerCase().startsWith('duration') && 
@@ -113,11 +183,25 @@ description (string), category (string), duration (string), level (string), inst
         const instructorLine = lines.find(line => line.toLowerCase().includes('instructor')) || '';
         const instructor = instructorLine.split(':')[1]?.trim() || 'John Smith';
         
-        const videoLines = lines.filter(line => line.toLowerCase().includes('video') || line.match(/^\d+\.\s/));
-        const videos = videoLines.map(line => {
-          const parts = line.split(':');
-          return parts.length > 1 ? parts[1].trim() : line.replace(/^\d+\.\s/, '').trim();
-        }).filter(Boolean);
+        // Search for YouTube videos for fallback
+        const youtubeVideos = await searchYouTubeVideos(title);
+        
+        let videos;
+        if (youtubeVideos.length > 0) {
+          videos = youtubeVideos.map((video) => ({
+            title: video.title,
+            description: video.description,
+            youtubeUrl: video.embedUrl,
+            thumbnail: video.thumbnail,
+            duration: video.duration
+          }));
+        } else {
+          videos = [
+            { title: `Introduction to ${title}`, description: `Getting started with ${title}` },
+            { title: `${title} Advanced Techniques`, description: `Advanced concepts in ${title}` },
+            { title: `${title} Projects`, description: `Practical projects using ${title}` }
+          ];
+        }
         
         courseDetails = {
           description,
@@ -126,9 +210,11 @@ description (string), category (string), duration (string), level (string), inst
           level: level.toLowerCase().includes('begin') ? 'beginner' : 
                  level.toLowerCase().includes('adv') ? 'advanced' : 'intermediate',
           instructor,
-          videos: videos.length ? videos : [`Introduction to ${title}`, `${title} Advanced Techniques`, `${title} Projects`]
+          videos
         };
       }
+      
+      console.log('Generated course details:', courseDetails);
       
       return new Response(
         JSON.stringify({ success: true, courseDetails }),
@@ -138,7 +224,26 @@ description (string), category (string), duration (string), level (string), inst
       console.error("Error parsing AI response:", error);
       console.log("Raw response:", generatedText);
       
-      // Return a fallback response
+      // Return a fallback response with YouTube search
+      const youtubeVideos = await searchYouTubeVideos(title);
+      
+      let videos;
+      if (youtubeVideos.length > 0) {
+        videos = youtubeVideos.map((video) => ({
+          title: video.title,
+          description: video.description,
+          youtubeUrl: video.embedUrl,
+          thumbnail: video.thumbnail,
+          duration: video.duration
+        }));
+      } else {
+        videos = [
+          { title: `Introduction to ${title}`, description: `Getting started with ${title}` },
+          { title: `${title} Advanced Techniques`, description: `Advanced concepts in ${title}` },
+          { title: `${title} Projects`, description: `Practical projects using ${title}` }
+        ];
+      }
+      
       return new Response(
         JSON.stringify({
           success: true,
@@ -148,7 +253,7 @@ description (string), category (string), duration (string), level (string), inst
             duration: "8 weeks",
             level: "intermediate",
             instructor: "John Smith",
-            videos: [`Introduction to ${title}`, `${title} Advanced Techniques`, `${title} Projects`]
+            videos
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
