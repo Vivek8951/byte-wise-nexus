@@ -83,7 +83,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
           prompt: `Create a comprehensive course description for a computer science course about ${topic}. 
                 Include learning objectives, key topics covered, and target audience.
                 Keep it concise but informative, maximum 150 words.`,
-          maxTokens: 500
+          context: "You are an educational content creator specializing in computer science courses.",
+          maxTokens: 500,
+          temperature: 0.7
         }
       });
       
@@ -111,7 +113,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         body: { 
           prompt: `Create a short summary of what might be in a computer science educational video 
           with this URL: ${videoUrl}. Pretend you are transcribing key points from the video.`,
-          maxTokens: 800
+          context: "You are a video content analyzer for educational technology videos.",
+          maxTokens: 800,
+          temperature: 0.7
         }
       });
       
@@ -145,18 +149,21 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Determine if request is for text or image generation
+      // Determine if request is for image generation
       const isImageRequest = content.toLowerCase().includes('diagram') || 
                              content.toLowerCase().includes('graph') || 
                              content.toLowerCase().includes('picture') ||
-                             content.toLowerCase().includes('image');
+                             content.toLowerCase().includes('image') ||
+                             content.toLowerCase().includes('visual');
       
       if (isImageRequest) {
-        // Generate image description
+        // Generate image description first
         const { data: imageDescData, error: imageDescError } = await supabase.functions.invoke("text-generation", {
           body: { 
-            prompt: `Generate a detailed description for an image based on: ${content}`,
-            maxTokens: 500
+            prompt: `Generate a detailed description for an educational image or diagram based on: ${content}`,
+            context: "You are creating descriptions for educational visual content in computer science.",
+            maxTokens: 300,
+            temperature: 0.7
           }
         });
         
@@ -167,19 +174,20 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         const imageDesc = imageDescData?.generatedText || 
                          "I've prepared a visual representation based on your request.";
         
-        // Since we can't generate images directly, use Unsplash for a relevant image
+        // Use a relevant image from Unsplash
+        const searchTerm = content.replace(/image|picture|diagram|graph|visual/gi, '').trim() || 'computer science';
         const botMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: imageDesc,
           timestamp: new Date().toISOString(),
-          imageUrl: `https://source.unsplash.com/random/800x600/?${encodeURIComponent(content)}`,
+          imageUrl: `https://source.unsplash.com/800x600/?${encodeURIComponent(searchTerm)}`,
         };
         
         setMessages(prev => [...prev, botMessage]);
       } else {
-        // Regular text message - use the OpenRouter API through Supabase edge function
-        const recentMessages = messages.slice(-5).map(msg => ({
+        // Regular text message - use OpenRouter API through Supabase edge function
+        const recentMessages = messages.slice(-4).map(msg => ({
           role: msg.role === 'assistant' ? 'assistant' : 'user',
           content: msg.content
         }));
@@ -187,9 +195,10 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase.functions.invoke("text-generation", {
           body: { 
             prompt: content,
-            context: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics. Include code examples when relevant.",
+            context: "You are an AI learning assistant for a computer science e-learning platform. Provide helpful, accurate, and concise answers about computer science topics, programming, algorithms, and technology. Include code examples when relevant. Always respond clearly and avoid any garbled or unclear text.",
             previousMessages: recentMessages,
-            maxTokens: 800
+            maxTokens: 800,
+            temperature: 0.7
           }
         });
         
@@ -197,7 +206,12 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
           throw new Error(error.message);
         }
         
-        const responseText = data?.generatedText || "I'm sorry, I couldn't generate a response.";
+        const responseText = data?.generatedText || "I'm sorry, I couldn't generate a proper response.";
+        
+        // Validate that the response is clean text
+        if (responseText.length < 10 || responseText.includes('later') && responseText.includes('crucial')) {
+          throw new Error("Invalid response received from AI");
+        }
         
         const botMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -209,13 +223,14 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         setMessages(prev => [...prev, botMessage]);
       }
     } catch (error) {
-      // Handle errors
+      // Handle errors gracefully
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      console.error('Chatbot error:', errorMessage);
       
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I apologize, but I encountered an issue while processing your request. Please try again or try a different question.`,
+        content: `I apologize, but I encountered an issue while processing your request. The error was: ${errorMessage}. Please try asking your question again, or check if the OpenRouter API key is properly configured.`,
         timestamp: new Date().toISOString(),
       };
       
@@ -223,7 +238,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       
       toast({
         title: "AI Assistant Error",
-        description: errorMessage,
+        description: "There was an issue with the AI response. Please try again.",
         variant: "destructive",
       });
     } finally {
