@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const HUGGING_FACE_API_KEY = Deno.env.get('HUGGING_FACE_API_KEY') || '';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || '';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,8 +15,8 @@ serve(async (req) => {
   }
   
   try {
-    if (!HUGGING_FACE_API_KEY) {
-      throw new Error("Hugging Face API key not found");
+    if (!OPENROUTER_API_KEY) {
+      throw new Error("OpenRouter API key not found");
     }
     
     const { title } = await req.json();
@@ -30,8 +30,7 @@ serve(async (req) => {
     
     console.log(`Generating course details for: "${title}"`);
     
-    const prompt = `
-Generate a detailed description for a technical course titled "${title}". Also provide:
+    const prompt = `Generate a detailed description for a technical course titled "${title}". Also provide:
 1. A category for the course (e.g., Web Development, Data Science, Programming, Cybersecurity, etc.)
 2. A suggested duration for the course (e.g., "8 weeks")
 3. A difficulty level (beginner, intermediate, or advanced)
@@ -39,38 +38,46 @@ Generate a detailed description for a technical course titled "${title}". Also p
 5. 3 video lesson titles that would be included in this course
 
 Format the response as JSON with these keys:
-description (string), category (string), duration (string), level (string), instructor (string), and videos (array of strings).
-`;
+description (string), category (string), duration (string), level (string), instructor (string), and videos (array of strings).`;
 
-    // Call Hugging Face API
-    const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", {
+    // Call OpenRouter API
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${HUGGING_FACE_API_KEY}`,
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://your-app.com",
+        "X-Title": "Tech Learn Platform"
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 800,
-          temperature: 0.7,
-          return_full_text: false
-        }
+        model: "microsoft/wizardlm-2-8x22b",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that generates course details in JSON format."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 800,
+        temperature: 0.7
       })
     });
     
     if (!response.ok) {
-      console.error("Error response from Hugging Face API:", await response.text());
-      throw new Error(`Failed to get response from Hugging Face API: ${response.status} ${response.statusText}`);
+      console.error("Error response from OpenRouter API:", await response.text());
+      throw new Error(`Failed to get response from OpenRouter API: ${response.status} ${response.statusText}`);
     }
     
     const responseData = await response.json();
     
     // Extract the text response
-    const generatedText = responseData[0]?.generated_text;
+    const generatedText = responseData.choices?.[0]?.message?.content;
     
     if (!generatedText) {
-      throw new Error("Invalid response from Hugging Face API");
+      throw new Error("Invalid response from OpenRouter API");
     }
     
     // Try to extract JSON from the response

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, Send, Image, Mic, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,11 +42,11 @@ export function Chatbot() {
 
   const saveApiKey = () => {
     setApiKey(apiKeyInput);
-    localStorage.setItem('huggingface_api_key', apiKeyInput);
+    localStorage.setItem('openrouter_api_key', apiKeyInput);
     setApiKeyDialogOpen(false);
     toast({
       title: "API Key Saved",
-      description: "Your Hugging Face API key has been updated successfully.",
+      description: "Your OpenRouter API key has been updated successfully.",
     });
   };
   
@@ -204,7 +203,7 @@ export function Chatbot() {
           <DialogHeader>
             <DialogTitle>AI Assistant Settings</DialogTitle>
             <DialogDescription>
-              Enter your Hugging Face API key to enable AI features.
+              Enter your OpenRouter API key to enable AI features.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -217,7 +216,7 @@ export function Chatbot() {
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="hf_..."
+                placeholder="sk-or-v1-..."
                 className="col-span-3"
               />
             </div>

@@ -7,8 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Hugging Face API Key
-const HUGGING_FACE_API_KEY = Deno.env.get('HUGGING_FACE_API_KEY') || '';
+// OpenRouter API Key
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || '';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -18,8 +18,8 @@ serve(async (req) => {
   
   try {
     // Validate API key
-    if (!HUGGING_FACE_API_KEY) {
-      throw new Error("Hugging Face API key not found");
+    if (!OPENROUTER_API_KEY) {
+      throw new Error("OpenRouter API key not found");
     }
     
     // Parse request body
@@ -33,54 +33,56 @@ serve(async (req) => {
       );
     }
     
-    // Construct input based on provided parameters
-    let fullPrompt = "";
+    // Construct messages for OpenRouter
+    const messages = [];
     
     if (context) {
-      fullPrompt += `${context}\n\n`;
-    }
-    
-    if (previousMessages && Array.isArray(previousMessages) && previousMessages.length > 0) {
-      // Add conversation history
-      previousMessages.forEach((msg) => {
-        const role = msg.role === 'assistant' ? 'Assistant' : 'User';
-        fullPrompt += `${role}: ${msg.content}\n`;
+      messages.push({
+        role: "system",
+        content: context
       });
     }
     
-    fullPrompt += `User: ${prompt}\nAssistant: `;
+    if (previousMessages && Array.isArray(previousMessages) && previousMessages.length > 0) {
+      messages.push(...previousMessages);
+    }
     
-    console.log("Sending request to Hugging Face API");
+    messages.push({
+      role: "user",
+      content: prompt
+    });
     
-    // Call Hugging Face API
-    const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", {
+    console.log("Sending request to OpenRouter API");
+    
+    // Call OpenRouter API
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${HUGGING_FACE_API_KEY}`,
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://your-app.com",
+        "X-Title": "Tech Learn Platform"
       },
       body: JSON.stringify({
-        inputs: fullPrompt,
-        parameters: {
-          max_new_tokens: maxTokens,
-          temperature: temperature,
-          return_full_text: false
-        }
+        model: "microsoft/wizardlm-2-8x22b",
+        messages: messages,
+        max_tokens: maxTokens,
+        temperature: temperature
       })
     });
     
     if (!response.ok) {
-      console.error("Error response from Hugging Face API:", await response.text());
-      throw new Error(`Failed to get response from Hugging Face API: ${response.status} ${response.statusText}`);
+      console.error("Error response from OpenRouter API:", await response.text());
+      throw new Error(`Failed to get response from OpenRouter API: ${response.status} ${response.statusText}`);
     }
     
     const responseData = await response.json();
     
     // Extract the text response
-    const generatedText = responseData[0]?.generated_text;
+    const generatedText = responseData.choices?.[0]?.message?.content;
     
     if (!generatedText) {
-      throw new Error("Invalid response from Hugging Face API");
+      throw new Error("Invalid response from OpenRouter API");
     }
     
     return new Response(

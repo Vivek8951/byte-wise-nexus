@@ -39,13 +39,13 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       try {
         // Try to use the Supabase edge function to validate API key
         const { data, error } = await supabase.functions.invoke("check-api-keys", {
-          body: { keyType: "huggingface" }
+          body: { keyType: "openrouter" }
         });
         
         if (error) {
           console.error("Error checking API key:", error);
         } else if (data?.isValid) {
-          console.log("HuggingFace API key is valid");
+          console.log("OpenRouter API key is valid");
         }
       } catch (error) {
         console.error("Error validating API key:", error);
@@ -74,7 +74,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Generate course description based on topic using Hugging Face
+  // Generate course description based on topic using OpenRouter
   const generateCourseDescription = async (topic: string): Promise<string> => {
     try {
       // Call Supabase edge function to generate description
@@ -103,7 +103,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Get video transcription using Hugging Face
+  // Get video transcription using OpenRouter
   const getVideoTranscription = async (videoUrl: string): Promise<string> => {
     try {
       // Call Supabase edge function to analyze video
@@ -178,7 +178,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         
         setMessages(prev => [...prev, botMessage]);
       } else {
-        // Regular text message - use the Hugging Face API through Supabase edge function
+        // Regular text message - use the OpenRouter API through Supabase edge function
         const recentMessages = messages.slice(-5).map(msg => ({
           role: msg.role === 'assistant' ? 'assistant' : 'user',
           content: msg.content
