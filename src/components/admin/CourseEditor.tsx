@@ -625,9 +625,9 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                       <Label htmlFor={`note-type-${index}`}>File Type</Label>
                       <Select 
                         value={note.fileType as string} 
-                        onValueChange={(value) => {
+                        onValueChange={(value: string) => {
                           const updatedNotes = [...notes];
-                          updatedNotes[index] = { ...updatedNotes[index], fileType: value };
+                          updatedNotes[index] = { ...updatedNotes[index], fileType: value as 'pdf' | 'doc' | 'txt' };
                           setNotes(updatedNotes);
                         }}
                       >

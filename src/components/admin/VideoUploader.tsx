@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -97,12 +96,8 @@ export function VideoUploader({ courseId, onUploadComplete }: VideoUploaderProps
         analyzedContent: null
       };
 
-      const newVideo = await addVideo(videoData);
+      await addVideo(videoData);
       setProgress(80);
-
-      if (!newVideo || !newVideo.id) {
-        throw new Error("Failed to create video record");
-      }
 
       setIsUploading(false);
       setProgress(100);
@@ -110,7 +105,7 @@ export function VideoUploader({ courseId, onUploadComplete }: VideoUploaderProps
       // 4. Trigger AI processing
       setIsProcessing(true);
       const { data, error } = await supabase.functions.invoke("process-video", {
-        body: { videoId: newVideo.id, courseId: courseId },
+        body: { courseId: courseId },
       });
 
       if (error) {
@@ -141,7 +136,7 @@ export function VideoUploader({ courseId, onUploadComplete }: VideoUploaderProps
       console.error("Upload error:", error);
       toast({
         title: "Upload failed",
-        description: error.message || "An error occurred while uploading the video",
+        description: error instanceof Error ? error.message : "An error occurred while uploading the video",
         variant: "destructive",
       });
     } finally {

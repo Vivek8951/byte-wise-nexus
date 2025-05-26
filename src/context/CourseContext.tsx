@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Course, Video, Note } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,9 +11,10 @@ interface CourseContextType {
   addCourse: (course: Omit<Course, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Course | null>;
   updateCourse: (id: string, updates: Partial<Course>) => Promise<void>;
   deleteCourse: (id: string) => Promise<void>;
+  getCourse: (id: string) => Course | undefined;
   getCourseVideos: (courseId: string) => Video[];
   getCourseNotes: (courseId: string) => Note[];
-  addVideo: (video: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addVideo: (video: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Video | null>;
   addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   deleteVideo: (id: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
@@ -241,7 +241,11 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addVideo = async (videoData: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const getCourse = (id: string): Course | undefined => {
+    return courses.find(course => course.id === id);
+  };
+
+  const addVideo = async (videoData: Omit<Video, 'id' | 'createdAt' | 'updatedAt'>): Promise<Video | null> => {
     try {
       console.log('Adding video:', videoData);
       
@@ -274,6 +278,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 
       setVideos(prev => [...prev, newVideo]);
       console.log('Video added successfully');
+      return newVideo;
     } catch (error) {
       console.error('Error adding video:', error);
       toast({
@@ -281,6 +286,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         description: "Failed to add video to the database",
         variant: "destructive"
       });
+      return null;
     }
   };
 
@@ -376,6 +382,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       addCourse,
       updateCourse,
       deleteCourse,
+      getCourse,
       getCourseVideos,
       getCourseNotes,
       addVideo,
