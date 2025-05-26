@@ -70,6 +70,7 @@ export default function AdminCourses() {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [courseCount, setCourseCount] = useState(5);
   const [clearExisting, setClearExisting] = useState(false);
+  const [isDeletingCourse, setIsDeletingCourse] = useState(false);
   
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -254,12 +255,24 @@ export default function AdminCourses() {
   
   const handleDeleteCourse = async () => {
     if (currentCourse) {
-      await deleteCourse(currentCourse.id);
-      setIsDeleteDialogOpen(false);
-      toast({
-        title: "Course deleted",
-        description: `"${currentCourse.title}" has been removed`,
-      });
+      setIsDeletingCourse(true);
+      try {
+        await deleteCourse(currentCourse.id);
+        setIsDeleteDialogOpen(false);
+        toast({
+          title: "Course deleted",
+          description: `"${currentCourse.title}" has been removed successfully`,
+        });
+      } catch (error) {
+        console.error('Error deleting course:', error);
+        toast({
+          title: "Error deleting course",
+          description: "Failed to delete the course. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsDeletingCourse(false);
+      }
     }
   };
   
@@ -487,12 +500,20 @@ export default function AdminCourses() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingCourse}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteCourse} 
+              disabled={isDeletingCourse}
               className="bg-red-500 hover:bg-red-600"
             >
-              Delete
+              {isDeletingCourse ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.2";
 
@@ -218,34 +219,53 @@ serve(async (req) => {
     console.log(`Received request to generate ${count} courses`);
     console.log(`Clear existing courses: ${clearExisting}`);
     
-    // Ensure count is within reasonable limits (removed the 15 course limit)
+    // Ensure count is within reasonable limits
     const coursesToGenerate = Math.min(Math.max(parseInt(count.toString()) || 5, 1), 50);
     console.log(`Will generate ${coursesToGenerate} courses`);
     
     // Clear all existing courses if requested
     if (clearExisting) {
-      // Delete all videos and notes (will cascade due to foreign key constraints)
-      const { error: deleteVideosError } = await supabase
-        .from('videos')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      console.log("Starting to clear existing courses...");
+      
+      try {
+        // Delete all videos first (due to foreign key constraints)
+        const { error: deleteVideosError } = await supabase
+          .from('videos')
+          .delete()
+          .not('id', 'is', null); // Delete all videos
+          
+        if (deleteVideosError) {
+          console.error("Error deleting videos:", deleteVideosError);
+          throw new Error(`Error deleting existing videos: ${deleteVideosError.message}`);
+        }
         
-      const { error: deleteNotesError } = await supabase
-        .from('notes')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        // Delete all notes
+        const { error: deleteNotesError } = await supabase
+          .from('notes')
+          .delete()
+          .not('id', 'is', null); // Delete all notes
+        
+        if (deleteNotesError) {
+          console.error("Error deleting notes:", deleteNotesError);
+          throw new Error(`Error deleting existing notes: ${deleteNotesError.message}`);
+        }
       
-      // Delete all courses
-      const { error: deleteCoursesError } = await supabase
-        .from('courses')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      if (deleteCoursesError) {
-        throw new Error(`Error deleting existing courses: ${deleteCoursesError.message}`);
+        // Delete all courses
+        const { error: deleteCoursesError } = await supabase
+          .from('courses')
+          .delete()
+          .not('id', 'is', null); // Delete all courses
+        
+        if (deleteCoursesError) {
+          console.error("Error deleting courses:", deleteCoursesError);
+          throw new Error(`Error deleting existing courses: ${deleteCoursesError.message}`);
+        }
+        
+        console.log("Successfully deleted existing courses, videos, and notes");
+      } catch (clearError) {
+        console.error("Error during clear operation:", clearError);
+        throw new Error(`Failed to clear existing courses: ${clearError.message}`);
       }
-      
-      console.log("Deleted existing courses successfully");
     }
     
     console.log(`Generating ${coursesToGenerate} courses with AI`);
