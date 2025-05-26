@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
@@ -137,7 +136,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     }
   }, [course?.id, course?.thumbnail, toast]);
   
-  // Enhanced AI generation with YouTube video fetching
+  // Enhanced AI generation with better prompting
   const generateCourseDetails = async () => {
     const titleValue = watchedTitle || titleRef.current?.value;
     if (!titleValue) {
@@ -154,56 +153,75 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     try {
       console.log('Generating course details for:', titleValue);
       
-      const { data, error } = await supabase.functions.invoke('generate-course-details', {
-        body: { title: titleValue }
+      // Generate description
+      const { data: descData, error: descError } = await supabase.functions.invoke('text-generation', {
+        body: { 
+          prompt: `Write a professional course description for "${titleValue}". Include learning objectives, key topics, and target audience. Keep it between 100-200 words. Write in clear, professional English without any garbled text.`,
+          maxTokens: 400,
+          temperature: 0.3
+        }
       });
       
-      if (error) throw error;
+      if (descError) throw descError;
       
-      if (data.success && data.courseDetails) {
-        const { description, category, instructor, duration, level: aiLevel, videos: videoData } = data.courseDetails;
-        
+      // Generate other details
+      const { data: detailsData, error: detailsError } = await supabase.functions.invoke('text-generation', {
+        body: { 
+          prompt: `For a course titled "${titleValue}", provide only these details in this exact format:
+          Category: [category name]
+          Instructor: [instructor name]
+          Duration: [duration like "8 weeks"]
+          Level: [beginner/intermediate/advanced]`,
+          maxTokens: 200,
+          temperature: 0.3
+        }
+      });
+      
+      if (detailsError) throw detailsError;
+      
+      if (descData.generatedText && detailsData.generatedText) {
         // Update form values
-        setValue('description', description);
-        setValue('category', category);
-        setValue('instructor', instructor);
-        setValue('duration', duration);
-        setLevel(aiLevel);
+        setValue('description', descData.generatedText.trim());
+        
+        // Parse the details response
+        const details = detailsData.generatedText;
+        const categoryMatch = details.match(/Category:\s*(.+)/i);
+        const instructorMatch = details.match(/Instructor:\s*(.+)/i);
+        const durationMatch = details.match(/Duration:\s*(.+)/i);
+        const levelMatch = details.match(/Level:\s*(.+)/i);
+        
+        if (categoryMatch) setValue('category', categoryMatch[1].trim());
+        if (instructorMatch) setValue('instructor', instructorMatch[1].trim());
+        if (durationMatch) setValue('duration', durationMatch[1].trim());
+        if (levelMatch) {
+          const levelValue = levelMatch[1].trim().toLowerCase();
+          if (['beginner', 'intermediate', 'advanced'].includes(levelValue)) {
+            setLevel(levelValue);
+          }
+        }
         
         // Generate a thumbnail URL using Unsplash
+        const category = categoryMatch ? categoryMatch[1].trim() : titleValue;
         const thumbnailUrl = `https://source.unsplash.com/800x600/?${encodeURIComponent(category.toLowerCase() + ' programming')}`;
         setValue('thumbnail', thumbnailUrl);
         
-        // Process videos - now with YouTube URLs
-        let newVideos = [];
-        if (videoData && videoData.length > 0) {
-          newVideos = videoData.map((video: any, index: number) => ({
-            title: video.title || `Lesson ${index + 1}: ${titleValue}`,
-            description: video.description || `Video lesson covering ${video.title || 'key concepts'}`,
-            url: video.youtubeUrl || '',
-            duration: video.duration || '10:00',
-            thumbnail: video.thumbnail || '',
-            order: index + 1
-          }));
-        } else {
-          // Fallback videos if none were generated
-          newVideos = [
-            { 
-              title: `Introduction to ${titleValue}`, 
-              description: `Get started with the fundamentals of ${titleValue}`, 
-              url: '', 
-              duration: '15:00', 
-              order: 1 
-            },
-            { 
-              title: `${titleValue} Advanced Concepts`, 
-              description: `Deep dive into advanced ${titleValue} topics`, 
-              url: '', 
-              duration: '20:00', 
-              order: 2 
-            }
-          ];
-        }
+        // Generate default videos
+        const newVideos = [
+          { 
+            title: `Introduction to ${titleValue}`, 
+            description: `Get started with the fundamentals of ${titleValue}`, 
+            url: '', 
+            duration: '15:00', 
+            order: 1 
+          },
+          { 
+            title: `${titleValue} Advanced Concepts`, 
+            description: `Deep dive into advanced ${titleValue} topics`, 
+            url: '', 
+            duration: '20:00', 
+            order: 2 
+          }
+        ];
         
         setVideos(newVideos);
         
@@ -222,7 +240,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
         
         toast({
           title: "Course details generated",
-          description: "AI has generated course details with YouTube videos based on your title",
+          description: "AI has generated course details based on your title",
         });
       } else {
         throw new Error("Failed to generate course details");
