@@ -6,10 +6,8 @@ import {
   X, 
   User, 
   LogOut, 
-  Settings, 
   BookOpen, 
   Users,
-  BarChart3,
   GraduationCap,
   Home
 } from "lucide-react";
@@ -46,39 +44,37 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-background/80">
+    <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-2 text-xl font-bold text-primary hover:text-primary/90 transition-colors"
+            className="flex items-center space-x-2 text-xl font-bold text-primary hover:text-primary/90 transition-colors group"
           >
-            <GraduationCap className="h-8 w-8" />
-            <span>TechLearn</span>
+            <div className="p-1 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 group-hover:scale-105 transition-transform">
+              <GraduationCap className="h-6 w-6 text-white" />
+            </div>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              TechLearn
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             <Link 
               to="/courses" 
-              className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+              className="text-foreground/80 hover:text-foreground transition-colors flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent/50"
             >
               <BookOpen className="h-4 w-4" />
               Browse Courses
-            </Link>
-            <Link 
-              to="/about" 
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              About
             </Link>
             
             {isAuthenticated && (
               <>
                 <Link 
                   to="/dashboard" 
-                  className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                  className="text-foreground/80 hover:text-foreground transition-colors flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent/50"
                 >
                   <Home className="h-4 w-4" />
                   Dashboard
@@ -88,14 +84,14 @@ export function Navbar() {
                   <>
                     <Link 
                       to="/admin/courses" 
-                      className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                      className="text-foreground/80 hover:text-foreground transition-colors flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent/50"
                     >
                       <BookOpen className="h-4 w-4" />
                       Courses
                     </Link>
                     <Link 
                       to="/admin/users" 
-                      className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                      className="text-foreground/80 hover:text-foreground transition-colors flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent/50"
                     >
                       <Users className="h-4 w-4" />
                       Users
@@ -107,51 +103,51 @@ export function Navbar() {
           </div>
 
           {/* Right side buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3">
             <ThemeToggle />
             
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full border-2 border-transparent hover:border-primary/20">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-medium">
                         {getInitials(user.name || user.email)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
+                <DropdownMenuContent className="w-64 p-2" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal p-3 bg-accent/50 rounded-md">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{user.name || "User"}</p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
-                      <p className="text-xs leading-none text-muted-foreground capitalize">
+                      <p className="text-xs leading-none text-muted-foreground capitalize bg-primary/10 text-primary px-2 py-1 rounded-full inline-block w-fit mt-1">
                         {user.role} Account
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
                   {user.role === 'admin' && (
                     <>
-                      <DropdownMenuItem onClick={() => navigate("/admin/courses")}>
+                      <DropdownMenuItem onClick={() => navigate("/admin/courses")} className="cursor-pointer">
                         <BookOpen className="mr-2 h-4 w-4" />
                         <span>Manage Courses</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                      <DropdownMenuItem onClick={() => navigate("/admin/users")} className="cursor-pointer">
                         <Users className="mr-2 h-4 w-4" />
                         <span>Manage Users</span>
                       </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -159,10 +155,10 @@ export function Navbar() {
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" asChild className="hover:bg-accent">
                   <Link to="/login">Sign In</Link>
                 </Button>
-                <Button asChild>
+                <Button asChild className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-md hover:shadow-lg transition-all">
                   <Link to="/register">Get Started</Link>
                 </Button>
               </div>
@@ -185,21 +181,14 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-border">
+          <div className="md:hidden border-t border-border">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <Link
                 to="/courses"
                 className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Browse Courses
-              </Link>
-              <Link
-                to="/about"
-                className="block px-3 py-2 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
               </Link>
               
               {isAuthenticated && (
@@ -234,10 +223,10 @@ export function Navbar() {
               )}
               
               {isAuthenticated && user ? (
-                <div className="border-t border-border pt-4 pb-3">
-                  <div className="flex items-center px-3">
+                <div className="border-t border-border pt-4 pb-3 mt-3">
+                  <div className="flex items-center px-3 pb-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                         {getInitials(user.name || user.email)}
                       </AvatarFallback>
                     </Avatar>
@@ -248,7 +237,7 @@ export function Navbar() {
                       <div className="text-sm text-muted-foreground">{user.email}</div>
                     </div>
                   </div>
-                  <div className="mt-3 space-y-1 px-2">
+                  <div className="space-y-1 px-2">
                     <Button
                       variant="ghost"
                       className="w-full justify-start"
@@ -262,7 +251,7 @@ export function Navbar() {
                     </Button>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start"
+                      className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);
@@ -274,11 +263,11 @@ export function Navbar() {
                   </div>
                 </div>
               ) : (
-                <div className="border-t border-border pt-4 pb-3 space-y-2 px-3">
+                <div className="border-t border-border pt-4 pb-3 space-y-2 px-3 mt-3">
                   <Button variant="ghost" className="w-full" asChild>
                     <Link to="/login" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
                   </Button>
-                  <Button className="w-full" asChild>
+                  <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600" asChild>
                     <Link to="/register" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
                   </Button>
                 </div>
