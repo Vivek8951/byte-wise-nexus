@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Chatbot } from "@/components/chatbot/Chatbot";
 import { useAuth } from "@/context/AuthContext";
 import { useCourses } from "@/context/CourseContext";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,6 @@ export default function Dashboard() {
         )}
       </main>
       <Footer />
-      <Chatbot />
     </>
   );
 }

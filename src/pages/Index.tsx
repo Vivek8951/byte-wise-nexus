@@ -4,7 +4,6 @@ import { ArrowRight, Code, Database, Network, Server, Cpu, Layout, BookOpen, Awa
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Chatbot } from "@/components/chatbot/Chatbot";
 
 export default function Index() {
   useEffect(() => {
@@ -48,8 +47,8 @@ export default function Index() {
     },
     {
       icon: Cpu,
-      title: "AI Learning Assistant",
-      description: "Get immediate help from our AI chatbot that answers questions and generates visual explanations.",
+      title: "Interactive Learning",
+      description: "Engage with comprehensive video content and downloadable resources for hands-on learning.",
       color: "from-green-500 to-green-700"
     },
     {
@@ -111,7 +110,7 @@ export default function Index() {
               </h1>
               <p className="text-lg md:text-xl opacity-90 mb-8 animate-in slide-in-from-bottom-5 delay-150">
                 Comprehensive learning platform with preloaded courses, downloadable resources,
-                and AI-powered assistance for computer science students.
+                and interactive content for computer science students.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center animate-in slide-in-from-bottom-5 delay-300">
                 <Link to="/courses">
@@ -273,7 +272,6 @@ export default function Index() {
         </section>
       </main>
       <Footer />
-      <Chatbot />
     </>
   );
 }
