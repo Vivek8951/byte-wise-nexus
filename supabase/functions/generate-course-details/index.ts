@@ -12,7 +12,7 @@ const corsHeaders = {
 // Function to search YouTube for relevant videos
 async function searchYouTubeVideos(query: string, maxResults: number = 3) {
   if (!YOUTUBE_API_KEY) {
-    console.log('YouTube API key not found, using fallback videos');
+    console.log('YouTube API key not found, returning empty array');
     return [];
   }
   
@@ -109,6 +109,10 @@ serve(async (req) => {
     
     console.log(`Generating course details for: "${title}"`);
     
+    // Search for YouTube videos FIRST to get real content
+    console.log('Searching for YouTube videos...');
+    const youtubeVideos = await searchYouTubeVideos(title, 3);
+    
     // Create a comprehensive prompt for better course generation
     const prompt = `Generate detailed course information for a technical course titled "${title}". Provide a comprehensive response in valid JSON format with these exact fields:
 
@@ -185,7 +189,8 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
       if (!courseDetails.category) {
         courseDetails.category = title.toLowerCase().includes('machine') ? 'Machine Learning' : 
                                  title.toLowerCase().includes('web') ? 'Web Development' : 
-                                 title.toLowerCase().includes('data') ? 'Data Science' : 'Programming';
+                                 title.toLowerCase().includes('data') ? 'Data Science' : 
+                                 title.toLowerCase().includes('blockchain') ? 'Blockchain' : 'Programming';
       }
       
       if (!courseDetails.duration) {
@@ -209,33 +214,34 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
         description: `Master ${title} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`,
         category: title.toLowerCase().includes('machine') ? 'Machine Learning' : 
                  title.toLowerCase().includes('web') ? 'Web Development' : 
-                 title.toLowerCase().includes('data') ? 'Data Science' : 'Programming',
+                 title.toLowerCase().includes('data') ? 'Data Science' : 
+                 title.toLowerCase().includes('blockchain') ? 'Blockchain' : 'Programming',
         duration: "10 weeks",
         level: "intermediate",
         instructor: "Dr. Sarah Johnson"
       };
     }
     
-    // Search for YouTube videos related to the course
-    console.log('Searching for YouTube videos...');
-    const youtubeVideos = await searchYouTubeVideos(title, 3);
-    
-    // Add YouTube videos to course details
+    // Add YouTube videos to course details with REAL URLs
     if (youtubeVideos.length > 0) {
+      console.log('Found YouTube videos:', youtubeVideos.length);
       courseDetails.videos = youtubeVideos.map((video) => ({
         title: video.title,
         description: video.description,
-        youtubeUrl: video.youtubeUrl,
+        youtubeUrl: video.youtubeUrl, // This is the embed URL
+        url: video.youtubeUrl,        // Also set as url field
         thumbnail: video.thumbnail,
         duration: video.duration
       }));
     } else {
+      console.log('No YouTube videos found, using fallback');
       // Fallback videos if no YouTube results
       courseDetails.videos = [
         { 
           title: `Introduction to ${title}`, 
           description: `Getting started with the fundamentals of ${title}`,
           youtubeUrl: "",
+          url: "",
           thumbnail: "",
           duration: "15:00"
         },
@@ -243,6 +249,7 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
           title: `${title} Advanced Concepts`, 
           description: `Deep dive into advanced topics and practical applications`,
           youtubeUrl: "",
+          url: "",
           thumbnail: "",
           duration: "22:00"
         },
@@ -250,13 +257,14 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
           title: `${title} Hands-on Project`, 
           description: `Build a real-world project using ${title} techniques`,
           youtubeUrl: "",
+          url: "",
           thumbnail: "",
           duration: "30:00"
         }
       ];
     }
     
-    console.log('Generated course details:', courseDetails);
+    console.log('Generated course details with videos:', courseDetails);
     
     return new Response(
       JSON.stringify({ success: true, courseDetails }),
@@ -279,9 +287,9 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
           level: "intermediate",
           instructor: "Dr. Sarah Johnson",
           videos: [
-            { title: `Introduction to ${title}`, description: `Comprehensive introduction to ${title} concepts and applications`, youtubeUrl: "", thumbnail: "", duration: "15:00" },
-            { title: `${title} Best Practices`, description: `Industry standard practices and methodologies for ${title}`, youtubeUrl: "", thumbnail: "", duration: "20:00" },
-            { title: `${title} Real-world Projects`, description: `Hands-on projects to apply ${title} skills in practical scenarios`, youtubeUrl: "", thumbnail: "", duration: "25:00" }
+            { title: `Introduction to ${title}`, description: `Comprehensive introduction to ${title} concepts and applications`, youtubeUrl: "", url: "", thumbnail: "", duration: "15:00" },
+            { title: `${title} Best Practices`, description: `Industry standard practices and methodologies for ${title}`, youtubeUrl: "", url: "", thumbnail: "", duration: "20:00" },
+            { title: `${title} Real-world Projects`, description: `Hands-on projects to apply ${title} skills in practical scenarios`, youtubeUrl: "", url: "", thumbnail: "", duration: "25:00" }
           ]
         }
       }),
