@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || '';
+const OPENROUTER_API_KEY = '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';
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY') || '';
 
 const corsHeaders = {
@@ -36,7 +36,7 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
       youtubeUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
       embedUrl: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
       thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
-      duration: '10:00' // Default duration, could be fetched with additional API call
+      duration: '10:00'
     })) || [];
   } catch (error) {
     console.error('Error searching YouTube:', error);
@@ -66,17 +66,25 @@ serve(async (req) => {
     
     console.log(`Generating course details for: "${title}"`);
     
-    const prompt = `Generate a detailed description for a technical course titled "${title}". Also provide:
-1. A category for the course (e.g., Web Development, Data Science, Programming, Cybersecurity, etc.)
-2. A suggested duration for the course (e.g., "8 weeks")
-3. A difficulty level (MUST be exactly one of: beginner, intermediate, advanced)
-4. A fictional instructor name who would be qualified to teach this course
-5. 3 video lesson titles that would be included in this course
+    const prompt = `Generate detailed course information for a technical course titled "${title}". Provide a comprehensive response in valid JSON format with these exact fields:
 
-Format the response as JSON with these keys:
-description (string), category (string), duration (string), level (string), instructor (string), and videos (array of objects with title and description).`;
+{
+  "description": "A detailed 2-3 sentence course description that explains what students will learn and the practical skills they'll gain",
+  "category": "The most appropriate category (e.g., Web Development, Data Science, Programming, Machine Learning, etc.)",
+  "duration": "Duration in weeks format (e.g., '8 weeks')",
+  "level": "One of: beginner, intermediate, or advanced",
+  "instructor": "A realistic instructor name with proper credentials",
+  "videos": [
+    {
+      "title": "Video lesson title",
+      "description": "Brief description of video content"
+    }
+  ]
+}
 
-    // Call OpenRouter API
+Make sure the response is valid JSON and the description is professional and informative.`;
+
+    // Call OpenRouter API with improved parameters
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -86,19 +94,20 @@ description (string), category (string), duration (string), level (string), inst
         "X-Title": "Tech Learn Platform"
       },
       body: JSON.stringify({
-        model: "microsoft/wizardlm-2-8x22b",
+        model: "openai/gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that generates course details in JSON format. Always ensure the level field is exactly 'beginner', 'intermediate', or 'advanced'."
+            content: "You are a professional course content creator. Generate high-quality educational course details in valid JSON format. Always ensure responses are coherent and professional."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        max_tokens: 800,
-        temperature: 0.7
+        max_tokens: 1000,
+        temperature: 0.3,
+        top_p: 0.9
       })
     });
     
@@ -116,102 +125,69 @@ description (string), category (string), duration (string), level (string), inst
       throw new Error("Invalid response from OpenRouter API");
     }
     
+    console.log("Generated response:", generatedText);
+    
     // Try to extract JSON from the response
     try {
-      // Look for JSON pattern in the text
-      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-      let courseDetails;
+      // Clean the response to extract JSON
+      let jsonString = generatedText.trim();
       
+      // Find JSON block if wrapped in markdown
+      const jsonMatch = jsonString.match(/```json\s*([\s\S]*?)\s*```/) || jsonString.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        courseDetails = JSON.parse(jsonMatch[0]);
-        
-        // Ensure level is valid
-        if (!['beginner', 'intermediate', 'advanced'].includes(courseDetails.level)) {
-          courseDetails.level = 'intermediate';
-        }
-        
-        // Search for YouTube videos related to the course
-        console.log('Searching for YouTube videos...');
-        const youtubeVideos = await searchYouTubeVideos(title);
-        
-        // Enhance video data with YouTube results
-        if (youtubeVideos.length > 0 && courseDetails.videos) {
-          courseDetails.videos = courseDetails.videos.map((video: any, index: number) => {
-            const youtubeVideo = youtubeVideos[index];
-            if (youtubeVideo) {
-              return {
-                ...video,
-                youtubeUrl: youtubeVideo.embedUrl, // Use embed URL
-                thumbnail: youtubeVideo.thumbnail,
-                duration: youtubeVideo.duration
-              };
-            }
-            return video;
-          });
-        } else if (youtubeVideos.length > 0) {
-          // If no videos in courseDetails, use YouTube results
-          courseDetails.videos = youtubeVideos.map((video) => ({
-            title: video.title,
-            description: video.description,
-            youtubeUrl: video.embedUrl,
-            thumbnail: video.thumbnail,
-            duration: video.duration
-          }));
-        }
-        
-      } else {
-        // Fallback: Parse the response as plain text
-        const lines = generatedText.split('\n').filter(line => line.trim());
-        
-        const description = lines.find(line => 
-          !line.toLowerCase().startsWith('category') && 
-          !line.toLowerCase().startsWith('duration') && 
-          !line.toLowerCase().startsWith('level') && 
-          !line.toLowerCase().startsWith('instructor') && 
-          !line.toLowerCase().startsWith('video')
-        ) || `Comprehensive course on ${title}`;
-        
-        const categoryLine = lines.find(line => line.toLowerCase().includes('category')) || '';
-        const category = categoryLine.split(':')[1]?.trim() || 'Programming';
-        
-        const durationLine = lines.find(line => line.toLowerCase().includes('duration')) || '';
-        const duration = durationLine.split(':')[1]?.trim() || '8 weeks';
-        
-        const levelLine = lines.find(line => line.toLowerCase().includes('level')) || '';
-        const level = levelLine.split(':')[1]?.trim() || 'beginner';
-        
-        const instructorLine = lines.find(line => line.toLowerCase().includes('instructor')) || '';
-        const instructor = instructorLine.split(':')[1]?.trim() || 'John Smith';
-        
-        // Search for YouTube videos for fallback
-        const youtubeVideos = await searchYouTubeVideos(title);
-        
-        let videos;
-        if (youtubeVideos.length > 0) {
-          videos = youtubeVideos.map((video) => ({
-            title: video.title,
-            description: video.description,
-            youtubeUrl: video.embedUrl,
-            thumbnail: video.thumbnail,
-            duration: video.duration
-          }));
-        } else {
-          videos = [
-            { title: `Introduction to ${title}`, description: `Getting started with ${title}` },
-            { title: `${title} Advanced Techniques`, description: `Advanced concepts in ${title}` },
-            { title: `${title} Projects`, description: `Practical projects using ${title}` }
-          ];
-        }
-        
-        courseDetails = {
-          description,
-          category,
-          duration,
-          level: level.toLowerCase().includes('begin') ? 'beginner' : 
-                 level.toLowerCase().includes('adv') ? 'advanced' : 'intermediate',
-          instructor,
-          videos
-        };
+        jsonString = jsonMatch[1] || jsonMatch[0];
+      }
+      
+      const courseDetails = JSON.parse(jsonString);
+      
+      // Validate required fields
+      if (!courseDetails.description || !courseDetails.category || !courseDetails.instructor) {
+        throw new Error("Missing required fields in AI response");
+      }
+      
+      // Ensure level is valid
+      if (!['beginner', 'intermediate', 'advanced'].includes(courseDetails.level)) {
+        courseDetails.level = 'intermediate';
+      }
+      
+      // Search for YouTube videos related to the course
+      console.log('Searching for YouTube videos...');
+      const youtubeVideos = await searchYouTubeVideos(title);
+      
+      // Enhance video data with YouTube results
+      if (youtubeVideos.length > 0) {
+        courseDetails.videos = youtubeVideos.slice(0, 3).map((video, index) => ({
+          title: video.title,
+          description: video.description.substring(0, 200) + '...',
+          youtubeUrl: video.embedUrl,
+          thumbnail: video.thumbnail,
+          duration: video.duration
+        }));
+      } else if (!courseDetails.videos || courseDetails.videos.length === 0) {
+        // Fallback videos if no YouTube results
+        courseDetails.videos = [
+          { 
+            title: `Introduction to ${title}`, 
+            description: `Getting started with the fundamentals of ${title}`,
+            youtubeUrl: "",
+            thumbnail: "",
+            duration: "15:00"
+          },
+          { 
+            title: `${title} Advanced Concepts`, 
+            description: `Deep dive into advanced topics and practical applications`,
+            youtubeUrl: "",
+            thumbnail: "",
+            duration: "22:00"
+          },
+          { 
+            title: `${title} Hands-on Project`, 
+            description: `Build a real-world project using ${title} techniques`,
+            youtubeUrl: "",
+            thumbnail: "",
+            duration: "30:00"
+          }
+        ];
       }
       
       console.log('Generated course details:', courseDetails);
@@ -220,8 +196,9 @@ description (string), category (string), duration (string), level (string), inst
         JSON.stringify({ success: true, courseDetails }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } catch (error) {
-      console.error("Error parsing AI response:", error);
+      
+    } catch (parseError) {
+      console.error("Error parsing AI response:", parseError);
       console.log("Raw response:", generatedText);
       
       // Return a fallback response with YouTube search
@@ -229,18 +206,18 @@ description (string), category (string), duration (string), level (string), inst
       
       let videos;
       if (youtubeVideos.length > 0) {
-        videos = youtubeVideos.map((video) => ({
+        videos = youtubeVideos.slice(0, 3).map((video) => ({
           title: video.title,
-          description: video.description,
+          description: video.description.substring(0, 200) + '...',
           youtubeUrl: video.embedUrl,
           thumbnail: video.thumbnail,
           duration: video.duration
         }));
       } else {
         videos = [
-          { title: `Introduction to ${title}`, description: `Getting started with ${title}` },
-          { title: `${title} Advanced Techniques`, description: `Advanced concepts in ${title}` },
-          { title: `${title} Projects`, description: `Practical projects using ${title}` }
+          { title: `Introduction to ${title}`, description: `Comprehensive introduction to ${title} concepts and applications` },
+          { title: `${title} Best Practices`, description: `Industry standard practices and methodologies for ${title}` },
+          { title: `${title} Real-world Projects`, description: `Hands-on projects to apply ${title} skills in practical scenarios` }
         ];
       }
       
@@ -248,11 +225,11 @@ description (string), category (string), duration (string), level (string), inst
         JSON.stringify({
           success: true,
           courseDetails: {
-            description: `Learn everything about ${title} with this comprehensive course.`,
-            category: "Programming",
-            duration: "8 weeks",
+            description: `Master ${title} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`,
+            category: title.includes('Machine') ? 'Machine Learning' : title.includes('Web') ? 'Web Development' : title.includes('Data') ? 'Data Science' : 'Programming',
+            duration: "10 weeks",
             level: "intermediate",
-            instructor: "John Smith",
+            instructor: "Dr. Sarah Johnson",
             videos
           }
         }),

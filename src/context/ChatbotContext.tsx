@@ -19,11 +19,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       // Call Supabase edge function to generate description
       const { data, error } = await supabase.functions.invoke("text-generation", {
         body: { 
-          prompt: `Create a comprehensive course description for a computer science course about ${topic}. 
-                Include learning objectives, key topics covered, and target audience.
-                Keep it concise but informative, maximum 150 words. Write in clear, professional English.`,
-          context: "You are an educational content creator specializing in computer science courses.",
-          maxTokens: 300,
+          prompt: `Write a professional course description for "${topic}". Include learning objectives, key topics, and target audience. Keep it between 100-200 words. Write in clear, professional English without any garbled text.`,
+          context: "You are an educational content creator specializing in computer science courses. Provide clear, coherent descriptions without repetitive words.",
+          maxTokens: 400,
           temperature: 0.3
         }
       });
@@ -32,15 +30,15 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         throw new Error(error.message);
       }
       
-      return data.generatedText || "";
+      return data.generatedText || `Master ${topic} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`;
     } catch (error) {
       console.error("Error generating course description:", error);
       toast({
         title: "Error",
-        description: "Failed to generate course description. Please try again.",
+        description: "Failed to generate course description. Using fallback content.",
         variant: "destructive"
       });
-      return "";
+      return `Master ${topic} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`;
     }
   };
 
@@ -62,7 +60,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         throw new Error(error.message);
       }
       
-      return data.generatedText || "";
+      return data.generatedText || "This educational video covers key concepts and practical applications in computer science.";
     } catch (error) {
       console.error("Error analyzing video:", error);
       toast({
@@ -70,7 +68,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         description: "Failed to analyze video content. Please try again.",
         variant: "destructive"
       });
-      return "";
+      return "This educational video covers key concepts and practical applications in computer science.";
     }
   };
 

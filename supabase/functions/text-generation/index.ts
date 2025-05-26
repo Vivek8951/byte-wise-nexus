@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || '';
+const OPENROUTER_API_KEY = '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';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,7 +26,7 @@ serve(async (req) => {
       );
     }
     
-    const { prompt, context, maxTokens = 500, temperature = 0.7 } = await req.json();
+    const { prompt, context, maxTokens = 500, temperature = 0.3 } = await req.json();
     
     if (!prompt) {
       return new Response(
@@ -46,11 +46,11 @@ serve(async (req) => {
         "X-Title": "Tech Learn Platform"
       },
       body: JSON.stringify({
-        model: "microsoft/wizardlm-2-8x22b",
+        model: "openai/gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: context || "You are a helpful assistant that generates educational content. Provide clear, professional responses."
+            content: context || "You are a helpful assistant that generates educational content. Provide clear, professional responses without any garbled text or repetitive words."
           },
           {
             role: "user",
@@ -58,7 +58,8 @@ serve(async (req) => {
           }
         ],
         max_tokens: maxTokens,
-        temperature: temperature
+        temperature: temperature,
+        top_p: 0.9
       })
     });
     
