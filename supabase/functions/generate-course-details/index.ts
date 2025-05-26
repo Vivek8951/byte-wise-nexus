@@ -12,7 +12,7 @@ const corsHeaders = {
 // Function to search YouTube for relevant videos
 async function searchYouTubeVideos(query: string, maxResults: number = 3) {
   if (!YOUTUBE_API_KEY) {
-    console.log('YouTube API key not found, skipping video search');
+    console.log('YouTube API key not found, using fallback videos');
     return [];
   }
   
@@ -29,15 +29,58 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
     
     const data = await response.json();
     
-    return data.items?.map((item: any) => ({
-      title: item.snippet.title,
-      description: item.snippet.description,
-      videoId: item.id.videoId,
-      youtubeUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
-      thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
-      duration: '10:00'
-    })) || [];
+    if (!data.items || data.items.length === 0) {
+      console.log('No YouTube videos found for query:', query);
+      return [];
+    }
+    
+    // Get video details including duration
+    const videoIds = data.items.map((item: any) => item.id.videoId).join(',');
+    const detailsResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
+    );
+    
+    if (!detailsResponse.ok) {
+      console.error('YouTube video details API error:', detailsResponse.status);
+      return data.items.map((item: any) => ({
+        title: item.snippet.title,
+        description: item.snippet.description.substring(0, 200) + '...',
+        videoId: item.id.videoId,
+        youtubeUrl: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
+        thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+        duration: '10:00'
+      }));
+    }
+    
+    const detailsData = await detailsResponse.json();
+    
+    return detailsData.items.map((item: any) => {
+      // Parse duration from PT1H2M3S format
+      const duration = item.contentDetails.duration;
+      let formattedDuration = '10:00';
+      
+      const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (match) {
+        const hours = match[1] ? parseInt(match[1]) : 0;
+        const minutes = match[2] ? parseInt(match[2]) : 0;
+        const seconds = match[3] ? parseInt(match[3]) : 0;
+        
+        if (hours > 0) {
+          formattedDuration = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+          formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+      }
+      
+      return {
+        title: item.snippet.title,
+        description: item.snippet.description.substring(0, 200) + '...',
+        videoId: item.id.videoId,
+        youtubeUrl: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
+        thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
+        duration: formattedDuration
+      };
+    });
   } catch (error) {
     console.error('Error searching YouTube:', error);
     return [];
@@ -66,25 +109,20 @@ serve(async (req) => {
     
     console.log(`Generating course details for: "${title}"`);
     
+    // Create a comprehensive prompt for better course generation
     const prompt = `Generate detailed course information for a technical course titled "${title}". Provide a comprehensive response in valid JSON format with these exact fields:
 
 {
-  "description": "A detailed 2-3 sentence course description that explains what students will learn and the practical skills they'll gain",
-  "category": "The most appropriate category (e.g., Web Development, Data Science, Programming, Machine Learning, etc.)",
-  "duration": "Duration in weeks format (e.g., '8 weeks')",
+  "description": "A detailed 2-3 sentence course description that explains what students will learn and the practical skills they'll gain. Make it professional and informative.",
+  "category": "The most appropriate category from: Web Development, Data Science, Programming, Machine Learning, Mobile Development, Cybersecurity, Cloud Computing, DevOps, Computer Science, Design, Artificial Intelligence, Database Management, Networking, Operating Systems, Algorithms, Software Engineering, Game Development, Blockchain, Digital Marketing, UX/UI Design",
+  "duration": "Duration in weeks format (e.g., '8 weeks', '12 weeks')",
   "level": "One of: beginner, intermediate, or advanced",
-  "instructor": "A realistic instructor name with proper credentials",
-  "videos": [
-    {
-      "title": "Video lesson title",
-      "description": "Brief description of video content"
-    }
-  ]
+  "instructor": "A realistic instructor name with proper title (e.g., 'Dr. Sarah Johnson', 'Prof. Michael Chen', 'Maya Patel')"
 }
 
-Make sure the response is valid JSON and the description is professional and informative.`;
+Important: Return ONLY the JSON object, no additional text or markdown formatting.`;
 
-    // Call OpenRouter API with improved parameters
+    // Call OpenRouter API
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -98,27 +136,25 @@ Make sure the response is valid JSON and the description is professional and inf
         messages: [
           {
             role: "system",
-            content: "You are a professional course content creator. Generate high-quality educational course details in valid JSON format. Always ensure responses are coherent and professional."
+            content: "You are a professional course content creator. Generate high-quality educational course details in valid JSON format. Always ensure responses are coherent, professional, and properly formatted."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.3,
+        max_tokens: 800,
+        temperature: 0.4,
         top_p: 0.9
       })
     });
     
     if (!response.ok) {
       console.error("Error response from OpenRouter API:", await response.text());
-      throw new Error(`Failed to get response from OpenRouter API: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to get response from OpenRouter API: ${response.status}`);
     }
     
     const responseData = await response.json();
-    
-    // Extract the text response
     const generatedText = responseData.choices?.[0]?.message?.content;
     
     if (!generatedText) {
@@ -127,7 +163,8 @@ Make sure the response is valid JSON and the description is professional and inf
     
     console.log("Generated response:", generatedText);
     
-    // Try to extract JSON from the response
+    // Parse the JSON response
+    let courseDetails;
     try {
       // Clean the response to extract JSON
       let jsonString = generatedText.trim();
@@ -138,109 +175,117 @@ Make sure the response is valid JSON and the description is professional and inf
         jsonString = jsonMatch[1] || jsonMatch[0];
       }
       
-      const courseDetails = JSON.parse(jsonString);
+      courseDetails = JSON.parse(jsonString);
       
-      // Validate required fields
-      if (!courseDetails.description || !courseDetails.category || !courseDetails.instructor) {
-        throw new Error("Missing required fields in AI response");
+      // Validate and fix required fields
+      if (!courseDetails.description) {
+        courseDetails.description = `Master ${title} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`;
       }
       
-      // Ensure level is valid
+      if (!courseDetails.category) {
+        courseDetails.category = title.toLowerCase().includes('machine') ? 'Machine Learning' : 
+                                 title.toLowerCase().includes('web') ? 'Web Development' : 
+                                 title.toLowerCase().includes('data') ? 'Data Science' : 'Programming';
+      }
+      
+      if (!courseDetails.duration) {
+        courseDetails.duration = "10 weeks";
+      }
+      
       if (!['beginner', 'intermediate', 'advanced'].includes(courseDetails.level)) {
         courseDetails.level = 'intermediate';
       }
       
-      // Search for YouTube videos related to the course
-      console.log('Searching for YouTube videos...');
-      const youtubeVideos = await searchYouTubeVideos(title);
-      
-      // Enhance video data with YouTube results
-      if (youtubeVideos.length > 0) {
-        courseDetails.videos = youtubeVideos.slice(0, 3).map((video, index) => ({
-          title: video.title,
-          description: video.description.substring(0, 200) + '...',
-          youtubeUrl: video.embedUrl,
-          thumbnail: video.thumbnail,
-          duration: video.duration
-        }));
-      } else if (!courseDetails.videos || courseDetails.videos.length === 0) {
-        // Fallback videos if no YouTube results
-        courseDetails.videos = [
-          { 
-            title: `Introduction to ${title}`, 
-            description: `Getting started with the fundamentals of ${title}`,
-            youtubeUrl: "",
-            thumbnail: "",
-            duration: "15:00"
-          },
-          { 
-            title: `${title} Advanced Concepts`, 
-            description: `Deep dive into advanced topics and practical applications`,
-            youtubeUrl: "",
-            thumbnail: "",
-            duration: "22:00"
-          },
-          { 
-            title: `${title} Hands-on Project`, 
-            description: `Build a real-world project using ${title} techniques`,
-            youtubeUrl: "",
-            thumbnail: "",
-            duration: "30:00"
-          }
-        ];
+      if (!courseDetails.instructor) {
+        const instructors = ['Dr. Sarah Johnson', 'Prof. Michael Chen', 'Maya Patel', 'James Wilson', 'Emma Clark'];
+        courseDetails.instructor = instructors[Math.floor(Math.random() * instructors.length)];
       }
-      
-      console.log('Generated course details:', courseDetails);
-      
-      return new Response(
-        JSON.stringify({ success: true, courseDetails }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
       
     } catch (parseError) {
       console.error("Error parsing AI response:", parseError);
-      console.log("Raw response:", generatedText);
       
-      // Return a fallback response with YouTube search
-      const youtubeVideos = await searchYouTubeVideos(title);
-      
-      let videos;
-      if (youtubeVideos.length > 0) {
-        videos = youtubeVideos.slice(0, 3).map((video) => ({
-          title: video.title,
-          description: video.description.substring(0, 200) + '...',
-          youtubeUrl: video.embedUrl,
-          thumbnail: video.thumbnail,
-          duration: video.duration
-        }));
-      } else {
-        videos = [
-          { title: `Introduction to ${title}`, description: `Comprehensive introduction to ${title} concepts and applications` },
-          { title: `${title} Best Practices`, description: `Industry standard practices and methodologies for ${title}` },
-          { title: `${title} Real-world Projects`, description: `Hands-on projects to apply ${title} skills in practical scenarios` }
-        ];
-      }
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          courseDetails: {
-            description: `Master ${title} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`,
-            category: title.includes('Machine') ? 'Machine Learning' : title.includes('Web') ? 'Web Development' : title.includes('Data') ? 'Data Science' : 'Programming',
-            duration: "10 weeks",
-            level: "intermediate",
-            instructor: "Dr. Sarah Johnson",
-            videos
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Fallback course details
+      courseDetails = {
+        description: `Master ${title} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`,
+        category: title.toLowerCase().includes('machine') ? 'Machine Learning' : 
+                 title.toLowerCase().includes('web') ? 'Web Development' : 
+                 title.toLowerCase().includes('data') ? 'Data Science' : 'Programming',
+        duration: "10 weeks",
+        level: "intermediate",
+        instructor: "Dr. Sarah Johnson"
+      };
     }
+    
+    // Search for YouTube videos related to the course
+    console.log('Searching for YouTube videos...');
+    const youtubeVideos = await searchYouTubeVideos(title, 3);
+    
+    // Add YouTube videos to course details
+    if (youtubeVideos.length > 0) {
+      courseDetails.videos = youtubeVideos.map((video) => ({
+        title: video.title,
+        description: video.description,
+        youtubeUrl: video.youtubeUrl,
+        thumbnail: video.thumbnail,
+        duration: video.duration
+      }));
+    } else {
+      // Fallback videos if no YouTube results
+      courseDetails.videos = [
+        { 
+          title: `Introduction to ${title}`, 
+          description: `Getting started with the fundamentals of ${title}`,
+          youtubeUrl: "",
+          thumbnail: "",
+          duration: "15:00"
+        },
+        { 
+          title: `${title} Advanced Concepts`, 
+          description: `Deep dive into advanced topics and practical applications`,
+          youtubeUrl: "",
+          thumbnail: "",
+          duration: "22:00"
+        },
+        { 
+          title: `${title} Hands-on Project`, 
+          description: `Build a real-world project using ${title} techniques`,
+          youtubeUrl: "",
+          thumbnail: "",
+          duration: "30:00"
+        }
+      ];
+    }
+    
+    console.log('Generated course details:', courseDetails);
+    
+    return new Response(
+      JSON.stringify({ success: true, courseDetails }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
   } catch (error) {
     console.error("Error in generate-course-details function:", error);
+    
+    // Return a fallback response
+    const { title } = await req.json().catch(() => ({ title: 'Sample Course' }));
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({
+        success: true,
+        courseDetails: {
+          description: `Master ${title} with this comprehensive course covering fundamental concepts, practical applications, and real-world projects. Learn industry-standard practices and gain hands-on experience through guided exercises and expert instruction.`,
+          category: "Programming",
+          duration: "10 weeks",
+          level: "intermediate",
+          instructor: "Dr. Sarah Johnson",
+          videos: [
+            { title: `Introduction to ${title}`, description: `Comprehensive introduction to ${title} concepts and applications`, youtubeUrl: "", thumbnail: "", duration: "15:00" },
+            { title: `${title} Best Practices`, description: `Industry standard practices and methodologies for ${title}`, youtubeUrl: "", thumbnail: "", duration: "20:00" },
+            { title: `${title} Real-world Projects`, description: `Hands-on projects to apply ${title} skills in practical scenarios`, youtubeUrl: "", thumbnail: "", duration: "25:00" }
+          ]
+        }
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

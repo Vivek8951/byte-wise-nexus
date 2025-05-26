@@ -50,7 +50,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: context || "You are a helpful assistant that generates educational content. Provide clear, professional responses without any garbled text or repetitive words."
+            content: context || "You are a helpful assistant that generates educational content. Provide clear, professional responses without any garbled text or repetitive words. Focus on creating high-quality, coherent content."
           },
           {
             role: "user",
@@ -69,7 +69,7 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error("OpenRouter API error:", response.status, errorText);
       
-      // Return a fallback response instead of failing completely
+      // Return a meaningful fallback response based on prompt type
       let fallbackText = "";
       if (prompt.toLowerCase().includes("course description")) {
         fallbackText = "This comprehensive course covers essential concepts and practical applications. Students will learn fundamental principles through hands-on exercises, real-world examples, and expert guidance. Perfect for beginners and intermediate learners looking to advance their skills.";
@@ -89,7 +89,7 @@ serve(async (req) => {
     const generatedText = responseData.choices?.[0]?.message?.content;
     
     if (!generatedText || generatedText.trim().length < 10) {
-      console.error("Generated response appears to be garbled or too short:", generatedText);
+      console.error("Generated response appears to be invalid or too short:", generatedText);
       
       // Provide fallback content based on prompt type
       let fallbackText = "";
