@@ -127,16 +127,41 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Adding course:', courseData);
       
+      // Validate required fields
+      if (!courseData.title?.trim()) {
+        throw new Error('Course title is required');
+      }
+      
+      if (!courseData.description?.trim()) {
+        throw new Error('Course description is required');
+      }
+      
+      if (!courseData.category?.trim()) {
+        throw new Error('Course category is required');
+      }
+      
+      if (!courseData.instructor?.trim()) {
+        throw new Error('Course instructor is required');
+      }
+      
+      if (!courseData.duration?.trim()) {
+        throw new Error('Course duration is required');
+      }
+      
+      if (!courseData.thumbnail?.trim()) {
+        throw new Error('Course thumbnail is required');
+      }
+
       const { data, error } = await supabase
         .from('courses')
         .insert({
-          title: courseData.title,
-          description: courseData.description,
-          category: courseData.category,
-          thumbnail: courseData.thumbnail,
-          level: courseData.level,
-          duration: courseData.duration,
-          instructor: courseData.instructor,
+          title: courseData.title.trim(),
+          description: courseData.description.trim(),
+          category: courseData.category.trim(),
+          thumbnail: courseData.thumbnail.trim(),
+          level: courseData.level || 'beginner',
+          duration: courseData.duration.trim(),
+          instructor: courseData.instructor.trim(),
           enrolled_count: courseData.enrolledCount || 0,
           rating: courseData.rating || 0,
           featured: courseData.featured || false,
@@ -146,7 +171,11 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Supabase error:', error);
-        throw error;
+        throw new Error(`Failed to create course: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('No data returned from course creation');
       }
 
       const newCourse: Course = {
@@ -169,12 +198,19 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       
       console.log('Course added successfully:', newCourse);
       
+      toast({
+        title: "Course created",
+        description: `"${newCourse.title}" has been created successfully`,
+      });
+      
       return newCourse;
     } catch (error) {
       console.error('Error adding course:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       toast({
         title: "Error adding course",
-        description: "Failed to add course to the database",
+        description: errorMessage,
         variant: "destructive"
       });
       return null;
@@ -249,21 +285,37 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Adding video:', videoData);
       
+      // Validate required fields
+      if (!videoData.courseId) {
+        throw new Error('Course ID is required for video');
+      }
+      
+      if (!videoData.title?.trim()) {
+        throw new Error('Video title is required');
+      }
+      
       const { data, error } = await supabase
         .from('videos')
         .insert({
           course_id: videoData.courseId,
-          title: videoData.title,
-          description: videoData.description,
-          url: videoData.url,
-          thumbnail: videoData.thumbnail,
-          duration: videoData.duration,
-          order_num: videoData.order,
+          title: videoData.title.trim(),
+          description: videoData.description?.trim() || '',
+          url: videoData.url?.trim() || '',
+          thumbnail: videoData.thumbnail?.trim() || '',
+          duration: videoData.duration?.trim() || '0:00',
+          order_num: videoData.order || 1,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Video creation error:', error);
+        throw new Error(`Failed to create video: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('No data returned from video creation');
+      }
 
       const newVideo: Video = {
         id: data.id,
@@ -277,13 +329,15 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       };
 
       setVideos(prev => [...prev, newVideo]);
-      console.log('Video added successfully');
+      console.log('Video added successfully:', newVideo);
       return newVideo;
     } catch (error) {
       console.error('Error adding video:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       toast({
         title: "Error adding video",
-        description: "Failed to add video to the database",
+        description: errorMessage,
         variant: "destructive"
       });
       return null;
@@ -294,20 +348,36 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Adding note:', noteData);
       
+      // Validate required fields
+      if (!noteData.courseId) {
+        throw new Error('Course ID is required for note');
+      }
+      
+      if (!noteData.title?.trim()) {
+        throw new Error('Note title is required');
+      }
+      
       const { data, error } = await supabase
         .from('notes')
         .insert({
           course_id: noteData.courseId,
-          title: noteData.title,
-          description: noteData.description,
-          file_url: noteData.fileUrl,
-          file_type: noteData.fileType,
-          order_num: noteData.order,
+          title: noteData.title.trim(),
+          description: noteData.description?.trim() || '',
+          file_url: noteData.fileUrl?.trim() || '',
+          file_type: noteData.fileType || 'pdf',
+          order_num: noteData.order || 1,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Note creation error:', error);
+        throw new Error(`Failed to create note: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('No data returned from note creation');
+      }
 
       const newNote: Note = {
         id: data.id,
@@ -320,12 +390,14 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       };
 
       setNotes(prev => [...prev, newNote]);
-      console.log('Note added successfully');
+      console.log('Note added successfully:', newNote);
     } catch (error) {
       console.error('Error adding note:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       toast({
         title: "Error adding note",
-        description: "Failed to add note to the database",
+        description: errorMessage,
         variant: "destructive"
       });
     }
