@@ -46,8 +46,8 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
         title: item.snippet.title,
         description: item.snippet.description.substring(0, 200) + '...',
         videoId: item.id.videoId,
-        youtubeUrl: `https://www.youtube.com/embed/${item.id.videoId}`,
-        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+        youtubeUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+        url: `https://www.youtube.com/embed/${item.id.videoId}`,
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
         duration: '10:00'
       }));
@@ -79,8 +79,8 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
         title: item.snippet.title,
         description: item.snippet.description.substring(0, 200) + '...',
         videoId: videoId,
-        youtubeUrl: `https://www.youtube.com/embed/${videoId}`,
-        url: `https://www.youtube.com/watch?v=${videoId}`,
+        youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+        url: `https://www.youtube.com/embed/${videoId}`,
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
         duration: formattedDuration
       };
@@ -233,8 +233,8 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
       courseDetails.videos = youtubeVideos.map((video) => ({
         title: video.title,
         description: video.description,
-        youtubeUrl: video.youtubeUrl, // Embed URL for iframe
-        url: video.url,               // Watch URL for direct access
+        youtubeUrl: video.youtubeUrl, // Direct YouTube watch URL
+        url: video.url,               // Embed URL for iframe
         thumbnail: video.thumbnail,
         duration: video.duration
       }));
