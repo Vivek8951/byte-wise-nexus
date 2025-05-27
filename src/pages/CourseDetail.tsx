@@ -62,9 +62,16 @@ export default function CourseDetail() {
           .order('order_num', { ascending: true });
 
         if (videoError) throw videoError;
-        setVideos(videoData || []);
-        if (videoData && videoData.length > 0) {
-          setSelectedVideo(videoData[0]);
+        
+        // Transform video URLs to ensure they're embed URLs
+        const transformedVideos = (videoData || []).map(video => ({
+          ...video,
+          url: video.url ? convertToEmbedUrl(video.url) : video.url
+        }));
+        
+        setVideos(transformedVideos);
+        if (transformedVideos && transformedVideos.length > 0) {
+          setSelectedVideo(transformedVideos[0]);
         }
 
         // Fetch study materials
@@ -103,6 +110,25 @@ export default function CourseDetail() {
 
     fetchCourseData();
   }, [id, user]);
+
+  // Helper function to convert YouTube URLs to embed format
+  const convertToEmbedUrl = (url: string): string => {
+    if (!url) return url;
+    
+    // If it's already an embed URL, return as is
+    if (url.includes('youtube.com/embed') || url.includes('youtube-nocookie.com/embed')) {
+      return url;
+    }
+    
+    // Extract video ID from watch URL
+    const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    if (videoIdMatch) {
+      const videoId = videoIdMatch[1];
+      return `https://www.youtube-nocookie.com/embed/${videoId}`;
+    }
+    
+    return url;
+  };
 
   const handleVideoSelect = async (video: any) => {
     setSelectedVideo(video);
@@ -303,7 +329,8 @@ export default function CourseDetail() {
                   <AspectRatio ratio={16 / 9} className="bg-muted">
                     <SimpleVideoPlayer 
                       url={selectedVideo.url} 
-                      title={selectedVideo.title} 
+                      title={selectedVideo.title}
+                      thumbnail={selectedVideo.thumbnail}
                     />
                   </AspectRatio>
                   <div className="p-4">

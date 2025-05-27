@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 
 interface SimpleVideoPlayerProps {
@@ -16,6 +17,27 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
   const [showThumbnail, setShowThumbnail] = useState(!!thumbnail);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Function to convert YouTube watch URLs to embed URLs
+  const convertToEmbedUrl = (videoUrl: string): string => {
+    if (!videoUrl) return '';
+    
+    // If it's already an embed URL, return as is
+    if (videoUrl.includes('youtube.com/embed') || videoUrl.includes('youtube-nocookie.com/embed')) {
+      return videoUrl;
+    }
+    
+    // Extract video ID from watch URL
+    const videoIdMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    if (videoIdMatch) {
+      const videoId = videoIdMatch[1];
+      return `https://www.youtube-nocookie.com/embed/${videoId}`;
+    }
+    
+    return videoUrl;
+  };
+
+  const embedUrl = convertToEmbedUrl(url);
+
   useEffect(() => {
     // Reset state when URL changes
     setIsPlaying(autoPlay);
@@ -23,8 +45,13 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
     setIsLoading(true);
     setShowThumbnail(!!thumbnail);
     
+    // For YouTube embeds, we don't need to handle video events
+    if (isYouTubeEmbed) {
+      setIsLoading(false);
+    }
+    
     // If the video is ready, play it if autoPlay is true
-    if (videoRef.current) {
+    if (videoRef.current && !isYouTubeEmbed) {
       if (autoPlay) {
         videoRef.current.play().catch(() => {
           // Autoplay was prevented - do nothing, this is expected on many browsers
@@ -95,13 +122,13 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
   };
 
   // Check if the URL is a YouTube embed
-  const isYouTubeEmbed = url?.includes('youtube.com/embed') || url?.includes('youtube-nocookie.com/embed');
+  const isYouTubeEmbed = embedUrl?.includes('youtube.com/embed') || embedUrl?.includes('youtube-nocookie.com/embed');
   
   // Extract YouTube video ID for higher quality thumbnails if not provided
   const extractYouTubeVideoId = () => {
     if (!isYouTubeEmbed) return null;
     
-    const match = url.match(/embed\/([\w-]+)/);
+    const match = embedUrl.match(/embed\/([\w-]+)/);
     return match ? match[1] : null;
   };
   
@@ -119,6 +146,18 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
   };
   
   const effectiveThumbnail = isYouTubeEmbed ? getYouTubeThumbnail() : thumbnail;
+
+  // If no URL is provided, show placeholder
+  if (!embedUrl) {
+    return (
+      <div className="relative w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <div className="text-center p-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading video...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isYouTubeEmbed) {
     return (
@@ -143,10 +182,10 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
           </div>
         ) : (
           <iframe
-            src={`${url}?autoplay=${showThumbnail ? 0 : (autoPlay ? 1 : 0)}`}
+            src={`${embedUrl}?autoplay=${showThumbnail ? 0 : (autoPlay ? 1 : 0)}&rel=0&modestbranding=1`}
             title={title || "YouTube video player"}
             frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             className="w-full h-full aspect-video"
           ></iframe>
@@ -184,7 +223,7 @@ export function SimpleVideoPlayer({ url, title, autoPlay = false, thumbnail }: S
       ) : (
         <video
           ref={videoRef}
-          src={url}
+          src={embedUrl}
           className="w-full h-full"
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
