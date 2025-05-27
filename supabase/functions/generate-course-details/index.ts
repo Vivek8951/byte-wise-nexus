@@ -46,7 +46,8 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
         title: item.snippet.title,
         description: item.snippet.description.substring(0, 200) + '...',
         videoId: item.id.videoId,
-        youtubeUrl: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
+        youtubeUrl: `https://www.youtube.com/embed/${item.id.videoId}`,
+        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
         duration: '10:00'
       }));
@@ -72,11 +73,14 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
         }
       }
       
+      const videoId = item.id;
+      
       return {
         title: item.snippet.title,
         description: item.snippet.description.substring(0, 200) + '...',
-        videoId: item.id.videoId,
-        youtubeUrl: `https://www.youtube-nocookie.com/embed/${item.id.videoId}`,
+        videoId: videoId,
+        youtubeUrl: `https://www.youtube.com/embed/${videoId}`,
+        url: `https://www.youtube.com/watch?v=${videoId}`,
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
         duration: formattedDuration
       };
@@ -112,6 +116,7 @@ serve(async (req) => {
     // Search for YouTube videos FIRST to get real content
     console.log('Searching for YouTube videos...');
     const youtubeVideos = await searchYouTubeVideos(title, 3);
+    console.log('Found YouTube videos:', youtubeVideos.length);
     
     // Create a comprehensive prompt for better course generation
     const prompt = `Generate detailed course information for a technical course titled "${title}". Provide a comprehensive response in valid JSON format with these exact fields:
@@ -224,15 +229,16 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
     
     // Add YouTube videos to course details with REAL URLs
     if (youtubeVideos.length > 0) {
-      console.log('Found YouTube videos:', youtubeVideos.length);
+      console.log('Adding real YouTube videos:', youtubeVideos.length);
       courseDetails.videos = youtubeVideos.map((video) => ({
         title: video.title,
         description: video.description,
-        youtubeUrl: video.youtubeUrl, // This is the embed URL
-        url: video.youtubeUrl,        // Also set as url field
+        youtubeUrl: video.youtubeUrl, // Embed URL for iframe
+        url: video.url,               // Watch URL for direct access
         thumbnail: video.thumbnail,
         duration: video.duration
       }));
+      console.log('Sample video URLs:', courseDetails.videos[0]?.youtubeUrl, courseDetails.videos[0]?.url);
     } else {
       console.log('No YouTube videos found, using fallback');
       // Fallback videos if no YouTube results
@@ -264,7 +270,7 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
       ];
     }
     
-    console.log('Generated course details with videos:', courseDetails);
+    console.log('Final course details with videos:', courseDetails);
     
     return new Response(
       JSON.stringify({ success: true, courseDetails }),
