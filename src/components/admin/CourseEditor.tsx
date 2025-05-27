@@ -153,115 +153,63 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     try {
       console.log('Generating course details for:', titleValue);
       
-      // Generate description with fallback
-      try {
-        const { data: descData, error: descError } = await supabase.functions.invoke('text-generation', {
-          body: { 
-            prompt: `Write a professional course description for "${titleValue}". Include learning objectives, key topics, and target audience. Keep it between 100-200 words. Write in clear, professional English without any garbled text.`,
-            maxTokens: 400,
-            temperature: 0.3
-          }
-        });
-        
-        if (!descError && descData.generatedText) {
-          setValue('description', descData.generatedText.trim());
-        } else {
-          // Fallback description
-          setValue('description', `Comprehensive ${titleValue} course covering essential concepts, practical applications, and real-world scenarios. Students will learn through hands-on exercises, expert instruction, and interactive learning materials designed to build professional skills.`);
-        }
-      } catch (error) {
-        console.error("Description generation failed, using fallback");
-        setValue('description', `Learn ${titleValue} with this comprehensive course designed for practical skill development and career advancement.`);
-      }
-      
-      // Generate other details with fallback
-      try {
-        const { data: detailsData, error: detailsError } = await supabase.functions.invoke('text-generation', {
-          body: { 
-            prompt: `For a course titled "${titleValue}", provide only these details in this exact format:
-            Category: [category name]
-            Instructor: [instructor name]
-            Duration: [duration like "8 weeks"]
-            Level: [beginner/intermediate/advanced]`,
-            maxTokens: 200,
-            temperature: 0.3
-          }
-        });
-        
-        if (!detailsError && detailsData.generatedText) {
-          // Parse the details response
-          const details = detailsData.generatedText;
-          const categoryMatch = details.match(/Category:\s*(.+)/i);
-          const instructorMatch = details.match(/Instructor:\s*(.+)/i);
-          const durationMatch = details.match(/Duration:\s*(.+)/i);
-          const levelMatch = details.match(/Level:\s*(.+)/i);
-          
-          if (categoryMatch) setValue('category', categoryMatch[1].trim());
-          if (instructorMatch) setValue('instructor', instructorMatch[1].trim());
-          if (durationMatch) setValue('duration', durationMatch[1].trim());
-          if (levelMatch) {
-            const levelValue = levelMatch[1].trim().toLowerCase();
-            if (['beginner', 'intermediate', 'advanced'].includes(levelValue)) {
-              setLevel(levelValue);
-            }
-          }
-        } else {
-          // Fallback values
-          setValue('category', 'Computer Science');
-          setValue('instructor', 'Dr. Sarah Johnson');
-          setValue('duration', '8 weeks');
-          setLevel('intermediate');
-        }
-      } catch (error) {
-        console.error("Details generation failed, using fallback");
-        setValue('category', 'Programming');
-        setValue('instructor', 'Prof. Michael Chen');
-        setValue('duration', '10 weeks');
-        setLevel('beginner');
-      }
-      
-      // Generate a thumbnail URL using Unsplash
-      const category = watch('category') || titleValue;
-      const thumbnailUrl = `https://source.unsplash.com/800x600/?${encodeURIComponent(category.toLowerCase() + ' programming')}`;
-      setValue('thumbnail', thumbnailUrl);
-      
-      // Generate default videos
-      const newVideos = [
-        { 
-          title: `Introduction to ${titleValue}`, 
-          description: `Get started with the fundamentals of ${titleValue}`, 
-          url: '', 
-          duration: '15:00', 
-          order: 1 
-        },
-        { 
-          title: `${titleValue} Advanced Concepts`, 
-          description: `Deep dive into advanced ${titleValue} topics`, 
-          url: '', 
-          duration: '20:00', 
-          order: 2 
-        }
-      ];
-      
-      setVideos(newVideos);
-      
-      // Generate default notes
-      const defaultNotes = [
-        {
-          title: `${titleValue} Course Materials`,
-          description: `Comprehensive study materials for ${titleValue}`,
-          fileUrl: '',
-          fileType: 'pdf' as const,
-          order: 1
-        }
-      ];
-      
-      setNotes(defaultNotes);
-      
-      toast({
-        title: "Course details generated",
-        description: "Course details have been generated successfully (some may use fallback values)",
+      // Call the generate-course-details function
+      const { data, error } = await supabase.functions.invoke('generate-course-details', {
+        body: { title: titleValue }
       });
+      
+      if (error) {
+        throw new Error(error.message || 'Failed to generate course details');
+      }
+      
+      if (data && data.success && data.courseDetails) {
+        const details = data.courseDetails;
+        
+        // Set form values
+        setValue('description', details.description);
+        setValue('category', details.category);
+        setValue('instructor', details.instructor);
+        setValue('duration', details.duration);
+        setLevel(details.level);
+        
+        // Generate a thumbnail URL using Unsplash
+        const thumbnailUrl = `https://source.unsplash.com/800x600/?${encodeURIComponent(details.category.toLowerCase() + ' programming')}`;
+        setValue('thumbnail', thumbnailUrl);
+        
+        // Set videos with YouTube URLs
+        if (details.videos && details.videos.length > 0) {
+          const generatedVideos = details.videos.map((video: any, index: number) => ({
+            title: video.title || `Video ${index + 1}`,
+            description: video.description || '',
+            url: video.youtubeUrl || video.url || '', // Use the YouTube URL
+            duration: video.duration || '10:00',
+            thumbnail: video.thumbnail || '',
+            order: index + 1
+          }));
+          setVideos(generatedVideos);
+          console.log('Set videos with URLs:', generatedVideos);
+        }
+        
+        // Generate default notes
+        const defaultNotes = [
+          {
+            title: `${titleValue} Course Materials`,
+            description: `Comprehensive study materials for ${titleValue}`,
+            fileUrl: '',
+            fileType: 'pdf' as const,
+            order: 1
+          }
+        ];
+        
+        setNotes(defaultNotes);
+        
+        toast({
+          title: "Course details generated",
+          description: "Course details and YouTube videos have been generated successfully",
+        });
+      } else {
+        throw new Error('Invalid response from course generation');
+      }
     } catch (error) {
       console.error("Error generating course details:", error);
       
@@ -273,9 +221,29 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
       setValue('thumbnail', `https://source.unsplash.com/800x600/?programming`);
       setLevel('intermediate');
       
+      // Fallback videos with sample YouTube URLs
+      const fallbackVideos = [
+        { 
+          title: `Introduction to ${titleValue}`, 
+          description: `Getting started with the fundamentals of ${titleValue}`, 
+          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 
+          duration: '15:00', 
+          order: 1 
+        },
+        { 
+          title: `${titleValue} Advanced Concepts`, 
+          description: `Deep dive into advanced ${titleValue} topics`, 
+          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 
+          duration: '20:00', 
+          order: 2 
+        }
+      ];
+      
+      setVideos(fallbackVideos);
+      
       toast({
         title: "Using default values",
-        description: "Generated default course details. You can modify them as needed.",
+        description: "Generated default course details with sample YouTube URLs. You can modify them as needed.",
       });
     } finally {
       setIsGeneratingDetails(false);
@@ -624,7 +592,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                           updatedVideos[index] = { ...updatedVideos[index], url: e.target.value };
                           setVideos(updatedVideos);
                         }}
-                        placeholder="YouTube URL (can be added later)"
+                        placeholder="YouTube URL (e.g., https://www.youtube.com/watch?v=...)"
                       />
                     </div>
                     

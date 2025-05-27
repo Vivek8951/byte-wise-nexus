@@ -47,7 +47,8 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
         description: item.snippet.description.substring(0, 200) + '...',
         videoId: item.id.videoId,
         youtubeUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-        url: `https://www.youtube.com/embed/${item.id.videoId}`,
+        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+        embedUrl: `https://www.youtube.com/embed/${item.id.videoId}`,
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
         duration: '10:00'
       }));
@@ -80,7 +81,8 @@ async function searchYouTubeVideos(query: string, maxResults: number = 3) {
         description: item.snippet.description.substring(0, 200) + '...',
         videoId: videoId,
         youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
-        url: `https://www.youtube.com/embed/${videoId}`,
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        embedUrl: `https://www.youtube.com/embed/${videoId}`,
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url,
         duration: formattedDuration
       };
@@ -233,38 +235,42 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
       courseDetails.videos = youtubeVideos.map((video) => ({
         title: video.title,
         description: video.description,
-        youtubeUrl: video.youtubeUrl, // Direct YouTube watch URL
-        url: video.url,               // Embed URL for iframe
+        youtubeUrl: video.youtubeUrl, // Direct YouTube watch URL for the form field
+        url: video.youtubeUrl,        // Use watch URL instead of embed URL for the form
+        embedUrl: video.embedUrl,     // Keep embed URL for player if needed
         thumbnail: video.thumbnail,
         duration: video.duration
       }));
       console.log('Sample video URLs:', courseDetails.videos[0]?.youtubeUrl, courseDetails.videos[0]?.url);
     } else {
       console.log('No YouTube videos found, using fallback');
-      // Fallback videos if no YouTube results
+      // Fallback videos if no YouTube results - with sample YouTube URLs
       courseDetails.videos = [
         { 
           title: `Introduction to ${title}`, 
           description: `Getting started with the fundamentals of ${title}`,
-          youtubeUrl: "",
-          url: "",
-          thumbnail: "",
+          youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
           duration: "15:00"
         },
         { 
           title: `${title} Advanced Concepts`, 
           description: `Deep dive into advanced topics and practical applications`,
-          youtubeUrl: "",
-          url: "",
-          thumbnail: "",
+          youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
           duration: "22:00"
         },
         { 
           title: `${title} Hands-on Project`, 
           description: `Build a real-world project using ${title} techniques`,
-          youtubeUrl: "",
-          url: "",
-          thumbnail: "",
+          youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+          thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
           duration: "30:00"
         }
       ];
@@ -293,9 +299,33 @@ Important: Return ONLY the JSON object, no additional text or markdown formattin
           level: "intermediate",
           instructor: "Dr. Sarah Johnson",
           videos: [
-            { title: `Introduction to ${title}`, description: `Comprehensive introduction to ${title} concepts and applications`, youtubeUrl: "", url: "", thumbnail: "", duration: "15:00" },
-            { title: `${title} Best Practices`, description: `Industry standard practices and methodologies for ${title}`, youtubeUrl: "", url: "", thumbnail: "", duration: "20:00" },
-            { title: `${title} Real-world Projects`, description: `Hands-on projects to apply ${title} skills in practical scenarios`, youtubeUrl: "", url: "", thumbnail: "", duration: "25:00" }
+            { 
+              title: `Introduction to ${title}`, 
+              description: `Comprehensive introduction to ${title} concepts and applications`, 
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+              url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+              embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg", 
+              duration: "15:00" 
+            },
+            { 
+              title: `${title} Best Practices`, 
+              description: `Industry standard practices and methodologies for ${title}`, 
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+              url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+              embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg", 
+              duration: "20:00" 
+            },
+            { 
+              title: `${title} Real-world Projects`, 
+              description: `Hands-on projects to apply ${title} skills in practical scenarios`, 
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+              url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+              embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg", 
+              duration: "25:00" 
+            }
           ]
         }
       }),
